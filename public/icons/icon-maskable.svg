@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Campus Quiz">
+  <rect width="512" height="512" fill="#0f766e"/>
+  <circle cx="256" cy="256" r="178" fill="#facc15"/>
+  <path fill="#083344" d="M166 170h180v38H166v-38Zm0 78h180v38H166v-38Zm0 78h110v38H166v-38Z"/>
+  <circle cx="352" cy="352" r="58" fill="#2563eb"/>
+  <path fill="#fff" d="m324 352 18 18 40-48 21 18-60 70-40-40 21-18Z"/>
+</svg>

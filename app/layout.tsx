@@ -1,0 +1,60 @@
+import type { Metadata, Viewport } from "next";
+import "./globals.css";
+import { PwaRegister } from "@/components/pwa-register";
+
+const visualSettingsScript = `
+(() => {
+  try {
+    const raw = window.localStorage.getItem("campus-quiz-settings-v1");
+    const settings = raw ? JSON.parse(raw) : {};
+    const backgrounds = new Set(["grid", "blast", "stickers", "checker", "poster", "tape", "notebook", "neon", "waves"]);
+    const motions = new Set(["low", "normal", "high", "off"]);
+    document.documentElement.dataset.background = backgrounds.has(settings.background) ? settings.background : "grid";
+    document.documentElement.dataset.motion = motions.has(settings.motion) ? settings.motion : "normal";
+    document.documentElement.classList.toggle("dark", settings.theme === "dark");
+  } catch {
+    document.documentElement.dataset.background = "grid";
+    document.documentElement.dataset.motion = "normal";
+  }
+})();
+`;
+
+export const metadata: Metadata = {
+  title: "Quiz ôn tập",
+  description: "Nền tảng quiz cộng đồng cho trường học",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Quiz ôn tập",
+    statusBarStyle: "default"
+  },
+  icons: {
+    icon: "/icons/icon.jpg",
+    shortcut: "/icons/icon.jpg",
+    apple: "/icons/icon.jpg"
+  }
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0f766e",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1
+};
+
+export default function RootLayout({
+  children
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="vi" suppressHydrationWarning>
+      <body>
+        <script dangerouslySetInnerHTML={{ __html: visualSettingsScript }} />
+        {children}
+        <PwaRegister />
+        <div className="fixed bottom-2 left-3 z-50 rounded-full border border-foreground/20 bg-card/70 px-2 py-1 text-[10px] font-black text-foreground/55 shadow-sm backdrop-blur">
+          By 2001250X34
+        </div>
+      </body>
+    </html>
+  );
+}

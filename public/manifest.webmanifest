@@ -1,0 +1,33 @@
+{
+  "name": "Quiz ôn tập",
+  "short_name": "Quiz ôn tập",
+  "description": "Nền tảng quiz cộng đồng cho trường học",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f766e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon.jpg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide"
+    }
+  ]
+}
