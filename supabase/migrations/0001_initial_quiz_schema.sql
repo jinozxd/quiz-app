@@ -1,4 +1,5 @@
 create extension if not exists "pgcrypto";
+create extension if not exists "citext";
 
 create type public.room_visibility as enum ('public', 'school', 'private');
 create type public.room_status as enum ('draft', 'waiting', 'live', 'ended', 'locked');
@@ -92,6 +93,26 @@ create table public.push_subscriptions (
   created_at timestamptz not null default now()
 );
 
+create table public.app_users (
+  id uuid primary key default gen_random_uuid(),
+  email citext not null unique,
+  name citext not null unique,
+  password_hash text not null,
+  password_salt text not null,
+  role text not null default 'member' check (role in ('member', 'admin')),
+  password_changed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.app_user_data (
+  user_id uuid primary key references public.app_users(id) on delete cascade,
+  saved jsonb not null default '{"items":{},"order":[],"starredQuestionIds":[],"results":[]}'::jsonb,
+  profile_media jsonb not null default '{}'::jsonb,
+  profile_progress jsonb not null default '{"level":1,"xp":0,"awardedResultIds":[],"unlockedAchievementIds":[]}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
 alter table public.profiles enable row level security;
 alter table public.quiz_rooms enable row level security;
 alter table public.questions enable row level security;
@@ -101,6 +122,8 @@ alter table public.answer_submissions enable row level security;
 alter table public.moderation_reports enable row level security;
 alter table public.audit_logs enable row level security;
 alter table public.push_subscriptions enable row level security;
+alter table public.app_users enable row level security;
+alter table public.app_user_data enable row level security;
 
 create or replace function public.is_admin()
 returns boolean

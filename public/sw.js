@@ -1,4 +1,4 @@
-const STATIC_CACHE = "campus-quiz-static-v1";
+const STATIC_CACHE = "quiz-on-tap-static-v1";
 const STATIC_ASSETS = [
   "/",
   "/offline",
@@ -53,7 +53,7 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {
-    title: "Campus Quiz",
+    title: "Quiz ôn tập",
     body: "Có hoạt động quiz mới."
   };
 

@@ -5,7 +5,7 @@ import { PwaRegister } from "@/components/pwa-register";
 const visualSettingsScript = `
 (() => {
   try {
-    const raw = window.localStorage.getItem("campus-quiz-settings-v1");
+    const raw = window.localStorage.getItem("quiz-on-tap-settings-v1") ?? window.localStorage.getItem("campus-quiz-settings-v1");
     const settings = raw ? JSON.parse(raw) : {};
     const backgrounds = new Set(["grid", "blast", "stickers", "checker", "poster", "tape", "notebook", "neon", "waves"]);
     const motions = new Set(["low", "normal", "high", "off"]);

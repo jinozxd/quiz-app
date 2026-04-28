@@ -39,15 +39,17 @@ import { cn } from "@/lib/utils";
 import memoryTipsRaw from "@/data/ktct-memory-tips.json";
 
 type AuthUser = {
+  id?: string;
   email: string;
   name: string;
-  password: string;
+  password?: string;
   role: "admin" | "member";
   createdAt: number;
   passwordChangedAt?: number;
 };
 
 type AuthSession = {
+  id?: string;
   name: string;
   role: AuthUser["role"];
 };
@@ -55,8 +57,8 @@ type AuthSession = {
 type AuthState = {
   users: AuthUser[];
   session?: AuthSession;
+  sessionToken?: string;
   rememberedName?: string;
-  rememberedPassword?: string;
   rememberPassword?: boolean;
 };
 
@@ -78,11 +80,16 @@ type ProfileMediaItem = {
 
 type ProfileMedia = Record<string, ProfileMediaItem>;
 
-const STORAGE_KEY = "campus-quiz-progress-v2";
-const SETTINGS_KEY = "campus-quiz-settings-v1";
-const AUTH_STORAGE_KEY = "campus-quiz-auth-v1";
-const PROFILE_MEDIA_KEY = "campus-quiz-profile-media-v1";
-const PROFILE_PROGRESS_KEY = "campus-quiz-profile-progress-v1";
+const STORAGE_KEY = "quiz-on-tap-progress-v2";
+const SETTINGS_KEY = "quiz-on-tap-settings-v1";
+const AUTH_STORAGE_KEY = "quiz-on-tap-auth-v1";
+const PROFILE_MEDIA_KEY = "quiz-on-tap-profile-media-v1";
+const PROFILE_PROGRESS_KEY = "quiz-on-tap-profile-progress-v1";
+const LEGACY_STORAGE_KEY = "campus-quiz-progress-v2";
+const LEGACY_SETTINGS_KEY = "campus-quiz-settings-v1";
+const LEGACY_AUTH_STORAGE_KEY = "campus-quiz-auth-v1";
+const LEGACY_PROFILE_MEDIA_KEY = "campus-quiz-profile-media-v1";
+const LEGACY_PROFILE_PROGRESS_KEY = "campus-quiz-profile-progress-v1";
 const PASSWORD_CHANGE_COOLDOWN_MS = 15 * 24 * 60 * 60 * 1000;
 const MAX_PINNED = 1;
 const PART_SIZE = 15;
@@ -91,11 +98,11 @@ const EXAM_QUESTION_COUNT = 40;
 const ADMIN_USER: AuthUser = {
   email: "adminvn@campus.local",
   name: "adminvn",
-  password: "123456789A",
   role: "admin",
   createdAt: 0
 };
 void "JinozXD";
+void ADMIN_USER;
 const EMOJI_SWEEP_POOL = [
   "❓",
   "💸",
@@ -295,13 +302,21 @@ function emptySaved(): SavedProgress {
   return { items: {}, order: [], starredQuestionIds: [], results: [] };
 }
 
+function readLocalStorageWithFallback(key: string, legacyKey: string) {
+  const raw = window.localStorage.getItem(key) ?? window.localStorage.getItem(legacyKey);
+  if (raw && !window.localStorage.getItem(key)) {
+    window.localStorage.setItem(key, raw);
+  }
+  return raw;
+}
+
 function restoreSaved(): SavedProgress {
   if (typeof window === "undefined") {
     return emptySaved();
   }
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = readLocalStorageWithFallback(STORAGE_KEY, LEGACY_STORAGE_KEY);
     if (!raw) {
       return emptySaved();
     }
@@ -320,14 +335,13 @@ function restoreSaved(): SavedProgress {
 }
 
 function normalizeAuthState(parsed?: Partial<AuthState>): AuthState {
-  const users = parsed?.users ?? [];
-  const hasAdmin = users.some((user) => user.name.toLowerCase() === ADMIN_USER.name);
+  const users = (parsed?.users ?? []).map((user) => ({ ...user, password: undefined }));
 
   return {
-    users: hasAdmin ? users : [ADMIN_USER, ...users],
+    users,
     session: parsed?.session,
+    sessionToken: parsed?.sessionToken,
     rememberedName: parsed?.rememberedName,
-    rememberedPassword: parsed?.rememberedPassword,
     rememberPassword: Boolean(parsed?.rememberPassword)
   };
 }
@@ -338,7 +352,7 @@ function restoreAuth(): AuthState {
   }
 
   try {
-    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
+    const raw = readLocalStorageWithFallback(AUTH_STORAGE_KEY, LEGACY_AUTH_STORAGE_KEY);
     if (!raw) {
       return normalizeAuthState();
     }
@@ -355,7 +369,7 @@ function restoreProfileMedia(): ProfileMedia {
   }
 
   try {
-    const raw = window.localStorage.getItem(PROFILE_MEDIA_KEY);
+    const raw = readLocalStorageWithFallback(PROFILE_MEDIA_KEY, LEGACY_PROFILE_MEDIA_KEY);
     return raw ? (JSON.parse(raw) as ProfileMedia) : {};
   } catch {
     return {};
@@ -380,7 +394,7 @@ function restoreProfileProgress(): ProfileProgress {
   }
 
   try {
-    const raw = window.localStorage.getItem(PROFILE_PROGRESS_KEY);
+    const raw = readLocalStorageWithFallback(PROFILE_PROGRESS_KEY, LEGACY_PROFILE_PROGRESS_KEY);
     return raw ? normalizeProfileProgress(JSON.parse(raw) as Partial<ProfileProgress>) : normalizeProfileProgress();
   } catch {
     return normalizeProfileProgress();
@@ -426,7 +440,7 @@ export function restoreSettings(): AppSettings {
   }
 
   try {
-    const raw = window.localStorage.getItem(SETTINGS_KEY);
+    const raw = readLocalStorageWithFallback(SETTINGS_KEY, LEGACY_SETTINGS_KEY);
     if (!raw) {
       return defaultSettings();
     }
@@ -449,6 +463,48 @@ export function restoreSettings(): AppSettings {
   } catch {
     return defaultSettings();
   }
+}
+
+type AppAuthResponse = {
+  user?: {
+    id?: string;
+    name: string;
+    role: AuthUser["role"];
+  };
+  token?: string;
+  error?: string;
+};
+
+async function requestAppAuth(body: Record<string, unknown>, token?: string) {
+  const response = await fetch("/api/app-auth", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify(body)
+  });
+  const data = (await response.json().catch(() => ({}))) as AppAuthResponse;
+
+  if (!response.ok) {
+    return { error: data.error ?? "Không kết nối được hệ thống tài khoản." };
+  }
+
+  return data;
+}
+
+function authStateForSession(user: NonNullable<AppAuthResponse["user"]>, token: string, rememberPassword: boolean): AuthState {
+  return {
+    users: [],
+    session: { id: user.id, name: user.name, role: user.role },
+    sessionToken: token,
+    rememberedName: rememberPassword ? user.name : undefined,
+    rememberPassword
+  };
+}
+
+function hasSavedContent(saved: SavedProgress | undefined) {
+  return Boolean(saved && (saved.order.length > 0 || Object.keys(saved.items).length > 0 || (saved.results?.length ?? 0) > 0 || (saved.starredQuestionIds?.length ?? 0) > 0));
 }
 
 function getSubject(subjects: QuizSubject[], subjectId?: string) {
@@ -1212,8 +1268,20 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const transitionKeyRef = useRef<string | null>(null);
   const survivalResultSavedRef = useRef<string | null>(null);
   const achievementToastReadyRef = useRef(false);
+  const cloudDataLoadedRef = useRef(false);
   const currentUser = auth.session;
+  const isGuest = !currentUser;
   const isPomodoroActive = Boolean(state.subject && state.chapter && !state.submitted);
+
+  function requireLogin() {
+    if (currentUser) {
+      return false;
+    }
+
+    setAuthMode("login");
+    setAuthOpen(true);
+    return true;
+  }
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
@@ -1233,6 +1301,79 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     profileProgressRef.current = profileProgress;
     window.localStorage.setItem(PROFILE_PROGRESS_KEY, JSON.stringify(profileProgress));
   }, [profileProgress]);
+
+  useEffect(() => {
+    const token = auth.sessionToken;
+    if (!token) {
+      cloudDataLoadedRef.current = false;
+      return;
+    }
+
+    let cancelled = false;
+    fetch("/api/app-data", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Unable to load cloud data.");
+        }
+        return response.json() as Promise<{
+          saved?: SavedProgress;
+          profileMedia?: ProfileMedia;
+          profileProgress?: ProfileProgress;
+        }>;
+      })
+      .then((data) => {
+        if (cancelled) {
+          return;
+        }
+
+        if (data.saved && hasSavedContent(data.saved)) {
+          setSaved({
+            ...emptySaved(),
+            ...data.saved,
+            items: data.saved.items ?? {},
+            order: data.saved.order ?? Object.keys(data.saved.items ?? {}),
+            starredQuestionIds: data.saved.starredQuestionIds ?? [],
+            results: data.saved.results ?? []
+          });
+        }
+        if (data.profileMedia) {
+          setProfileMedia(data.profileMedia);
+        }
+        if (data.profileProgress) {
+          setProfileProgress(normalizeProfileProgress(data.profileProgress));
+        }
+        cloudDataLoadedRef.current = true;
+      })
+      .catch(() => {
+        cloudDataLoadedRef.current = true;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.sessionToken]);
+
+  useEffect(() => {
+    const token = auth.sessionToken;
+    if (!token || !cloudDataLoadedRef.current) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void fetch("/api/app-data", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ saved, profileMedia, profileProgress })
+      });
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [auth.sessionToken, saved, profileMedia, profileProgress]);
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -1349,6 +1490,14 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       return next;
     });
   }, [state, currentUser?.name]);
+
+  useEffect(() => {
+    if (currentUser || (!state.subject && !state.chapter)) {
+      return;
+    }
+
+    setState({ answers: {}, submitted: false });
+  }, [currentUser, state.chapter, state.subject]);
 
   const currentProgressId = state.subject && state.chapter ? progressId(state.subject.id, state.chapter.id) : undefined;
   const displayUser = currentUser ?? { name: "user", role: "member" as const };
@@ -1483,6 +1632,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       return saved.order.indexOf(a.id) - saved.order.indexOf(b.id);
     });
   function openProgress(item: ProgressItem) {
+    if (requireLogin()) {
+      return;
+    }
+
     const subject = getSubject(subjects, item.subjectId);
     const chapter = getChapter(subject, item.chapterId, item.questionOrder, item.optionOrders);
     if (!subject || !chapter) {
@@ -1498,6 +1651,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function startShuffledChapter(subject: QuizSubject, chapter: QuizChapter) {
+    if (requireLogin()) {
+      return;
+    }
+
     const shuffled = makeShuffledChapter(chapter);
     const id = progressId(subject.id, shuffled.id);
     const item = saved.items[id];
@@ -1511,6 +1668,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function startExamMode(subject: QuizSubject) {
+    if (requireLogin()) {
+      return;
+    }
+
     setState({
       subject,
       chapter: makeExamChapter(subject),
@@ -1520,6 +1681,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function startAllRandomMode(subject: QuizSubject) {
+    if (requireLogin()) {
+      return;
+    }
+
     setState({
       subject,
       chapter: makeAllQuestionsChapter(subject),
@@ -1529,6 +1694,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function startPracticeMode(subject: QuizSubject) {
+    if (requireLogin()) {
+      return;
+    }
+
     setState({
       subject,
       chapter: makePracticeChapter(subject, saved.starredQuestionIds ?? []),
@@ -1538,6 +1707,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function startSurvivalMode(subject: QuizSubject, config: SurvivalConfig) {
+    if (requireLogin()) {
+      return;
+    }
+
     setSurvivalConfigOpen(false);
     setState({
       subject,
@@ -1555,6 +1728,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function startMatchingMode(subject: QuizSubject, count: MatchingCount) {
+    if (requireLogin()) {
+      return;
+    }
+
     setMatchingConfigOpen(false);
     setState({
       subject,
@@ -1594,6 +1771,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function finishMatchingMode(scoreValue: number, totalValue: number) {
+    if (requireLogin()) {
+      return;
+    }
+
     if (!state.subject || !state.chapter) {
       return;
     }
@@ -1619,6 +1800,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function answerQuestion(question: QuizChapter["questions"][number], optionId: string) {
+    if (requireLogin()) {
+      return;
+    }
+
     if (state.submitted || (state.survival && state.answers[question.id])) {
       return;
     }
@@ -1658,6 +1843,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function toggleStar(questionId: string) {
+    if (requireLogin()) {
+      return;
+    }
+
     setSaved((current) => {
       const starred = new Set(current.starredQuestionIds ?? []);
       if (starred.has(questionId)) {
@@ -1674,6 +1863,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function submitCurrentQuiz() {
+    if (requireLogin()) {
+      return;
+    }
+
     if (!state.subject || !state.chapter) {
       return;
     }
@@ -1826,25 +2019,23 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     setResultActionId(null);
   }
 
-  function loginUser(name: string, password: string, rememberPassword: boolean) {
+  async function loginUser(name: string, password: string, rememberPassword: boolean) {
     const cleanedName = name.trim();
-    const user = auth.users.find((item) => item.name.toLowerCase() === cleanedName.toLowerCase());
-    if (!user || user.password !== password) {
-      return "Sai tên đăng nhập hoặc mật khẩu.";
+    if (!cleanedName || !password) {
+      return "Vui lòng nhập tên đăng nhập và mật khẩu.";
     }
 
-    setAuth((current) => ({
-      ...current,
-      session: { name: user.name, role: user.role },
-      rememberPassword,
-      rememberedName: rememberPassword ? user.name : undefined,
-      rememberedPassword: rememberPassword ? password : undefined
-    }));
+    const result = await requestAppAuth({ action: "login", name: cleanedName, password });
+    if (result.error || !result.user || !result.token) {
+      return result.error ?? "Không đăng nhập được.";
+    }
+
+    setAuth(authStateForSession(result.user, result.token, rememberPassword));
     setAuthOpen(false);
     return undefined;
   }
 
-  function registerUser(email: string, name: string, password: string, confirmPassword: string) {
+  async function registerUser(email: string, name: string, password: string, confirmPassword: string) {
     const cleanedEmail = email.trim().toLowerCase();
     const cleanedName = name.trim();
 
@@ -1856,77 +2047,55 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       return "Email chưa hợp lệ.";
     }
 
-    if (password.length < 6) {
-      return "Mật khẩu cần ít nhất 6 ký tự.";
+    if (password.length < 8) {
+      return "Mật khẩu cần ít nhất 8 ký tự.";
     }
 
     if (password !== confirmPassword) {
       return "Mật khẩu xác nhận không khớp.";
     }
 
-    if (auth.users.some((user) => user.name.toLowerCase() === cleanedName.toLowerCase())) {
-      return "Tên trong web đã tồn tại.";
-    }
-
-    if (auth.users.some((user) => user.email.toLowerCase() === cleanedEmail)) {
-      return "Email đã được đăng ký.";
-    }
-
-    const user: AuthUser = {
+    const result = await requestAppAuth({
+      action: "register",
       email: cleanedEmail,
       name: cleanedName,
       password,
-      role: "member",
-      createdAt: Date.now()
-    };
+      confirmPassword
+    });
 
-    setAuth((current) => ({
-      ...current,
-      users: [...current.users, user],
-      session: { name: user.name, role: user.role }
-    }));
+    if (result.error || !result.user || !result.token) {
+      return result.error ?? "Không tạo được tài khoản.";
+    }
+
+    setAuth(authStateForSession(result.user, result.token, false));
     setAuthOpen(false);
     return undefined;
   }
 
   function logoutUser() {
-    setAuth((current) => ({ ...current, session: undefined }));
+    setAuth((current) => ({ users: [], rememberedName: current.rememberedName, rememberPassword: current.rememberPassword }));
     setAuthMode("login");
     setAuthOpen(true);
   }
 
-  function changeCurrentPassword(currentPassword: string, nextPassword: string, confirmPassword: string) {
-    if (!currentUser) {
+  async function changeCurrentPassword(currentPassword: string, nextPassword: string, confirmPassword: string) {
+    if (!currentUser || !auth.sessionToken) {
       return "Bạn cần đăng nhập trước khi đổi mật khẩu.";
     }
 
     const cleanedCurrentPassword = currentPassword.trim();
     const cleanedNextPassword = nextPassword.trim();
     const cleanedConfirmPassword = confirmPassword.trim();
-    const user = auth.users.find((item) => item.name === currentUser.name);
-
-    if (!user) {
-      return "Không tìm thấy tài khoản hiện tại.";
-    }
 
     if (!cleanedCurrentPassword || !cleanedNextPassword || !cleanedConfirmPassword) {
       return "Vui lòng điền đủ mật khẩu hiện tại, mật khẩu mới và xác nhận lại.";
     }
 
-    if (user.password !== cleanedCurrentPassword) {
-      return "Mật khẩu hiện tại chưa đúng.";
+    if (cleanedNextPassword.length < 8) {
+      return "Mật khẩu mới cần ít nhất 8 ký tự.";
     }
 
-    if (user.passwordChangedAt && Date.now() - user.passwordChangedAt < PASSWORD_CHANGE_COOLDOWN_MS) {
-      const nextDate = new Date(user.passwordChangedAt + PASSWORD_CHANGE_COOLDOWN_MS).toLocaleString("vi-VN");
-      return `Bạn vừa đổi mật khẩu gần đây. Lần đổi tiếp theo sau ${nextDate}.`;
-    }
-
-    if (cleanedNextPassword.length < 6) {
-      return "Mật khẩu mới cần ít nhất 6 ký tự.";
-    }
-
-    if (cleanedNextPassword === user.password) {
+    if (cleanedNextPassword === cleanedCurrentPassword) {
       return "Mật khẩu mới phải khác mật khẩu hiện tại.";
     }
 
@@ -1934,20 +2103,22 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       return "Mật khẩu xác nhận không khớp.";
     }
 
+    const result = await requestAppAuth({
+      action: "change-password",
+      currentPassword: cleanedCurrentPassword,
+      nextPassword: cleanedNextPassword,
+      confirmPassword: cleanedConfirmPassword
+    }, auth.sessionToken);
+
+    if (result.error) {
+      return result.error;
+    }
+
     setAuth((current) => ({
       ...current,
-      users: current.users.map((item) =>
-        item.name === currentUser.name
-          ? {
-              ...item,
-              password: cleanedNextPassword,
-              passwordChangedAt: Date.now()
-            }
-          : item
-      ),
-      rememberedPassword: current.rememberedName === currentUser.name && current.rememberPassword ? cleanedNextPassword : current.rememberedPassword
+      ...(result.user && result.token ? authStateForSession(result.user, result.token, false) : {}),
+      rememberPassword: false
     }));
-
     return undefined;
   }
 
@@ -1965,10 +2136,18 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             setState({ answers: {}, submitted: false });
           }}
           onAdmin={() => {
+            if (requireLogin()) {
+              return;
+            }
             setAdminControlOpen(true);
             setState({ answers: {}, submitted: false });
           }}
-          onSettings={() => setSettingsOpen(true)}
+          onSettings={() => {
+            if (requireLogin()) {
+              return;
+            }
+            setSettingsOpen(true);
+          }}
           onAuth={() => {
             setAuthMode("login");
             setAuthOpen(true);
@@ -2094,7 +2273,12 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                     <ModeCard
                       title="Chế độ học"
                       badge={`${subject.chapters.length} chương`}
-                      onClick={() => setState({ subject, answers: {}, submitted: false })}
+                      onClick={() => {
+                        if (requireLogin()) {
+                          return;
+                        }
+                        setState({ subject, answers: {}, submitted: false });
+                      }}
                     />
                     <ModeCard
                       title="Luyện tập"
@@ -2106,6 +2290,9 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                       title="Sinh tồn"
                       badge="1/3 mạng + khiêng"
                       onClick={() => {
+                        if (requireLogin()) {
+                          return;
+                        }
                         setModeConfigSubject(subject);
                         setSurvivalConfigOpen(true);
                       }}
@@ -2114,6 +2301,9 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                       title="Nối câu hỏi"
                       badge="8 câu/round"
                       onClick={() => {
+                        if (requireLogin()) {
+                          return;
+                        }
                         setModeConfigSubject(subject);
                         setMatchingConfigOpen(true);
                       }}
@@ -2167,10 +2357,18 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             setState({ answers: {}, submitted: false });
           }}
           onAdmin={() => {
+            if (requireLogin()) {
+              return;
+            }
             setAdminControlOpen(true);
             setState({ answers: {}, submitted: false });
           }}
-          onSettings={() => setSettingsOpen(true)}
+          onSettings={() => {
+            if (requireLogin()) {
+              return;
+            }
+            setSettingsOpen(true);
+          }}
           onAuth={() => {
             setAuthMode("login");
             setAuthOpen(true);
@@ -2235,14 +2433,17 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                     )}
                     <Button
                       className="mt-5 w-full"
-                      onClick={() =>
+                      onClick={() => {
+                        if (requireLogin()) {
+                          return;
+                        }
                         setState({
                           subject: state.subject,
                           chapter,
                           answers: item?.answers ?? {},
                           submitted: item?.submitted ?? false
-                        })
-                      }
+                        });
+                      }}
                     >
                       Làm cả chương
                     </Button>
@@ -2265,14 +2466,17 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                               key={part.id}
                               variant="outline"
                               className="h-auto justify-between gap-3 px-3 py-2"
-                              onClick={() =>
+                              onClick={() => {
+                                if (requireLogin()) {
+                                  return;
+                                }
                                 setState({
                                   subject: state.subject,
                                   chapter: part,
                                   answers: partItem?.answers ?? {},
                                   submitted: partItem?.submitted ?? false
-                                })
-                              }
+                                });
+                              }}
                             >
                               <span className="text-left">
                                 {part.title.replace(`${chapter.title} - `, "")}
@@ -2313,10 +2517,18 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           setState({ answers: {}, submitted: false });
         }}
         onAdmin={() => {
+          if (requireLogin()) {
+            return;
+          }
           setAdminControlOpen(true);
           setState({ answers: {}, submitted: false });
         }}
-        onSettings={() => setSettingsOpen(true)}
+        onSettings={() => {
+          if (requireLogin()) {
+            return;
+          }
+          setSettingsOpen(true);
+        }}
         onAuth={() => {
           setAuthMode("login");
           setAuthOpen(true);
@@ -2799,7 +3011,7 @@ function WelcomeBanner({ hasProgress, user }: { hasProgress: boolean; user?: Aut
     <section className="welcome-banner motion-rise mb-6 overflow-hidden rounded-[24px] border-2 border-foreground bg-card p-5 shadow-[8px_8px_0_0_hsl(var(--foreground))]">
       <div className="relative z-10 grid gap-4 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
         <div>
-          <p className="text-sm font-black uppercase text-muted-foreground">Campus Quiz</p>
+          <p className="text-sm font-black uppercase text-muted-foreground">Quiz ôn tập</p>
           <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
             {greeting}, {name}!
           </h2>
@@ -2885,7 +3097,7 @@ function AchievementsDialog({
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-black uppercase text-muted-foreground">Campus Quiz</p>
+            <p className="text-sm font-black uppercase text-muted-foreground">Quiz ôn tập</p>
             <h2 className="mt-1 text-3xl font-black">Thành tựu</h2>
           </div>
           <div className="flex items-center gap-2">
@@ -4118,9 +4330,11 @@ export function SettingsDialog({
   user?: AuthSession;
   onClose: () => void;
   onChange: (settings: AppSettings | ((current: AppSettings) => AppSettings)) => void;
-  onChangePassword?: (currentPassword: string, nextPassword: string, confirmPassword: string) => string | undefined;
+  onChangePassword?: (currentPassword: string, nextPassword: string, confirmPassword: string) => Promise<string | undefined>;
 }) {
-  const [activeSection, setActiveSection] = useState<"account" | "motion" | "emoji" | "theme" | "background" | "pomodoro">("motion");
+  const [activeSection, setActiveSection] = useState<
+    "account" | "motion" | "emoji" | "theme" | "background" | "pomodoro" | "version"
+  >("motion");
   const [currentPassword, setCurrentPassword] = useState("");
   const [nextPassword, setNextPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -4134,10 +4348,8 @@ export function SettingsDialog({
     return null;
   }
 
-  const activeUser = user ? auth?.users.find((item) => item.name === user.name) : undefined;
-  const nextPasswordChangeAt = activeUser?.passwordChangedAt ? activeUser.passwordChangedAt + PASSWORD_CHANGE_COOLDOWN_MS : undefined;
-  const passwordLocked = Boolean(nextPasswordChangeAt && Date.now() < nextPasswordChangeAt);
-  const passwordLockText = nextPasswordChangeAt ? new Date(nextPasswordChangeAt).toLocaleString("vi-VN") : "";
+  const passwordLocked = false;
+  const passwordLockText = "";
 
   const motionOrder: MotionLevel[] = ["low", "normal", "high"];
   const motionIndex = settings.motion === "off" ? 1 : motionOrder.indexOf(settings.motion);
@@ -4156,12 +4368,13 @@ export function SettingsDialog({
     });
   }
 
-  function submitPasswordChange(event: FormEvent<HTMLFormElement>) {
+  async function submitPasswordChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPasswordSuccess("");
-    const error = onChangePassword
+    setPasswordMessage("Đang xử lý...");
+    const error = await (onChangePassword
       ? onChangePassword(currentPassword, nextPassword, confirmPassword)
-      : "Bạn cần đăng nhập ở trang chính trước khi đổi mật khẩu.";
+      : "Bạn cần đăng nhập ở trang chính trước khi đổi mật khẩu.");
     setPasswordMessage(error ?? "");
     if (!error) {
       setPasswordSuccess("Đã đổi mật khẩu. Bạn có thể đổi tiếp sau 15 ngày.");
@@ -4179,7 +4392,7 @@ export function SettingsDialog({
       >
         <div className="flex items-center justify-between gap-3 border-b-2 border-foreground bg-secondary px-4 py-3 sm:px-5 sm:py-4">
           <div>
-            <p className="text-xs font-black uppercase tracking-normal text-muted-foreground">Campus Quiz</p>
+            <p className="text-xs font-black uppercase tracking-normal text-muted-foreground">Quiz ôn tập</p>
             <h2 className="text-2xl font-black">Cài đặt</h2>
           </div>
           <Button size="icon" variant="outline" onClick={onClose} aria-label="Đóng cài đặt">
@@ -4238,6 +4451,14 @@ export function SettingsDialog({
               >
                 <span>⏱️</span>
                 <span>Pomodoro</span>
+              </button>
+              <button
+                type="button"
+                className={cn("settings-tab", activeSection === "version" && "settings-tab-active")}
+                onClick={() => setActiveSection("version")}
+              >
+                <span>🏷️</span>
+                <span>Phiên bản</span>
               </button>
             </div>
           </aside>
@@ -4633,6 +4854,25 @@ export function SettingsDialog({
                 </div>
               </section>
             )}
+
+            {activeSection === "version" && (
+              <section className="rounded-xl border-2 border-foreground bg-background/70 p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-xl font-black">Phiên bản</h3>
+                    <p className="mt-1 text-sm font-black text-muted-foreground">
+                      Thông tin bản phát hành hiện tại của Quiz ôn tập.
+                    </p>
+                  </div>
+                  <Badge variant="secondary">v1.1.3</Badge>
+                </div>
+
+                <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
+                  <p className="text-sm font-black text-muted-foreground">Bản hiện tại</p>
+                  <p className="mt-2 text-4xl font-black">1.1.3</p>
+                </div>
+              </section>
+            )}
           </div>
         </div>
       </div>
@@ -4644,7 +4884,7 @@ function Header({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-stretch gap-3 border-b-2 border-foreground bg-card px-3 py-3 shadow-[0_5px_0_0_hsl(var(--foreground))] sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4">
       <div>
-        <p className="text-sm text-muted-foreground">Campus Quiz</p>
+        <p className="text-sm text-muted-foreground">Quiz ôn tập</p>
         <h1 className="text-xl font-semibold tracking-normal sm:text-2xl">{title}</h1>
       </div>
       {action}
@@ -5041,12 +5281,12 @@ function AuthDialog({
   auth: AuthState;
   onModeChange: (mode: "login" | "register") => void;
   onClose: () => void;
-  onLogin: (name: string, password: string, rememberPassword: boolean) => string | undefined;
-  onRegister: (email: string, name: string, password: string, confirmPassword: string) => string | undefined;
+  onLogin: (name: string, password: string, rememberPassword: boolean) => Promise<string | undefined>;
+  onRegister: (email: string, name: string, password: string, confirmPassword: string) => Promise<string | undefined>;
 }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState(auth.rememberedName ?? "");
-  const [password, setPassword] = useState(auth.rememberedPassword ?? "");
+  const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -5057,11 +5297,12 @@ function AuthDialog({
     return null;
   }
 
-  function submitAuth(event: FormEvent<HTMLFormElement>) {
+  async function submitAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const error = mode === "login"
+    setMessage("Đang xử lý...");
+    const error = await (mode === "login"
       ? onLogin(name, password, rememberPassword)
-      : onRegister(email, name, password, confirmPassword);
+      : onRegister(email, name, password, confirmPassword));
     setMessage(error ?? "");
   }
 
@@ -5073,7 +5314,7 @@ function AuthDialog({
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-black text-muted-foreground">Campus Quiz</p>
+            <p className="text-sm font-black text-muted-foreground">Quiz ôn tập</p>
             <h2 className="text-2xl font-black">{mode === "login" ? "Đăng nhập" : "Đăng ký"}</h2>
           </div>
           <Button type="button" size="icon" variant="ghost" onClick={onClose} aria-label="Đóng đăng nhập">

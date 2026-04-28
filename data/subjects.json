@@ -1,13 +1,13 @@
 [
   {
     "id": "ktct-mac-lenin",
-    "title": "KTCT Mác-Lênin",
-    "description": "",
-    "source": "",
+    "title": "KTCT M?c-L?nin",
+    "description": "B? c?u h?i ?n t?p Kinh t? ch?nh tr? M?c-L?nin.",
+    "source": "ktct_all_chapters.json",
     "chapters": [
       {
         "id": "chuong-01",
-        "title": "Chương 01",
+        "title": "Ch??ng 01",
         "questions": [
           {
             "id": "q-chuong-01-1",
@@ -131,7 +131,7 @@
           },
           {
             "id": "q-chuong-01-5",
-            "prompt": "Kinh t?- ch�nh tr? M�c - L�nin d� k? th?a v� ph�t tri?n tr?c ti?p nh?ng th�nh t?u c?a tru?ng ph�i n�o?",
+            "prompt": "Kinh tế- chính trị Mác - Lênin đã kế thừa và phát triển trực tiếp những thành tựu của trường phái nào?",
             "options": [
               {
                 "id": "a",
@@ -202,7 +202,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Quan h? x� h?i gi?a ngu?i v?i ngu?i",
+                "text": "Quan hệ xã hội giữa người với người",
                 "correct": false
               },
               {
@@ -214,14 +214,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Qu� tr�nh s?n xu?t, ph�n ph?i, trao d?i, ti�u d�ng.",
+                "text": "Quá trình sản xuất, phân phối, trao đổi, tiêu dùng.",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-01-8",
-            "prompt": "H�y ch?n phuong �n d�ng v? d?c di?m c?a quy lu?t kinh t??",
+            "prompt": "Hãy chọn phương án đúng về đặc điểm của quy luật kinh tế?",
             "options": [
               {
                 "id": "a",
@@ -262,7 +262,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Ph�n t�ch v� t?ng h?p",
+                "text": "Phân tích và tổng hợp",
                 "correct": false
               },
               {
@@ -281,7 +281,7 @@
           },
           {
             "id": "q-chuong-01-10",
-            "prompt": "Montchrestien d� d? xu?t m�n khoa h?c m?i- Khoa h?c kinh t? ch�nh tr? trong t�c ph?m n�o?",
+            "prompt": "Montchrestien đã đề xuất môn khoa học mới- Khoa học kinh tế chính trị trong tác phẩm nào?",
             "options": [
               {
                 "id": "a",
@@ -298,7 +298,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "T�nh c?nh giai c?p c�ng nh�n Anh",
+                "text": "Tình cảnh giai cấp công nhân Anh",
                 "correct": false
               },
               {
@@ -346,7 +346,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "G�p ph?n x�y d?ng th? gi?i quan c�ch m?ng c?a giai c?p c�ng nh�n",
+                "text": "Góp phần xây dựng thế giới quan cách mạng của giai cấp công nhân",
                 "correct": false
               },
               {
@@ -358,7 +358,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "L� vu kh� tu tu?ng c?a giai c?p c�ng nh�n v� nh�n d�n lao d?ng trong c�ng cu?c x�y d?ng ch? nghia x� h?i",
+                "text": "Là vũ khí tư tưởng của giai cấp công nhân và nhân dân lao động trong công cuộc xây dựng chủ nghĩa xã hội",
                 "correct": false
               },
               {
@@ -382,7 +382,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "G�p ph?n x�y d?ng th? gi?i quan c�ch m?ng c?a giai c?p c�ng nh�n",
+                "text": "Góp phần xây dựng thế giới quan cách mạng của giai cấp công nhân",
                 "correct": false
               },
               {
@@ -394,7 +394,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "L� vu kh� tu tu?ng c?a giai c?p c�ng nh�n v� nh�n d�n lao d?ng trong c�ng cu?c x�y d?ng ch? nghia x� h?i",
+                "text": "Là vũ khí tư tưởng của giai cấp công nhân và nhân dân lao động trong công cuộc xây dựng chủ nghĩa xã hội",
                 "correct": false
               }
             ]
@@ -491,7 +491,7 @@
           },
           {
             "id": "q-chuong-01-17",
-            "prompt": "Y?u t? n�o sau d�y gi�p ph�n bi?t gi?a quy lu?t kinh t? v� ch�nh s�ch kinh t??",
+            "prompt": "Yếu tố nào sau đây giúp phân biệt giữa quy luật kinh tế và chính sách kinh tế?",
             "options": [
               {
                 "id": "a",
@@ -508,7 +508,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Ch�nh tr? - x� h?i",
+                "text": "Chính trị - xã hội",
                 "correct": false
               },
               {
@@ -523,7 +523,7 @@
       },
       {
         "id": "chuong-02",
-        "title": "Chương 02",
+        "title": "Ch??ng 02",
         "questions": [
           {
             "id": "q-chuong-02-1",
@@ -544,7 +544,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "C� s? ph�n c�ng lao d?ng x� h?i v� ch? d? tu h?u v? tu li?u s?n xu?t ch? y?u.",
+                "text": "Có sự phân công lao động xã hội và chế độ tư hữu về tư liệu sản xuất chủ yếu.",
                 "correct": true
               },
               {
@@ -562,19 +562,19 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "S?n ph?m c?a lao d?ng c� th? th?a m�n nhu du?c mong mu?n hay nhu c?u, y�u c?u v� du?c cung c?p cho th? tru?ng nh?m m?c d�ch th?a m�n ngu?i s?n xu?t",
+                "text": "Sản phẩm của lao động có thể thỏa mãn nhu được mong muốn hay nhu cầu, yêu cầu và được cung cấp cho thị trường nhằm mục đích thỏa mãn người sản xuất",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "S?n ph?m c?a lao d?ng c� th? tho? m�n m?t nhu c?u n�o d� c?a con ngu?i th�ng qua trao d?i mua b�n",
+                "text": "Sản phẩm của lao động có thể thoả mãn một nhu cầu nào đó của con người thông qua trao đổi mua bán",
                 "correct": true
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "S?n ph?m c?a lao d?ng d? th?a m�n nhu c?u c?a con ngu?i",
+                "text": "Sản phẩm của lao động để thỏa mãn nhu cầu của con người",
                 "correct": false
               },
               {
@@ -664,7 +664,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "L� c�ng d?ng c?a h�ng h�a trong vi?c th?a m�n nhu c?u c?a ngu?i s? d?ng.",
+                "text": "Là công dụng của hàng hóa trong việc thỏa mãn nhu cầu của người sử dụng.",
                 "correct": true
               },
               {
@@ -688,13 +688,13 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Lao d?ng x� h?i c?a ngu?i s?n xu?t h�ng h�a k?t tinh trong h�ng h�a",
+                "text": "Lao động xã hội của người sản xuất hàng hóa kết tinh trong hàng hóa",
                 "correct": true
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "Lao d?ng x� h?i c?a ngu?i s?n xu?t d� hao ph� du?c d? s?n xu?t ra h�ng h�a k?t tinh trong h�ng h�a",
+                "text": "Lao động xã hội của người sản xuất đã hao phí được để sản xuất ra hàng hóa kết tinh trong hàng hóa",
                 "correct": false
               },
               {
@@ -730,7 +730,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Gi� ti?n d� in tr�n s?n ph?m ho?c ngu?i b�n quy d?nh",
+                "text": "Giá tiền đã in trên sản phẩm hoặc người bán quy định",
                 "correct": false
               }
             ]
@@ -754,7 +754,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Hao ph� th?i gian lao d?ng x� h?i c?n thi?t",
+                "text": "Hao phí thời gian lao động xã hội cần thiết",
                 "correct": true
               },
               {
@@ -797,7 +797,7 @@
           },
           {
             "id": "q-chuong-02-10",
-            "prompt": "Ti?n t? c� m?t trong nh?ng ch?c nang n�o sau d�y?",
+            "prompt": "Tiền tệ có một trong những chức năng nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -857,7 +857,7 @@
           },
           {
             "id": "q-chuong-02-12",
-            "prompt": "Lu?ng gi� tr? c?a m?t don v? h�ng h�a ph? thu?c v�o c�c y?u t? n�o sau d�y?",
+            "prompt": "Lượng giá trị của một đơn vị hàng hóa phụ thuộc vào các yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -904,7 +904,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Th?i gian lao d?ng x� h?i c?n thi?t c?a nh?ng ngu?i s?n xu?t h�ng h�a",
+                "text": "Thời gian lao động xã hội cần thiết của những người sản xuất hàng hóa",
                 "correct": true
               },
               {
@@ -922,7 +922,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Lao d?ng tu nh�n v� lao d?ng x� h?i",
+                "text": "Lao động tư nhân và lao động xã hội",
                 "correct": false
               },
               {
@@ -947,7 +947,7 @@
           },
           {
             "id": "q-chuong-02-15",
-            "prompt": "Lao d?ng tr?u tu?ng l� ngu?n g?c c?a y?u t? n�o sau d�y?",
+            "prompt": "Lao động trừu tượng là nguồn gốc của yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -977,7 +977,7 @@
           },
           {
             "id": "q-chuong-02-16",
-            "prompt": "Lao d?ng c? th? l� ngu?n g?c c?a y?u t? n�o sau d�y?",
+            "prompt": "Lao động cụ thể là nguồn gốc của yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -1007,7 +1007,7 @@
           },
           {
             "id": "q-chuong-02-17",
-            "prompt": "Lao d?ng c? th? l� ngu?n g?c c?a y?u t? n�o sau d�y?",
+            "prompt": "Lao động cụ thể là nguồn gốc của yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -1042,7 +1042,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Lao d?ng ch�n tay",
+                "text": "Lao động chân tay",
                 "correct": false
               },
               {
@@ -1054,7 +1054,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Lao d?ng x� h?i c?a ngu?i s?n xu?t h�ng h�a kh�ng k? h�nh th?c c? th? c?a n�",
+                "text": "Lao động xã hội của người sản xuất hàng hóa không kể hình thức cụ thể của nó",
                 "correct": false
               },
               {
@@ -1187,12 +1187,12 @@
           },
           {
             "id": "q-chuong-02-23",
-            "prompt": "N?i dung y�u c?u c?a quy lu?t gi� tr? th? hi?n y?u t? n�o sau d�y?",
+            "prompt": "Nội dung yêu cầu của quy luật giá trị thể hiện yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "S?n xu?t v� trao d?i h�ng h�a ph?i d?a tr�n co s? hao ph� s?c lao d?ng x� h?i c?n thi?t",
+                "text": "Sản xuất và trao đổi hàng hóa phải dựa trên cơ sở hao phí sức lao động xã hội cần thiết",
                 "correct": true
               },
               {
@@ -1204,13 +1204,13 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Hao ph� lao d?ng x� h?i ph� h?p v?i hao ph� lao d?ng x� h?i c?n thi?t",
+                "text": "Hao phí lao động xã hội phù hợp với hao phí lao động xã hội cần thiết",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "Ph�n c�ng lao d?ng x� h?i v� s? t�ch bi?t v? m?t kinh t? c?a nh?ng ngu?i s?n xu?t",
+                "text": "Phân công lao động xã hội và sự tách biệt về mặt kinh tế của những người sản xuất",
                 "correct": false
               }
             ]
@@ -1234,20 +1234,20 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Quy lu?t kinh t? chung c?a m?i x� h?i",
+                "text": "Quy luật kinh tế chung của mọi xã hội",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "Quy lu?t kinh t? c?a th?i k? qu� d? l�n ch? nghia x� h?i",
+                "text": "Quy luật kinh tế của thời kỳ quá độ lên chủ nghĩa xã hội",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-02-25",
-            "prompt": "Theo nghia r?ng, t?ng h�a c�c m?i quan h? li�n quan d?n trao d?i, mua b�n h�ng h�a trong x� h?i, du?c h�nh th�nh do nh?ng di?u ki?n l?ch s?, kinh t?, x� h?i nh?t d?nh du?c g?i l� g�?",
+            "prompt": "Theo nghĩa rộng, tổng hòa các mối quan hệ liên quan đến trao đổi, mua bán hàng hóa trong xã hội, được hình thành do những điều kiện lịch sử, kinh tế, xã hội nhất định được gọi là gì?",
             "options": [
               {
                 "id": "a",
@@ -1288,7 +1288,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "T?ng h�a c�c m?i quan h? li�n quan d?n s?n xu?t h�ng h�a trong x� h?i, du?c h�nh th�nh do nh?ng di?u ki?n l?ch s?, kinh t?, x� h?i nh?t d?nh",
+                "text": "Tổng hòa các mối quan hệ liên quan đến sản xuất hàng hóa trong xã hội, được hình thành do những điều kiện lịch sử, kinh tế, xã hội nhất định",
                 "correct": true
               },
               {
@@ -1348,7 +1348,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "T?ng h�a c�c m?i quan h? li�n quan d?n s?n xu?t h�ng h�a trong x� h?i, du?c h�nh th�nh do nh?ng di?u ki?n l?ch s?, kinh t?, x� h?i nh?t d?nh",
+                "text": "Tổng hòa các mối quan hệ liên quan đến sản xuất hàng hóa trong xã hội, được hình thành do những điều kiện lịch sử, kinh tế, xã hội nhất định",
                 "correct": false
               },
               {
@@ -1408,7 +1408,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Ph�n c�ng lao d?ng x� h?i.",
+                "text": "Phân công lao động xã hội.",
                 "correct": true
               },
               {
@@ -1427,30 +1427,30 @@
           },
           {
             "id": "q-chuong-02-31",
-            "prompt": "S?n xu?t h�ng h�a xu?t hi?n t? h�nh th�i kinh t? x� h?i n�o?",
+            "prompt": "Sản xuất hàng hóa xuất hiện từ hình thái kinh tế xã hội nào?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "X� h?i phong ki?n.",
+                "text": "Xã hội phong kiến.",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "X� h?i tu b?n ch? nghia.",
+                "text": "Xã hội tư bản chủ nghĩa.",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "Cu?i x� h?i c?ng s?n nguy�n th?y, d?u x� h?i chi?m h?u n� l?.",
+                "text": "Cuối xã hội cộng sản nguyên thủy, đầu xã hội chiếm hữu nô lệ.",
                 "correct": true
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "X� h?i c?ng s?n ch? nghia.",
+                "text": "Xã hội cộng sản chủ nghĩa.",
                 "correct": false
               }
             ]
@@ -1498,7 +1498,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "C� lu?ng th?i gian hao ph� lao d?ng x� h?i c?n thi?t d? s?n xu?t ra ch�ng b?ng nhau",
+                "text": "Có lượng thời gian hao phí lao động xã hội cần thiết để sản xuất ra chúng bằng nhau",
                 "correct": false
               },
               {
@@ -1510,7 +1510,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Ch�ng c�ng l� s?n ph?m c?a lao d?ng, c� lu?ng th?i gian hao ph� lao d?ng x� h?i c?n thi?t d? s?n xu?t ra ch�ng b?ng nhau",
+                "text": "Chúng cùng là sản phẩm của lao động, có lượng thời gian hao phí lao động xã hội cần thiết để sản xuất ra chúng bằng nhau",
                 "correct": true
               }
             ]
@@ -1522,7 +1522,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Hao ph� lao d?ng x� h?i c?n thi?t",
+                "text": "Hao phí lao động xã hội cần thiết",
                 "correct": false
               },
               {
@@ -1540,14 +1540,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Hao ph� lao d?ng x� h?i c?n thi?t quy?t d?nh",
+                "text": "Hao phí lao động xã hội cần thiết quyết định",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-02-35",
-            "prompt": "Y?u t? n�o du?i d�y quy?t d?nh gi� c? h�ng h�a l� g�?",
+            "prompt": "Yếu tố nào dưới đây quyết định giá cả hàng hóa là gì?",
             "options": [
               {
                 "id": "a",
@@ -1577,7 +1577,7 @@
           },
           {
             "id": "q-chuong-02-36",
-            "prompt": "Y?u t? n�o sau d�y l�m gi� c? l?n hon gi� tr? h�ng h�a?",
+            "prompt": "Yếu tố nào sau đây làm giá cả lớn hơn giá trị hàng hóa?",
             "options": [
               {
                 "id": "a",
@@ -1727,7 +1727,7 @@
           },
           {
             "id": "q-chuong-02-41",
-            "prompt": "Lu?ng gi� tr? c?a m?t don v? h�ng h�a thay d?i c� m?i quan h? nhu th? n�o v?i c�c y?u t? n�o du?i d�y?",
+            "prompt": "Lượng giá trị của một đơn vị hàng hóa thay đổi có mối quan hệ như thế nào với các yếu tố nào dưới đây?",
             "options": [
               {
                 "id": "a",
@@ -1900,7 +1900,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "T?ng lu?ng gi� tr? t?o ra trong m?t don v? th?i gian kh�ng c�n b?ng",
+                "text": "Tổng lượng giá trị tạo ra trong một đơn vị thời gian không cân bằng",
                 "correct": false
               }
             ]
@@ -1967,37 +1967,37 @@
           },
           {
             "id": "q-chuong-02-49",
-            "prompt": "Nguy�n nh�n ra d?i c?a ti?n t? l� g�?",
+            "prompt": "Nguyên nhân ra đời của tiền tệ là gì?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "K?t qu? c?a qu� tr�nh ph�t tri?n l�u d�i c?a s?n xu?t h�ng h�a",
+                "text": "Kết quả của quá trình phát triển lâu dài của sản xuất hàng hóa",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "K?t qu? c?a qu� tr�nh ph�t tri?n l�u d�i c?a s?n xu?t v� trao d?i h�ng h�a",
+                "text": "Kết quả của quá trình phát triển lâu dài của sản xuất và trao đổi hàng hóa",
                 "correct": true
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "K?t qu? c?a qu� tr�nh ph�t tri?n l�u d�i c?a luu th�ng h�ng h�a",
+                "text": "Kết quả của quá trình phát triển lâu dài của lưu thông hàng hóa",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "K?t qu? c?a qu� tr�nh ph�t tri?n l�u d�i c?a s?n xu?t v� ph�n ph?i h�ng h�a",
+                "text": "Kết quả của quá trình phát triển lâu dài của sản xuất và phân phối hàng hóa",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-02-50",
-            "prompt": "Lo?i ti?n t? n�o sau d�y th?c hi?n t?t nh?t ch?c nang thu?c do gi� tr??",
+            "prompt": "Loại tiền tệ nào sau đây thực hiện tốt nhất chức năng thước đo giá trị?",
             "options": [
               {
                 "id": "a",
@@ -2044,7 +2044,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Phuong ti?n l�u th�ng",
+                "text": "Phương tiện lâu thông",
                 "correct": false
               },
               {
@@ -2057,7 +2057,7 @@
           },
           {
             "id": "q-chuong-02-52",
-            "prompt": "H�nh th�i gi� tr? n�o sau d�y l� l?n d?u ti�n xu?t hi?n v?t trung gian trong trao d?i h�ng h�a?",
+            "prompt": "Hình thái giá trị nào sau đây là lần đầu tiên xuất hiện vật trung gian trong trao đổi hàng hóa?",
             "options": [
               {
                 "id": "a",
@@ -2117,7 +2117,7 @@
           },
           {
             "id": "q-chuong-02-54",
-            "prompt": "T�nh ch?t tu nh�n v� t�nh ch?t x� h?i c?a lao d?ng s?n xu?t h�ng h�a l� bi?u hi?n c?a nh?ng ph?m tr� n�o?",
+            "prompt": "Tính chất tư nhân và tính chất xã hội của lao động sản xuất hàng hóa là biểu hiện của những phạm trù nào?",
             "options": [
               {
                 "id": "a",
@@ -2134,7 +2134,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Lao d?ng tu nh�n v� lao d?ng x� h?i",
+                "text": "Lao động tư nhân và lao động xã hội",
                 "correct": false
               },
               {
@@ -2164,7 +2164,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Lao d?ng tu nh�n v� lao d?ng x� h?i",
+                "text": "Lao động tư nhân và lao động xã hội",
                 "correct": false
               },
               {
@@ -2212,25 +2212,25 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "�i?u ti?t s?n xu?t v� gi� c? h�ng h�a; k�ch th�ch c?i ti?n k? thu?t; l�m ph�n h�a nh?ng ngu?i s?n xu?t h�ng h�a",
+                "text": "Điều tiết sản xuất và giá cả hàng hóa; kích thích cải tiến kỹ thuật; làm phân hóa những người sản xuất hàng hóa",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "�i?u ti?t s?n xu?t h�ng h�a; k�ch th�ch c?i ti?n k? thu?t; l�m ph�n h�a nh?ng ngu?i s?n xu?t h�ng h�a",
+                "text": "Điều tiết sản xuất hàng hóa; kích thích cải tiến kỹ thuật; làm phân hóa những người sản xuất hàng hóa",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "�i?u ti?t trao d?i v� luu th�ng h�ng h�a; k�ch th�ch c?i ti?n k? thu?t; l�m ph�n h�a nh?ng ngu?i s?n xu?t h�ng h�a",
+                "text": "Điều tiết trao đổi và lưu thông hàng hóa; kích thích cải tiến kỹ thuật; làm phân hóa những người sản xuất hàng hóa",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "�i?u ti?t s?n xu?t v� luu th�ng h�ng h�a; k�ch th�ch c?i ti?n k? thu?t; l�m ph�n h�a nh?ng ngu?i s?n xu?t h�ng h�a",
+                "text": "Điều tiết sản xuất và lưu thông hàng hóa; kích thích cải tiến kỹ thuật; làm phân hóa những người sản xuất hàng hóa",
                 "correct": true
               }
             ]
@@ -2297,7 +2297,7 @@
           },
           {
             "id": "q-chuong-02-60",
-            "prompt": "Th? tru?ng ra d?i, ph�t tri?n g?n li?n v?i s? ph�t tri?n c?a y?u t? n�o sau d�y?",
+            "prompt": "Thị trường ra đời, phát triển gắn liền với sự phát triển của yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -2344,7 +2344,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "L?i �ch c� nh�n",
+                "text": "Lợi ích cá nhân",
                 "correct": false
               },
               {
@@ -2357,7 +2357,7 @@
           },
           {
             "id": "q-chuong-02-62",
-            "prompt": "�? kh?c ph?c nh?ng khuy?t t?t c?a th? tru?ng, th�c d?y nh?ng y?u t? t�ch c?c, d?m b?o s? b�nh d?ng x� h?i v� s? ?n d?nh c?a to�n b? n?n kinh t? th� c?n d?n y?u t? n�o?",
+            "prompt": "Để khắc phục những khuyết tật của thị trường, thúc đẩy những yếu tố tích cực, đảm bảo sự bình đẳng xã hội và sự ổn định của toàn bộ nền kinh tế thì cần đến yếu tố nào?",
             "options": [
               {
                 "id": "a",
@@ -2507,12 +2507,12 @@
           },
           {
             "id": "q-chuong-02-67",
-            "prompt": "��u l� l?i �ch x� h?i do n?n s?n xu?t h�ng h�a mang l?i?",
+            "prompt": "Đâu là lợi ích xã hội do nền sản xuất hàng hóa mang lại?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Tang nang su?t lao d?ng x� h?i, c?i thi?n ch?t lu?ng cu?c s?ng",
+                "text": "Tăng năng suất lao động xã hội, cải thiện chất lượng cuộc sống",
                 "correct": true
               },
               {
@@ -2537,7 +2537,7 @@
           },
           {
             "id": "q-chuong-02-68",
-            "prompt": "Trong tru?ng h?p n�o sau d�y th� t?ng gi� c? m?t lo?i h�ng h�a b?ng t?ng gi� tr? lo?i h�ng h�a d�?",
+            "prompt": "Trong trường hợp nào sau đây thì tổng giá cả một loại hàng hóa bằng tổng giá trị loại hàng hóa đó?",
             "options": [
               {
                 "id": "a",
@@ -2567,7 +2567,7 @@
           },
           {
             "id": "q-chuong-02-69",
-            "prompt": "X�t d?n c�ng, nh�n t? quan tr?ng nh?t quy?t d?nh s? th?ng l?i c?a m?t tr?t t? x� h?i m?i l� g�?",
+            "prompt": "Xét đến cùng, nhân tố quan trọng nhất quyết định sự thắng lợi của một trật tự xã hội mới là gì?",
             "options": [
               {
                 "id": "a",
@@ -2590,14 +2590,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "S? di?u h�nh v� qu?n l� x� h?i c?a Nh� nu?c",
+                "text": "Sự điều hành và quản lý xã hội của Nhà nước",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-02-70",
-            "prompt": "Trong n?n s?n xu?t h�ng h�a, ch? th? s?n xu?t c?n ph?i l�m g� d? n�ng cao kh? nang c?nh tranh?",
+            "prompt": "Trong nền sản xuất hàng hóa, chủ thể sản xuất cần phải làm gì để nâng cao khả năng cạnh tranh?",
             "options": [
               {
                 "id": "a",
@@ -2657,7 +2657,7 @@
           },
           {
             "id": "q-chuong-02-72",
-            "prompt": "Th?i gian lao d?ng x� h?i c?n thi?t d? s?n xu?t ra h�ng h�a A l� 4 h, s?n xu?t ra h�ng h�a B l� 2h. H?i theo quy lu?t gi� tr?, h�ng h�a A v� h�ng h�a B khi trao d?i tr�n th? tru?ng ph?i tu�n theo t? l? n�o?",
+            "prompt": "Thời gian lao động xã hội cần thiết để sản xuất ra hàng hóa A là 4 h, sản xuất ra hàng hóa B là 2h. Hỏi theo quy luật giá trị, hàng hóa A và hàng hóa B khi trao đổi trên thị trường phải tuân theo tỷ lệ nào?",
             "options": [
               {
                 "id": "a",
@@ -2687,7 +2687,7 @@
           },
           {
             "id": "q-chuong-02-73",
-            "prompt": "Nh�n t? n�o l� co b?n, l�u d�i d? tang s?n ph?m cho x� h?i ?",
+            "prompt": "Nhân tố nào là cơ bản, lâu dài để tăng sản phẩm cho xã hội ?",
             "options": [
               {
                 "id": "a",
@@ -2717,7 +2717,7 @@
           },
           {
             "id": "q-chuong-02-74",
-            "prompt": "Tru?ng h?p n�o sau d�y s? d?ng ch?c nang phuong ti?n thanh to�n c?a ti?n t??",
+            "prompt": "Trường hợp nào sau đây sử dụng chức năng phương tiện thanh toán của tiền tệ?",
             "options": [
               {
                 "id": "a",
@@ -2734,7 +2734,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "T�ch tr? t�i s?n l�u d�i.",
+                "text": "Tích trữ tài sản lâu dài.",
                 "correct": false
               },
               {
@@ -2777,7 +2777,7 @@
           },
           {
             "id": "q-chuong-02-76",
-            "prompt": "Khi c� l?m ph�t phi m� (l?m ph�t 2 con s?), ngu?i d�n c� xu hu?ng s? d?ng ti?n t? v�o vi?c g�?",
+            "prompt": "Khi có lạm phát phi mã (lạm phát 2 con số), người dân có xu hướng sử dụng tiền tệ vào việc gì?",
             "options": [
               {
                 "id": "a",
@@ -2807,24 +2807,24 @@
           },
           {
             "id": "q-chuong-02-77",
-            "prompt": "Nguy�n nh�n s�u xa c?a kh?ng ho?ng kinh t? l� g�?",
+            "prompt": "Nguyên nhân sâu xa của khủng hoảng kinh tế là gì?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "M�u thu?n trong t�nh ch?t x� h?i c?a l?c lu?ng s?n xu?t v?i ch? d? s? h?u tu nh�n tu b?n ch? nghia",
+                "text": "Mâu thuẫn trong tính chất xã hội của lực lượng sản xuất với chế độ sở hữu tư nhân tư bản chủ nghĩa",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "M�u thu?n gi?a s?n xu?t v� ti�u d�ng",
+                "text": "Mâu thuẫn giữa sản xuất và tiêu dùng",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "M�u thu?n gi?a s? h?u v� ph�n ph?i tu b?n ch? nghia",
+                "text": "Mâu thuẫn giữa sở hữu và phân phối tư bản chủ nghĩa",
                 "correct": false
               },
               {
@@ -2837,7 +2837,7 @@
           },
           {
             "id": "q-chuong-02-78",
-            "prompt": "Ho?t d?ng xu?t kh?u h�ng h�a v� d?ch v? l� k?t qu? c? th? c?a quy lu?t kinh t? n�o sau d�y?",
+            "prompt": "Hoạt động xuất khẩu hàng hóa và dịch vụ là kết quả cụ thể của quy luật kinh tế nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -2867,7 +2867,7 @@
           },
           {
             "id": "q-chuong-02-79",
-            "prompt": "Suy cho c�ng, nguy�n nh�n d?n d?n s? xu?t hi?n c?a n?n s?n xu?t h�ng h�a l� g�?",
+            "prompt": "Suy cho cùng, nguyên nhân dẫn đến sự xuất hiện của nền sản xuất hàng hóa là gì?",
             "options": [
               {
                 "id": "a",
@@ -2899,11 +2899,11 @@
       },
       {
         "id": "chuong-03",
-        "title": "Chương 03",
+        "title": "Ch??ng 03",
         "questions": [
           {
             "id": "q-chuong-03-1",
-            "prompt": "Tu b?n c? d?nh bao g?m c�c y?u t? n�o sau d�y?",
+            "prompt": "Tư bản cố định bao gồm các yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -2933,7 +2933,7 @@
           },
           {
             "id": "q-chuong-03-2",
-            "prompt": "Y?u t? n�o sau d�y l� ngu?n g?c c?a t�ch luy tu b?n?",
+            "prompt": "Yếu tố nào sau đây là nguồn gốc của tích lũy tư bản?",
             "options": [
               {
                 "id": "a",
@@ -2993,7 +2993,7 @@
           },
           {
             "id": "q-chuong-03-4",
-            "prompt": "T�ch t? tu b?n c� ngu?n g?c tr?c ti?p t? d�u?",
+            "prompt": "Tích tụ tư bản có nguồn gốc trực tiếp từ đâu?",
             "options": [
               {
                 "id": "a",
@@ -3053,7 +3053,7 @@
           },
           {
             "id": "q-chuong-03-6",
-            "prompt": "Lu?ng gi� tr? m?i do lao d?ng t?o ra bao g?m c�c y?u t? n�o sau d�y?",
+            "prompt": "Lượng giá trị mới do lao động tạo ra bao gồm các yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -3173,7 +3173,7 @@
           },
           {
             "id": "q-chuong-03-10",
-            "prompt": "C�c y?u t? du?i d�y, y?u t? n�o thu?c v? tu b?n kh? bi?n?",
+            "prompt": "Các yếu tố dưới đây, yếu tố nào thuộc về tư bản khả biến?",
             "options": [
               {
                 "id": "a",
@@ -3203,7 +3203,7 @@
           },
           {
             "id": "q-chuong-03-11",
-            "prompt": "Nh�n t? n�o du?c coi l� ngu?n g?c tr?c ti?p c?a t?p trung tu b?n?",
+            "prompt": "Nhân tố nào được coi là nguồn gốc trực tiếp của tập trung tư bản?",
             "options": [
               {
                 "id": "a",
@@ -3214,13 +3214,13 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Tu b?n c� s?n trong x� h?i",
+                "text": "Tư bản có sẵn trong xã hội",
                 "correct": true
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "Ti?n ti?t ki?m trong d�n cu",
+                "text": "Tiền tiết kiệm trong dân cư",
                 "correct": false
               },
               {
@@ -3263,7 +3263,7 @@
           },
           {
             "id": "q-chuong-03-13",
-            "prompt": "H�ng h�a s?c lao d?ng v� h�ng h�a th�ng thu?ng kh�c nhau co b?n nh?t ? n?i dung n�o sau d�y?",
+            "prompt": "Hàng hóa sức lao động và hàng hóa thông thường khác nhau cơ bản nhất ở nội dung nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -3293,7 +3293,7 @@
           },
           {
             "id": "q-chuong-03-14",
-            "prompt": "Can c? n�o sau d�y du?c s? d?ng d? chia ra th�nh t�i s?n xu?t gi?n don v� t�i s?n xu?t m? r?ng?",
+            "prompt": "Căn cứ nào sau đây được sử dụng để chia ra thành tái sản xuất giản đơn và tái sản xuất mở rộng?",
             "options": [
               {
                 "id": "a",
@@ -3346,19 +3346,19 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Khi du?c s? d?ng d? cho vay ti�u d�ng c� nh�n.",
+                "text": "Khi được sử dụng để cho vay tiêu dùng cá nhân.",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-03-16",
-            "prompt": "S? ph�n ph?i gi� tr? th?ng du gi?a tu b?n c�ng nghi?p v� tu b?n thuong nghi?p tu�n theo quy lu?t n�o sau d�y?",
+            "prompt": "Sự phân phối giá trị thặng dư giữa tư bản công nghiệp và tư bản thương nghiệp tuân theo quy luật nào sau đây?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "T? su?t l?i nhu?n b�nh qu�n",
+                "text": "Tỷ suất lợi nhuận bình quân",
                 "correct": true
               },
               {
@@ -3383,7 +3383,7 @@
           },
           {
             "id": "q-chuong-03-17",
-            "prompt": "L?i t?c l� gi� c? c?a y?u t? n�o sau d�y?",
+            "prompt": "Lợi tức là giá cả của yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -3413,7 +3413,7 @@
           },
           {
             "id": "q-chuong-03-18",
-            "prompt": "L?i nhu?n thuong nghi?p, l?i nhu?n ng�n h�ng, l?i t?c, d?a t� l� h�nh th?c bi?u hi?n c?a c�i g�?",
+            "prompt": "Lợi nhuận thương nghiệp, lợi nhuận ngân hàng, lợi tức, địa tô là hình thức biểu hiện của cái gì?",
             "options": [
               {
                 "id": "a",
@@ -3473,7 +3473,7 @@
           },
           {
             "id": "q-chuong-03-20",
-            "prompt": "C�c y?u t? du?i d�y, y?u t? n�o thu?c v? tu b?n b?t bi?n?",
+            "prompt": "Các yếu tố dưới đây, yếu tố nào thuộc về tư bản bất biến?",
             "options": [
               {
                 "id": "a",
@@ -3533,7 +3533,7 @@
           },
           {
             "id": "q-chuong-03-22",
-            "prompt": "�?c di?m n�o du?i d�y kh�ng thu?c v? phuong ph�p s?n xu?t gi� tr? th?ng du tuong d?i?",
+            "prompt": "Đặc điểm nào dưới đây không thuộc về phương pháp sản xuất giá trị thặng dư tương đối?",
             "options": [
               {
                 "id": "a",
@@ -3563,7 +3563,7 @@
           },
           {
             "id": "q-chuong-03-23",
-            "prompt": "Nh?n d?nh n�o du?i d�y kh�ng d�ng khi n�i v? m?i quan h? gi?a ti?n t? v� tu b?n?",
+            "prompt": "Nhận định nào dưới đây không đúng khi nói về mối quan hệ giữa tiền tệ và tư bản?",
             "options": [
               {
                 "id": "a",
@@ -3610,7 +3610,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "G�y l?m ph�t v� th?t nghi?p.",
+                "text": "Gây lạm phát và thất nghiệp.",
                 "correct": false
               },
               {
@@ -3700,13 +3700,13 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "C?i ti?n k? thu?t s?n xu?t, n�ng cao nang su?t lao d?ng.",
+                "text": "Cải tiến kỹ thuật sản xuất, nâng cao năng suất lao động.",
                 "correct": true
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "Gi?m luong c�ng nh�n d? h? gi� th�nh s?n ph?m.",
+                "text": "Giảm lương công nhân để hạ giá thành sản phẩm.",
                 "correct": false
               }
             ]
@@ -3730,7 +3730,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Ph�n ph?i theo di?u l?nh c?a ng�nh",
+                "text": "Phân phối theo điều lệnh của ngành",
                 "correct": false
               },
               {
@@ -3743,7 +3743,7 @@
           },
           {
             "id": "q-chuong-03-29",
-            "prompt": "H�nh th�i tu b?n n�o sau d�y kh�ng tham gia v�o qu� tr�nh h�nh th�nh t? su?t l?i nhu?n b�nh qu�n?",
+            "prompt": "Hình thái tư bản nào sau đây không tham gia vào quá trình hình thành tỷ suất lợi nhuận bình quân?",
             "options": [
               {
                 "id": "a",
@@ -3773,7 +3773,7 @@
           },
           {
             "id": "q-chuong-03-30",
-            "prompt": "Ph�t bi?u n�o sau d�y l� ph�t bi?u d�ng?",
+            "prompt": "Phát biểu nào sau đây là phát biểu đúng?",
             "options": [
               {
                 "id": "a",
@@ -3838,13 +3838,13 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "L� tang quy m� tu b?n c� bi?t b?ng phuong th?c h?p nh?t nh?ng nh� tu b?n c� bi?t c� s?n trong x� h?i",
+                "text": "Là tăng quy mô tư bản cá biệt bằng phương thức hợp nhất những nhà tư bản cá biệt có sẵn trong xã hội",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "L�m cho tu b?n x� h?i tang",
+                "text": "Làm cho tư bản xã hội tăng",
                 "correct": false
               },
               {
@@ -3874,7 +3874,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "L� vi?c tang thu? d? t?o ngu?n v?n ng�n s�ch qu?c gia.",
+                "text": "Là việc tăng thuế để tạo nguồn vốn ngân sách quốc gia.",
                 "correct": false
               },
               {
@@ -3886,7 +3886,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "L� h�nh th?c vay v?n t? ng�n h�ng d? m? r?ng s?n xu?t.",
+                "text": "Là hình thức vay vốn từ ngân hàng để mở rộng sản xuất.",
                 "correct": false
               }
             ]
@@ -3940,7 +3940,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "L� s? ti?n m� ngu?i c�ng nh�n nh?n du?c do b�n s?c lao d?ng c?a m�nh cho nh� tu b?n",
+                "text": "Là số tiền mà người công nhân nhận được do bán sức lao động của mình cho nhà tư bản",
                 "correct": true
               },
               {
@@ -3958,25 +3958,25 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Ph?m vi b�c l?t c?a tu b?n d?i v?i c�ng nh�n l�m thu�",
+                "text": "Phạm vi bóc lột của tư bản đối với công nhân làm thuê",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Quy m� b�c l?t c?a tu b?n d?i v?i c�ng nh�n l�m thu�",
+                "text": "Quy mô bóc lột của tư bản đối với công nhân làm thuê",
                 "correct": true
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "T�nh ch?t b�c l?t c?a tu b?n d?i v?i c�ng nh�n l�m thu�",
+                "text": "Tính chất bóc lột của tư bản đối với công nhân làm thuê",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "Tr�nh d? b�c l?t c?a tu b?n d?i v?i c�ng nh�n l�m thu�",
+                "text": "Trình độ bóc lột của tư bản đối với công nhân làm thuê",
                 "correct": false
               }
             ]
@@ -3988,32 +3988,32 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Tr�nh d? b�c l?t c?a tu b?n d?i v?i c�ng nh�n l�m thu�",
+                "text": "Trình độ bóc lột của tư bản đối với công nhân làm thuê",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Ph?m vi b�c l?t c?a tu b?n d?i v?i c�ng nh�n l�m thu�",
+                "text": "Phạm vi bóc lột của tư bản đối với công nhân làm thuê",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "Quy m� b�c l?t c?a tu b?n d?i v?i c�ng nh�n l�m thu�",
+                "text": "Quy mô bóc lột của tư bản đối với công nhân làm thuê",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "T�nh ch?t b�c l?t c?a tu b?n d?i v?i c�ng nh�n l�m thu�",
+                "text": "Tính chất bóc lột của tư bản đối với công nhân làm thuê",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-03-38",
-            "prompt": "Bi?n ph�p n�o du?i d�y du?c s? d?ng nh?m gi?m hao m�n tu b?n c? d?nh?",
+            "prompt": "Biện pháp nào dưới đây được sử dụng nhằm giảm hao mòn tư bản cố định?",
             "options": [
               {
                 "id": "a",
@@ -4060,7 +4060,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "�?t du?c gi� tr? s? d?ng d? th?a m�n nhu c?u c?a ngu?i s?n xu?t ra n�",
+                "text": "Đạt được giá trị sử dụng để thỏa mãn nhu cầu của người sản xuất ra nó",
                 "correct": false
               },
               {
@@ -4090,7 +4090,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Trong x� h?i chi?m h?u n� l?",
+                "text": "Trong xã hội chiếm hữu nô lệ",
                 "correct": false
               },
               {
@@ -4193,7 +4193,7 @@
           },
           {
             "id": "q-chuong-03-44",
-            "prompt": "Phuong ph�p s?n xu?t gi� tr? th?ng du b?ng c�ch tang cu?ng d? lao d?ng l� phuong ph�p s?n xu?t gi� tr? th?ng du n�o du?i d�y?",
+            "prompt": "Phương pháp sản xuất giá trị thặng dư bằng cách tăng cường độ lao động là phương pháp sản xuất giá trị thặng dư nào dưới đây?",
             "options": [
               {
                 "id": "a",
@@ -4253,7 +4253,7 @@
           },
           {
             "id": "q-chuong-03-46",
-            "prompt": "Ph�t bi?u n�o sau d�y l� sai?",
+            "prompt": "Phát biểu nào sau đây là sai?",
             "options": [
               {
                 "id": "a",
@@ -4283,7 +4283,7 @@
           },
           {
             "id": "q-chuong-03-47",
-            "prompt": "Nh?ng y?u t? du?i d�y, y?u t? n�o kh�ng thu?c tu b?n c? d?nh?",
+            "prompt": "Những yếu tố dưới đây, yếu tố nào không thuộc tư bản cố định?",
             "options": [
               {
                 "id": "a",
@@ -4343,7 +4343,7 @@
           },
           {
             "id": "q-chuong-03-49",
-            "prompt": "Chi ph� th?c t? c?a x� h?i d? s?n xu?t h�ng ho� l� g�?",
+            "prompt": "Chi phí thực tế của xã hội để sản xuất hàng hoá là gì?",
             "options": [
               {
                 "id": "a",
@@ -4360,7 +4360,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Chi ph� s?c lao d?ng c?a to�n x� h?i",
+                "text": "Chi phí sức lao động của toàn xã hội",
                 "correct": false
               },
               {
@@ -4373,7 +4373,7 @@
           },
           {
             "id": "q-chuong-03-50",
-            "prompt": "L?i nhu?n c� ngu?n g?c t? d�u?",
+            "prompt": "Lợi nhuận có nguồn gốc từ đâu?",
             "options": [
               {
                 "id": "a",
@@ -4433,7 +4433,7 @@
           },
           {
             "id": "q-chuong-03-52",
-            "prompt": "Quy lu?t gi� c? s?n xu?t l� bi?u hi?n ho?t d?ng c?a quy lu?t n�o sau d�y?",
+            "prompt": "Quy luật giá cả sản xuất là biểu hiện hoạt động của quy luật nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -4493,12 +4493,12 @@
           },
           {
             "id": "q-chuong-03-54",
-            "prompt": "S? ph�n ph?i gi� tr? th?ng du gi?a tu b?n c�ng nghi?p v� tu b?n thuong nghi?p tu�n theo quy lu?t n�o sau d�y?",
+            "prompt": "Sự phân phối giá trị thặng dư giữa tư bản công nghiệp và tư bản thương nghiệp tuân theo quy luật nào sau đây?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "T? su?t l?i nhu?n b�nh qu�n",
+                "text": "Tỷ suất lợi nhuận bình quân",
                 "correct": true
               },
               {
@@ -4583,12 +4583,12 @@
           },
           {
             "id": "q-chuong-03-57",
-            "prompt": "Khi so s�nh s?c lao d?ng v� lao d?ng, � ki?n n�o sau d�y kh�ng d�ng?",
+            "prompt": "Khi so sánh sức lao động và lao động, ý kiến nào sau đây không đúng?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "S?c lao d?ng l� kh? nang lao d?ng c�n lao d?ng l� s?c lao d?ng d� du?c ti�u d�ng",
+                "text": "Sức lao động là khả năng lao động còn lao động là sức lao động đã được tiêu dùng",
                 "correct": false
               },
               {
@@ -4606,14 +4606,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "S?c lao d?ng l� kh? nang lao d?ng c�n lao d?ng l� s?c lao d?ng d� du?c ti�u d�ng v� s?c lao d?ng l� h�ng h�a c�n lao d?ng kh�ng l� h�ng h�a",
+                "text": "Sức lao động là khả năng lao động còn lao động là sức lao động đã được tiêu dùng và sức lao động là hàng hóa còn lao động không là hàng hóa",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-03-58",
-            "prompt": "Trong c�c c�ch di?n d?t du?i d�y, � di?n d?t n�o sai?",
+            "prompt": "Trong các cách diễn đạt dưới đây, ý diễn đạt nào sai?",
             "options": [
               {
                 "id": "a",
@@ -4643,7 +4643,7 @@
           },
           {
             "id": "q-chuong-03-59",
-            "prompt": "C?nh tranh trong n?i b? ng�nh l� nguy�n nh�n h�nh th�nh y?u t? n�o ?",
+            "prompt": "Cạnh tranh trong nội bộ ngành là nguyên nhân hình thành yếu tố nào ?",
             "options": [
               {
                 "id": "a",
@@ -4660,7 +4660,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "L?i nhu?n b�nh qu�n",
+                "text": "Lợi nhuận bình quân",
                 "correct": false
               },
               {
@@ -4673,7 +4673,7 @@
           },
           {
             "id": "q-chuong-03-60",
-            "prompt": "C?nh tranh gi?a c�c ng�nh l� nguy�n nh�n h�nh th�nh y?u t? n�o ?",
+            "prompt": "Cạnh tranh giữa các ngành là nguyên nhân hình thành yếu tố nào ?",
             "options": [
               {
                 "id": "a",
@@ -4690,7 +4690,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "T? su?t l?i nhu?n b�nh qu�n",
+                "text": "Tỷ suất lợi nhuận bình quân",
                 "correct": true
               },
               {
@@ -4703,7 +4703,7 @@
           },
           {
             "id": "q-chuong-03-61",
-            "prompt": "T? su?t l?i nhu?n ph?n �nh n?i dung n�o du?i d�y?",
+            "prompt": "Tỷ suất lợi nhuận phản ánh nội dung nào dưới đây?",
             "options": [
               {
                 "id": "a",
@@ -4733,7 +4733,7 @@
           },
           {
             "id": "q-chuong-03-62",
-            "prompt": "Vi?c ph�n chia tu b?n ?ng tru?c th�nh tu b?n b?t bi?n v� tu b?n kh? bi?n c� � nghia g�?",
+            "prompt": "Việc phân chia tư bản ứng trước thành tư bản bất biến và tư bản khả biến có ý nghĩa gì?",
             "options": [
               {
                 "id": "a",
@@ -4763,7 +4763,7 @@
           },
           {
             "id": "q-chuong-03-63",
-            "prompt": "Vi?c ph�n chia tu b?n ?ng tru?c th�nh tu b?n tu b?n c? d?nh v� tu b?n luu d?ng c� � nghia g�?",
+            "prompt": "Việc phân chia tư bản ứng trước thành tư bản tư bản cố định và tư bản lưu động có ý nghĩa gì?",
             "options": [
               {
                 "id": "a",
@@ -4793,7 +4793,7 @@
           },
           {
             "id": "q-chuong-03-64",
-            "prompt": "Khi nh� tu b?n tr? c�ng cho c�ng nh�n theo d�ng gi� tr? s?c lao d?ng th� c� c�n b�c l?t gi� tr? th?ng du kh�ng?",
+            "prompt": "Khi nhà tư bản trả công cho công nhân theo đúng giá trị sức lao động thì có còn bóc lột giá trị thặng dư không?",
             "options": [
               {
                 "id": "a",
@@ -4846,31 +4846,31 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Tang quy m� tu b?n x� h?i",
+                "text": "Tăng quy mô tư bản xã hội",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-03-66",
-            "prompt": "Khi ph�n chia kh?i lu?ng gi� tr? th?ng du th�nh qu? t�ch luy v� qu? ti�u d�ng c?a nh� tu b?n kh�ng d?i quy m� t�ch luy tu b?n ph? thu?c v�o y?u t? n�o?",
+            "prompt": "Khi phân chia khối lượng giá trị thặng dư thành quỹ tích lũy và quỹ tiêu dùng của nhà tư bản không đổi quy mô tích lũy tư bản phụ thuộc vào yếu tố nào?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Nang su?t lao d?ng x� h?i",
+                "text": "Năng suất lao động xã hội",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Cu?ng d? lao d?ng x� h?i",
+                "text": "Cường độ lao động xã hội",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "Ch?t lu?ng lao d?ng x� h?i",
+                "text": "Chất lượng lao động xã hội",
                 "correct": false
               },
               {
@@ -4918,7 +4918,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "�? b� d?p gi� tr? s?c lao d?ng c?a c�ng nh�n",
+                "text": "Đủ bù đắp giá trị sức lao động của công nhân",
                 "correct": false
               },
               {
@@ -4973,12 +4973,12 @@
           },
           {
             "id": "q-chuong-03-70",
-            "prompt": "Gi� c? s?n xu?t bao g?m nh?ng y?u t? n�o du?i d�y?",
+            "prompt": "Giá cả sản xuất bao gồm những yếu tố nào dưới đây?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Chi ph� s?n xu?t tu b?n ch? nghia v� t? su?t l?i nhu?n b�nh qu�n",
+                "text": "Chi phí sản xuất tư bản chủ nghĩa và tỷ suất lợi nhuận bình quân",
                 "correct": false
               },
               {
@@ -4996,7 +4996,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Chi ph� s?n xu?t tu b?n ch? nghia v� l?i nhu?n b�nh qu�n",
+                "text": "Chi phí sản xuất tư bản chủ nghĩa và lợi nhuận bình quân",
                 "correct": true
               }
             ]
@@ -5038,7 +5038,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Chi ph� s?n xu?t tu b?n ch? nghia v� t? su?t l?i nhu?n b�nh qu�n",
+                "text": "Chi phí sản xuất tư bản chủ nghĩa và tỷ suất lợi nhuận bình quân",
                 "correct": false
               },
               {
@@ -5056,14 +5056,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Chi ph� s?n xu?t tu b?n ch? nghia v� l?i nhu?n b�nh qu�n",
+                "text": "Chi phí sản xuất tư bản chủ nghĩa và lợi nhuận bình quân",
                 "correct": true
               }
             ]
           },
           {
             "id": "q-chuong-03-73",
-            "prompt": "Khi n�i v? m?i quan h? gi?a t? su?t gi� tr? th?ng du v� t? su?t l?i nhu?n, ph�t bi?u n�o sau d�y l� d�ng?",
+            "prompt": "Khi nói về mối quan hệ giữa tỷ suất giá trị thặng dư và tỷ suất lợi nhuận, phát biểu nào sau đây là đúng?",
             "options": [
               {
                 "id": "a",
@@ -5093,24 +5093,24 @@
           },
           {
             "id": "q-chuong-03-74",
-            "prompt": "Khi n�i v? t�ch t? tu b?n, k?t lu?n n�o sau d�y l� d�ng?",
+            "prompt": "Khi nói về tích tụ tư bản, kết luận nào sau đây là đúng?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Gi?m quy m� tu b?n c� bi?t v� tang tu b?n x� h?i.",
+                "text": "Giảm quy mô tư bản cá biệt và tăng tư bản xã hội.",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "L�m tang quy m� tu b?n c� bi?t v� tu b?n x� h?i.",
+                "text": "Làm tăng quy mô tư bản cá biệt và tư bản xã hội.",
                 "correct": true
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "Ch? l�m tang tu b?n x� h?i m� kh�ng ?nh hu?ng d?n tu b?n c� bi?t.",
+                "text": "Chỉ làm tăng tư bản xã hội mà không ảnh hưởng đến tư bản cá biệt.",
                 "correct": false
               },
               {
@@ -5123,7 +5123,7 @@
           },
           {
             "id": "q-chuong-03-75",
-            "prompt": "Nh�n t? n�o sau d�y ?nh hu?ng d?n t? su?t l?i nhu?n?",
+            "prompt": "Nhân tố nào sau đây ảnh hưởng đến tỷ suất lợi nhuận?",
             "options": [
               {
                 "id": "a",
@@ -5153,7 +5153,7 @@
           },
           {
             "id": "q-chuong-03-76",
-            "prompt": "T? d?nh nghia phuong ph�p s?n xu?t gi� tr? th?ng du tuy?t d?i h�y x�c d?nh phuong �n d�ng du?i d�y?",
+            "prompt": "Từ định nghĩa phương pháp sản xuất giá trị thặng dư tuyệt đối hãy xác định phương án đúng dưới đây?",
             "options": [
               {
                 "id": "a",
@@ -5188,7 +5188,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Gi� tr? c?a to�n b? h�ng h�a s?n xu?t trong x� h?i.",
+                "text": "Giá trị của toàn bộ hàng hóa sản xuất trong xã hội.",
                 "correct": false
               },
               {
@@ -5215,7 +5215,7 @@
       },
       {
         "id": "chuong-04",
-        "title": "Chương 04",
+        "title": "Ch??ng 04",
         "questions": [
           {
             "id": "q-chuong-04-1",
@@ -5249,7 +5249,7 @@
           },
           {
             "id": "q-chuong-04-2",
-            "prompt": "�?c quy?n sinh ra t? d�u?",
+            "prompt": "Độc quyền sinh ra từ đâu?",
             "options": [
               {
                 "id": "a",
@@ -5309,7 +5309,7 @@
           },
           {
             "id": "q-chuong-04-4",
-            "prompt": "C�c t? ch?c d?c quy?n th?ng tr? b?ng c�ch n�o sau d�y?",
+            "prompt": "Các tổ chức độc quyền thống trị bằng cách nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -5362,14 +5362,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "L�m tang nang su?t lao d?ng, n�ng cao nang l?c c?nh tranh",
+                "text": "Làm tăng năng suất lao động, nâng cao năng lực cạnh tranh",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-04-6",
-            "prompt": "Gi� c? d?c quy?n g?m nh?ng y?u t? n�o sau d�y?",
+            "prompt": "Giá cả độc quyền gồm những yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -5380,7 +5380,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Chi ph� s?n xu?t c?ng v?i t? su?t l?i nhu?n b�nh qu�n",
+                "text": "Chi phí sản xuất cộng với tỷ suất lợi nhuận bình quân",
                 "correct": false
               },
               {
@@ -5399,7 +5399,7 @@
           },
           {
             "id": "q-chuong-04-7",
-            "prompt": "�?c quy?n c� nh?ng t�c d?ng t�ch c?c n�o? H�y ch?n d�p �n sai",
+            "prompt": "Độc quyền có những tác động tích cực nào? Hãy chọn đáp án sai",
             "options": [
               {
                 "id": "a",
@@ -5416,7 +5416,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "L�m tang nang su?t lao d?ng, n�ng cao nang l?c c?nh tranh",
+                "text": "Làm tăng năng suất lao động, nâng cao năng lực cạnh tranh",
                 "correct": false
               },
               {
@@ -5429,7 +5429,7 @@
           },
           {
             "id": "q-chuong-04-8",
-            "prompt": "�?c quy?n c� nh?ng t�c d?ng ti�u c?c n�o? H�y ch?n d�p �n sai",
+            "prompt": "Độc quyền có những tác động tiêu cực nào? Hãy chọn đáp án sai",
             "options": [
               {
                 "id": "a",
@@ -5446,20 +5446,20 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "K�m h�m s? ti?n b? ki thu?t, k�m h�m s? ph�t tri?n kinh t?",
+                "text": "Kìm hãm sự tiến bộ kĩ thuật, kìm hãm sự phát triển kinh tế",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "Chi ph?i c�c quan h? kinh t?, x� h?i v� l�m tang s? ph�n h�a gi�u ngh�o",
+                "text": "Chi phối các quan hệ kinh tế, xã hội và làm tăng sự phân hóa giàu nghèo",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-04-9",
-            "prompt": "Nguy�n nh�n ch? y?u d?n d?n d?c quy?n da ng�nh l� g�?",
+            "prompt": "Nguyên nhân chủ yếu dẫn đến độc quyền đa ngành là gì?",
             "options": [
               {
                 "id": "a",
@@ -5476,7 +5476,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Do thi?u nh�n s? d?n d?n kh�ng d? nh�n s? l�m vi?c",
+                "text": "Do thiếu nhân sự dẫn đến không đủ nhân sự làm việc",
                 "correct": false
               },
               {
@@ -5489,18 +5489,18 @@
           },
           {
             "id": "q-chuong-04-10",
-            "prompt": "Tu b?n t�i ch�nh l� s? h?p nh?t c?a nh?ng y?u t? n�o du?i d�y?",
+            "prompt": "Tư bản tài chính là sự hợp nhất của những yếu tố nào dưới đây?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Tu b?n d?c quy?n c�ng nghi?p v� tu b?n d?c quy?n ng�n h�ng",
+                "text": "Tư bản độc quyền công nghiệp và tư bản độc quyền ngân hàng",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Tu b?n d?c quy?n ng�n h�ng v� tu b?n d?c quy?n nh� nu?c",
+                "text": "Tư bản độc quyền ngân hàng và tư bản độc quyền nhà nước",
                 "correct": false
               },
               {
@@ -5512,14 +5512,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Qu� tr�nh d?c quy?n h�a trong c�ng nghi?p v� trong ng�n h�ng",
+                "text": "Quá trình độc quyền hóa trong công nghiệp và trong ngân hàng",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-04-11",
-            "prompt": "Ngu?n g?c c?a l?i nhu?n d?c quy?n l� g�? H�y ch?n d�p �n sai",
+            "prompt": "Nguồn gốc của lợi nhuận độc quyền là gì? Hãy chọn đáp án sai",
             "options": [
               {
                 "id": "a",
@@ -5549,7 +5549,7 @@
           },
           {
             "id": "q-chuong-04-12",
-            "prompt": "H�nh th?c li�n k?t n�o sau d�y c?a c�c t? ch?c d?c quy?n c� tr�nh d? cao v� quy m� l?n nh?t?",
+            "prompt": "Hình thức liên kết nào sau đây của các tổ chức độc quyền có trình độ cao và quy mô lớn nhất?",
             "options": [
               {
                 "id": "a",
@@ -5579,7 +5579,7 @@
           },
           {
             "id": "q-chuong-04-13",
-            "prompt": "Nguy�n nh�n co b?n c?a s? h�nh th�nh ch? nghia tu b?n d?c quy?n?",
+            "prompt": "Nguyên nhân cơ bản của sự hình thành chủ nghĩa tư bản độc quyền?",
             "options": [
               {
                 "id": "a",
@@ -5794,7 +5794,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Xu?t kh?u tu b?n tu nh�n v� xu?t kh?u tu b?n nh� nu?c",
+                "text": "Xuất khẩu tư bản tư nhân và xuất khẩu tư bản nhà nước",
                 "correct": true
               },
               {
@@ -5819,7 +5819,7 @@
           },
           {
             "id": "q-chuong-04-21",
-            "prompt": "Xu?t kh?u tu b?n tu nh�n c� d?c di?m g�?",
+            "prompt": "Xuất khẩu tư bản tư nhân có đặc điểm gì?",
             "options": [
               {
                 "id": "a",
@@ -5854,7 +5854,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Hu?ng v�o c�c ng�nh thu?c k?t c?u h? t?ng d? t?o m�i tru?ng thu?n l?i cho d?u tu c?a tu b?n tu nh�n",
+                "text": "Hướng vào các ngành thuộc kết cấu hạ tầng để tạo môi trường thuận lợi cho đầu tư của tư bản tư nhân",
                 "correct": true
               },
               {
@@ -5879,7 +5879,7 @@
           },
           {
             "id": "q-chuong-04-23",
-            "prompt": "M?t trong nh?ng nguy�n nh�n h�nh th�nh ch? nghia tu b?n d?c quy?n nh� nu?c l� g�? H�y ch?n d�p �n d�ng.",
+            "prompt": "Một trong những nguyên nhân hình thành chủ nghĩa tư bản độc quyền nhà nước là gì? Hãy chọn đáp án đúng.",
             "options": [
               {
                 "id": "a",
@@ -5890,7 +5890,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "S? th?ng tr? c?a d?c quy?n d� l�m gia tang s? ph�n h�a gi�u ngh�o.",
+                "text": "Sự thống trị của độc quyền đã làm gia tăng sự phân hóa giàu nghèo.",
                 "correct": true
               },
               {
@@ -5909,7 +5909,7 @@
           },
           {
             "id": "q-chuong-04-24",
-            "prompt": "Nguy�n nh�n h�nh th�nh ch? nghia tu b?n d?c quy?n nh� nu?c l� g�?",
+            "prompt": "Nguyên nhân hình thành chủ nghĩa tư bản độc quyền nhà nước là gì?",
             "options": [
               {
                 "id": "a",
@@ -5920,7 +5920,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Sinh ra nh?ng co c?u kinh t? to l?n d�i h?i ph?i c� m?t s? di?u ti?t x� h?i d?i v?i s?n xu?t v� ph�n ph?i t? m?t trung t�m",
+                "text": "Sinh ra những cơ cấu kinh tế to lớn đòi hỏi phải có một sự điều tiết xã hội đối với sản xuất và phân phối từ một trung tâm",
                 "correct": false
               },
               {
@@ -5932,19 +5932,19 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "T�ch t? v� t?p trung v?n c�ng l?n th� t�ch t? v� t?p trung s?n xu?t c�ng cao, sinh ra nh?ng co c?u kinh t? to l?n d�i h?i ph?i c� m?t s? di?u ti?t x� h?i d?i v?i s?n xu?t v� ph�n ph?i t? m?t trung t�m",
+                "text": "Tích tụ và tập trung vốn càng lớn thì tích tụ và tập trung sản xuất càng cao, sinh ra những cơ cấu kinh tế to lớn đòi hỏi phải có một sự điều tiết xã hội đối với sản xuất và phân phối từ một trung tâm",
                 "correct": true
               }
             ]
           },
           {
             "id": "q-chuong-04-25",
-            "prompt": "M?t trong nh?ng nguy�n nh�n c?a s? chuy?n bi?n t? ch? nghia tu b?n t? do c?nh tranh sang ch? nghia tu b?n d?c quy?n l� g�?",
+            "prompt": "Một trong những nguyên nhân của sự chuyển biến từ chủ nghĩa tư bản tự do cạnh tranh sang chủ nghĩa tư bản độc quyền là gì?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "M�u thu?n giai c?p ng�y c�ng gay g?t",
+                "text": "Mâu thuẫn giai cấp ngày càng gay gắt",
                 "correct": false
               },
               {
@@ -5969,12 +5969,12 @@
           },
           {
             "id": "q-chuong-04-26",
-            "prompt": "M?t trong nh?ng nguy�n nh�n c?a s? chuy?n bi?n t? ch? nghia tu b?n t? do c?nh tranh sang ch? nghia tu b?n d?c quy?n l� g�?",
+            "prompt": "Một trong những nguyên nhân của sự chuyển biến từ chủ nghĩa tư bản tự do cạnh tranh sang chủ nghĩa tư bản độc quyền là gì?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "S? tang tru?ng d�n s? nhanh ch�ng",
+                "text": "Sự tăng trưởng dân số nhanh chóng",
                 "correct": false
               },
               {
@@ -5999,7 +5999,7 @@
           },
           {
             "id": "q-chuong-04-27",
-            "prompt": "M?t trong nh?ng nguy�n nh�n c?a s? chuy?n bi?n t? ch? nghia tu b?n t? do c?nh tranh sang ch? nghia tu b?n d?c quy?n l� g�?",
+            "prompt": "Một trong những nguyên nhân của sự chuyển biến từ chủ nghĩa tư bản tự do cạnh tranh sang chủ nghĩa tư bản độc quyền là gì?",
             "options": [
               {
                 "id": "a",
@@ -6016,7 +6016,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Vai tr� c?a ng�n h�ng trung uong ng�y c�ng tang",
+                "text": "Vai trò của ngân hàng trung ương ngày càng tăng",
                 "correct": false
               },
               {
@@ -6029,7 +6029,7 @@
           },
           {
             "id": "q-chuong-04-28",
-            "prompt": "Nh?ng nguy�n nh�n c?a s? chuy?n bi?n t? ch? nghia tu b?n t? do c?nh tranh sang ch? nghia tu b?n d?c quy?n l� g�? H�y ch?n d�p �n sai.",
+            "prompt": "Những nguyên nhân của sự chuyển biến từ chủ nghĩa tư bản tự do cạnh tranh sang chủ nghĩa tư bản độc quyền là gì? Hãy chọn đáp án sai.",
             "options": [
               {
                 "id": "a",
@@ -6046,7 +6046,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "M�u thu?n giai c?p d?i kh�ng gay g?t d?n m?c kh�ng th? di?u h�a du?c",
+                "text": "Mâu thuẫn giai cấp đối kháng gay gắt đến mức không thể điều hòa được",
                 "correct": true
               },
               {
@@ -6064,7 +6064,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "S?n xu?t nh?, ph�n t�n",
+                "text": "Sản xuất nhỏ, phân tán",
                 "correct": false
               },
               {
@@ -6089,7 +6089,7 @@
           },
           {
             "id": "q-chuong-04-30",
-            "prompt": "H�y ch?n ph�t bi?u d�ng v? c?nh tranh trong ch? nghia tu b?n d?c quy?n?",
+            "prompt": "Hãy chọn phát biểu đúng về cạnh tranh trong chủ nghĩa tư bản độc quyền?",
             "options": [
               {
                 "id": "a",
@@ -6106,7 +6106,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "M?t h�nh th�i kinh t? x� h?i m?i",
+                "text": "Một hình thái kinh tế xã hội mới",
                 "correct": false
               },
               {
@@ -6124,19 +6124,19 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "l?i nhu?n thu du?c cao hon l?i nhu?n b�nh qu�n, do s? th?ng tr? c?a c�c t? ch?c d?c quy?n dem l?i",
+                "text": "lợi nhuận thu được cao hơn lợi nhuận bình quân, do sự thống trị của các tổ chức độc quyền đem lại",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "l?i nhu?n b�nh qu�n cao hon l?i nhu?n thu du?c",
+                "text": "lợi nhuận bình quân cao hơn lợi nhuận thu được",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "l?i nhu?n b�nh qu�n b?ng l?i nhu?n thu du?c",
+                "text": "lợi nhuận bình quân bằng lợi nhuận thu được",
                 "correct": false
               },
               {
@@ -6209,7 +6209,7 @@
           },
           {
             "id": "q-chuong-04-34",
-            "prompt": "T? ch?c OPEC l� t�n g?i t?t c?a t? ch?c n�o du?i d�y?",
+            "prompt": "Tổ chức OPEC là tên gọi tắt của tổ chức nào dưới đây?",
             "options": [
               {
                 "id": "a",
@@ -6262,7 +6262,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "T�p trung quy m� r?ng l?n",
+                "text": "Tâp trung quy mô rộng lớn",
                 "correct": false
               }
             ]
@@ -6310,7 +6310,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Trang b? c� nh�n",
+                "text": "Trang bị cá nhân",
                 "correct": false
               },
               {
@@ -6334,32 +6334,32 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "S? ph�n chia th? gi?i gi?a c�c cu?ng qu?c d? qu?c",
+                "text": "Sự phân chia thế giới giữa các cường quốc đế quốc",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "S? ph�n chia ch?ng t?c th? gi?i",
+                "text": "Sự phân chia chủng tộc thế giới",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "S? ph�n chia s?c m�u",
+                "text": "Sự phân chia sắc màu",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "S? ph�n chia c?a tu b?n nh� nu?c",
+                "text": "Sự phân chia của tư bản nhà nước",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-04-39",
-            "prompt": "Trong c�c h�nh th?c li�n k?t sau d�y c?a ch? nghia tu b?n d?c quy?n,h�nh th?c n�o th? hi?n li�n k?t theo chi?u ngang? H�y ch?n d�p �n sai",
+            "prompt": "Trong các hình thức liên kết sau đây của chủ nghĩa tư bản độc quyền,hình thức nào thể hiện liên kết theo chiều ngang? Hãy chọn đáp án sai",
             "options": [
               {
                 "id": "a",
@@ -6389,7 +6389,7 @@
           },
           {
             "id": "q-chuong-04-40",
-            "prompt": "Trong c�c h�nh th?c li�n k?t sau d�y c?a ch? nghia tu b?n d?c quy?n, h�nh th?c n�o di?n h�nh cho li�n k?t theo chi?u d?c?",
+            "prompt": "Trong các hình thức liên kết sau đây của chủ nghĩa tư bản độc quyền, hình thức nào điển hình cho liên kết theo chiều dọc?",
             "options": [
               {
                 "id": "a",
@@ -6430,7 +6430,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "X� h?i kh�ng th?a nh?n c�c t? ch?c d?c quy?n",
+                "text": "Xã hội không thừa nhận các tổ chức độc quyền",
                 "correct": false
               },
               {
@@ -6449,7 +6449,7 @@
           },
           {
             "id": "q-chuong-04-42",
-            "prompt": "Li�n minh ch�u �u (EU) ra d?i ng�y n�o?",
+            "prompt": "Liên minh châu Âu (EU) ra đời ngày nào?",
             "options": [
               {
                 "id": "a",
@@ -6502,14 +6502,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "C� kh? nang th�u t�m s?n xu?t v� ti�u d�ng",
+                "text": "Có khả năng thâu tóm sản xuất và tiêu dùng",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-04-44",
-            "prompt": "Gi� c? d?c quy?n g?m nh?ng y?u t? n�o du?i d�y?",
+            "prompt": "Giá cả độc quyền gồm những yếu tố nào dưới đây?",
             "options": [
               {
                 "id": "a",
@@ -6520,7 +6520,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Gi� c? c�n b?ng cung � c?u",
+                "text": "Giá cả cân bằng cung – cầu",
                 "correct": false
               },
               {
@@ -6599,18 +6599,18 @@
           },
           {
             "id": "q-chuong-04-47",
-            "prompt": "Ngu?n g?c c?a l?i nhu?n d?c quy?n cao l� t? d�u? H�y ch?n d�p �n sai.",
+            "prompt": "Nguồn gốc của lợi nhuận độc quyền cao là từ đâu? Hãy chọn đáp án sai.",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Lao d?ng kh�ng c�ng c?a c�ng nh�n trong x� nghi?p d?c quy?n",
+                "text": "Lao động không công của công nhân trong xí nghiệp độc quyền",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Ph?n lao d?ng kh�ng c�ng c?a c�ng nh�n trong x� nghi?p ngo�i d?c quy?n",
+                "text": "Phần lao động không công của công nhân trong xí nghiệp ngoài độc quyền",
                 "correct": false
               },
               {
@@ -6622,7 +6622,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "To�n b? lao d?ng kh�ng c�ng c?a c�ng nh�n",
+                "text": "Toàn bộ lao động không công của công nhân",
                 "correct": true
               }
             ]
@@ -6634,7 +6634,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "M?t h�nh th?c ch? nghia x� h?i trong th?i k? d?u",
+                "text": "Một hình thức chủ nghĩa xã hội trong thời kỳ đầu",
                 "correct": false
               },
               {
@@ -6659,7 +6659,7 @@
           },
           {
             "id": "q-chuong-04-49",
-            "prompt": "�Ch? d? tham d?�, �ch? d? ?y nhi?m� l� h�nh th?c t? ch?c c?a y?u t? n�o du?i d�y?",
+            "prompt": "“Chế độ tham dự”, “chế độ ủy nhiệm” là hình thức tổ chức của yếu tố nào dưới đây?",
             "options": [
               {
                 "id": "a",
@@ -6676,7 +6676,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Tu b?n x� h?i ch? nghia",
+                "text": "Tư bản xã hội chủ nghĩa",
                 "correct": false
               },
               {
@@ -6689,7 +6689,7 @@
           },
           {
             "id": "q-chuong-04-50",
-            "prompt": "Trong c�c h�nh th?c li�n k?t sau d�y c?a ch? nghia tu b?n d?c quy?n, h�nh th?c n�o d? b? tan r� nh?t?",
+            "prompt": "Trong các hình thức liên kết sau đây của chủ nghĩa tư bản độc quyền, hình thức nào dễ bị tan rã nhất?",
             "options": [
               {
                 "id": "a",
@@ -6779,7 +6779,7 @@
           },
           {
             "id": "q-chuong-04-53",
-            "prompt": "T? ch?c OPEC thu?c h�nh th?c li�n k?t n�o du?i d�y?",
+            "prompt": "Tổ chức OPEC thuộc hình thức liên kết nào dưới đây?",
             "options": [
               {
                 "id": "a",
@@ -6809,7 +6809,7 @@
           },
           {
             "id": "q-chuong-04-54",
-            "prompt": "S? xu?t hi?n c�c t? ch?c d?c quy?n d�nh d?u ch? nghia tu b?n d� chuy?n sang giai do?n ph�t tri?n m?i n�o?",
+            "prompt": "Sự xuất hiện các tổ chức độc quyền đánh dấu chủ nghĩa tư bản đã chuyển sang giai đoạn phát triển mới nào?",
             "options": [
               {
                 "id": "a",
@@ -6820,7 +6820,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "ch? nghia th?c d�n",
+                "text": "chủ nghĩa thực dân",
                 "correct": false
               },
               {
@@ -6832,7 +6832,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "ch? nghia x� h?i",
+                "text": "chủ nghĩa xã hội",
                 "correct": false
               }
             ]
@@ -6871,22 +6871,22 @@
       },
       {
         "id": "chuong-05",
-        "title": "Chương 05",
+        "title": "Ch??ng 05",
         "questions": [
           {
             "id": "q-chuong-05-1",
-            "prompt": "M� h�nh kinh t? th? tru?ng n�o sau d�y ph�t tri?n ph? bi?n ? C?ng h�a li�n bang �?c?",
+            "prompt": "Mô hình kinh tế thị trường nào sau đây phát triển phổ biến ở Cộng hòa liên bang Đức?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Kinh t? th? tru?ng x� h?i",
+                "text": "Kinh tế thị trường xã hội",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Kinh t? x� h?i ch? nghia",
+                "text": "Kinh tế xã hội chủ nghĩa",
                 "correct": false
               },
               {
@@ -6898,14 +6898,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Kinh t? ng�n qu? s�ch",
+                "text": "Kinh tế ngân quỹ sách",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-2",
-            "prompt": "M� h�nh kinh t? th? tru?ng n�o sau d�y ph�t tri?n ph? bi?n ? M??",
+            "prompt": "Mô hình kinh tế thị trường nào sau đây phát triển phổ biến ở Mỹ?",
             "options": [
               {
                 "id": "a",
@@ -6916,13 +6916,13 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "M� h�nh kinh t? th? tru?ng x� h?i ch? nghia",
+                "text": "Mô hình kinh tế thị trường xã hội chủ nghĩa",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "M� h�nh kinh t? th? tru?ng x� h?i",
+                "text": "Mô hình kinh tế thị trường xã hội",
                 "correct": false
               },
               {
@@ -6935,12 +6935,12 @@
           },
           {
             "id": "q-chuong-05-3",
-            "prompt": "N?i dung n�o th? hi?n b?n ch?t c?a kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia ? Vi?t Nam?",
+            "prompt": "Nội dung nào thể hiện bản chất của kinh tế thị trường định hướng xã hội chủ nghĩa ở Việt Nam?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "L� n?n kinh t? hu?ng t?i t?ng bu?c x�c l?p m?t x� h?i d�n gi�u, nu?c m?nh, d�n ch?, c�ng b?ng, van minh",
+                "text": "Là nền kinh tế hướng tới từng bước xác lập một xã hội dân giàu, nước mạnh, dân chủ, công bằng, văn minh",
                 "correct": true
               },
               {
@@ -6965,7 +6965,7 @@
           },
           {
             "id": "q-chuong-05-4",
-            "prompt": "M� h�nh kinh t? th? tru?ng n�o sau d�y ph�t tri?n ph? bi?n ? Trung Qu?c?",
+            "prompt": "Mô hình kinh tế thị trường nào sau đây phát triển phổ biến ở Trung Quốc?",
             "options": [
               {
                 "id": "a",
@@ -6976,13 +6976,13 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "M� h�nh kinh t? th? tru?ng x� h?i ch? nghia",
+                "text": "Mô hình kinh tế thị trường xã hội chủ nghĩa",
                 "correct": true
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "M� h�nh kinh t? th? tru?ng x� h?i",
+                "text": "Mô hình kinh tế thị trường xã hội",
                 "correct": false
               },
               {
@@ -6995,18 +6995,18 @@
           },
           {
             "id": "q-chuong-05-5",
-            "prompt": "N?i dung n�o th? hi?n b?n ch?t c?a kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia ? Vi?t Nam?",
+            "prompt": "Nội dung nào thể hiện bản chất của kinh tế thị trường định hướng xã hội chủ nghĩa ở Việt Nam?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Gi� tr? d�n gi�u, nu?c m?nh, d�n ch?, c�ng b?ng, van minh",
+                "text": "Giá trị dân giàu, nước mạnh, dân chủ, công bằng, văn minh",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Duy tr� s? l�nh d?o to�n di?n c?a �?ng c?ng s?n",
+                "text": "Duy trì sự lãnh đạo toàn diện của Đảng cộng sản",
                 "correct": false
               },
               {
@@ -7025,12 +7025,12 @@
           },
           {
             "id": "q-chuong-05-6",
-            "prompt": "N?i dung n�o sau d�y kh�ng th? hi?n b?n ch?t c?a kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia ? Vi?t Nam?",
+            "prompt": "Nội dung nào sau đây không thể hiện bản chất của kinh tế thị trường định hướng xã hội chủ nghĩa ở Việt Nam?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "G?n tang tru?ng kinh t? v?i ti?n b? v� c�ng b?ng x� h?i.",
+                "text": "Gắn tăng trưởng kinh tế với tiến bộ và công bằng xã hội.",
                 "correct": false
               },
               {
@@ -7055,18 +7055,18 @@
           },
           {
             "id": "q-chuong-05-7",
-            "prompt": "��u l� d?c trung v? m?c ti�u c?a n?n kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia ? Vi?t Nam?",
+            "prompt": "Đâu là đặc trưng về mục tiêu của nền kinh tế thị trường định hướng xã hội chủ nghĩa ở Việt Nam?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Ph�t tri?n phuong th?c s?n xu?t, x�y d?ng co s? v?t ch?t k? thu?t c?a ch? nghia x� h?i, n�ng cao d?i s?ng nh�n d�n, th?c hi?n d�n gi�u, nu?c m?nh, d�n ch?, c�ng b?ng, van minh",
+                "text": "Phát triển phương thức sản xuất, xây dựng cơ sở vật chất kỹ thuật của chủ nghĩa xã hội, nâng cao đời sống nhân dân, thực hiện dân giàu, nước mạnh, dân chủ, công bằng, văn minh",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Kinh t? th? tru?ng v?i m� h�nh kinh t? m� m?i qu?c gia bu?c ph?i tu�n theo",
+                "text": "Kinh tế thị trường với mô hình kinh tế mà mọi quốc gia buộc phải tuân theo",
                 "correct": false
               },
               {
@@ -7078,19 +7078,19 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "K?t qu? d?u tranh ph�t tri?n l�u d�i c?a l?c lu?ng s?n xu?t v� x� h?i h�a c�c m?i quan h?",
+                "text": "Kết quả đấu tranh phát triển lâu dài của lực lượng sản xuất và xã hội hóa các mối quan hệ",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-8",
-            "prompt": "��u l� d?c trung v? s? h?u c?a n?n kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia ? Vi?t Nam?",
+            "prompt": "Đâu là đặc trưng về sở hữu của nền kinh tế thị trường định hướng xã hội chủ nghĩa ở Việt Nam?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "T?n t?i nhi?u h�nh th?c s? h?u, nhi?u th�nh ph?n kinh t?, trong d� kinh t? nh� nu?c gi? vai tr� ch? d?o, kinh t? tu nh�n l� m?t d?ng l?c quan tr?ng",
+                "text": "Tồn tại nhiều hình thức sở hữu, nhiều thành phần kinh tế, trong đó kinh tế nhà nước giữ vai trò chủ đạo, kinh tế tư nhân là một động lực quan trọng",
                 "correct": true
               },
               {
@@ -7115,18 +7115,18 @@
           },
           {
             "id": "q-chuong-05-9",
-            "prompt": "��u l� d?c trung v? quan h? qu?n l� c?a n?n kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia ? Vi?t Nam?",
+            "prompt": "Đâu là đặc trưng về quan hệ quản lý của nền kinh tế thị trường định hướng xã hội chủ nghĩa ở Việt Nam?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia ? Vi?t Nam d?t du?i s? qu?n l� c?a Nh� nu?c Vi?t Nam",
+                "text": "Kinh tế thị trường định hướng xã hội chủ nghĩa ở Việt Nam đặt dưới sự quản lý của Nhà nước Việt Nam",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Kinh t? th? tru?ng v?i m� h�nh kinh t? m� m?i qu?c gia bu?c ph?i tu�n theo",
+                "text": "Kinh tế thị trường với mô hình kinh tế mà mọi quốc gia buộc phải tuân theo",
                 "correct": false
               },
               {
@@ -7138,31 +7138,31 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "K?t qu? d?u tranh ph�t tri?n l�u d�i c?a l?c lu?ng s?n xu?t v� x� h?i h�a c�c m?i quan h?",
+                "text": "Kết quả đấu tranh phát triển lâu dài của lực lượng sản xuất và xã hội hóa các mối quan hệ",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-10",
-            "prompt": "��u l� d?c trung v? quan h? ph�n ph?i c?a n?n kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia ? Vi?t Nam?",
+            "prompt": "Đâu là đặc trưng về quan hệ phân phối của nền kinh tế thị trường định hướng xã hội chủ nghĩa ở Việt Nam?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Th?c hi?n nhi?u h�nh th?c ph�n ph?i, trong d� ph�n ph?i theo lao d?ng l� ch? y?u",
+                "text": "Thực hiện nhiều hình thức phân phối, trong đó phân phối theo lao động là chủ yếu",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Do thi?u nh�n s? d?n d?n kh�ng d? nh�n s? l�m vi?c",
+                "text": "Do thiếu nhân sự dẫn đến không đủ nhân sự làm việc",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "T? do di chuy?n tu b?n t? ng�nh n�y sang ng�nh kh�c, t?c l� ph�n ph?i tu b?n v�o c�c ng�nh s?n xu?t kh�c nhau",
+                "text": "Tự do di chuyển tư bản từ ngành này sang ngành khác, tức là phân phối tư bản vào các ngành sản xuất khác nhau",
                 "correct": false
               },
               {
@@ -7235,7 +7235,7 @@
           },
           {
             "id": "q-chuong-05-13",
-            "prompt": "M?i th�nh ph?n kinh t? (tuong ?ng v?i m?t h�nh th?c s? h?u nh?t d?nh) d�ng vai tr� g� trong n?n kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia ? Vi?t Nam?",
+            "prompt": "Mỗi thành phần kinh tế (tương ứng với một hình thức sở hữu nhất định) đóng vai trò gì trong nền kinh tế thị trường định hướng xã hội chủ nghĩa ở Việt Nam?",
             "options": [
               {
                 "id": "a",
@@ -7265,24 +7265,24 @@
           },
           {
             "id": "q-chuong-05-14",
-            "prompt": "�?c trung v? quan h? gi?a tang tru?ng kinh t? g?n v?i c�ng b?ng x� h?i trong n?n kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia ? Vi?t Nam l� g�?",
+            "prompt": "Đặc trưng về quan hệ giữa tăng trưởng kinh tế gắn với công bằng xã hội trong nền kinh tế thị trường định hướng xã hội chủ nghĩa ở Việt Nam là gì?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Th?c hi?n g?n tang tru?ng kinh t? v?i c�ng b?ng x� h?i, ph�t tri?n kinh t? di d�i v?i ph�t tri?n van h�a - x� h?i.",
+                "text": "Thực hiện gắn tăng trưởng kinh tế với công bằng xã hội, phát triển kinh tế đi đôi với phát triển văn hóa - xã hội.",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "G?n v?i kinh t? �p d?t v�o th? tru?ng x� h?i ch? nghia vi?t nam qua h�nh th?c ch? s? h?u",
+                "text": "Gắn với kinh tế áp đặt vào thị trường xã hội chủ nghĩa việt nam qua hình thức chủ sở hữu",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "Tang cu?ng x�y d?ng l?c lu?ng c�ng nh�n khai th�c ph�t tri?n kinh t?",
+                "text": "Tăng cường xây dựng lực lượng công nhân khai thác phát triển kinh tế",
                 "correct": false
               },
               {
@@ -7295,12 +7295,12 @@
           },
           {
             "id": "q-chuong-05-15",
-            "prompt": "Th? ch? kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia l� g�?",
+            "prompt": "Thể chế kinh tế thị trường định hướng xã hội chủ nghĩa là gì?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "L� h? th?ng du?ng l?i, ch? truong chi?n lu?c, h? th?ng lu?t ph�p, ch�nh s�ch quy d?nh co ch? v?n h�nh, di?u ch?nh ch?c nang, ho?t d?ng, m?c ti�u, phuong th?c ho?t d?ng, quan h? l?i �ch c?a c�c t? ch?c, c�c ch? th? kinh t? nh?m ti?n t?i x�c l?p d?ng b? c�c y?u t? th? tru?ng, c�c lo?i th? tru?ng hi?n d?i theo hu?ng g�p ph?n th�c d?y d�n gi�u, nu?c m?nh, d�n ch?, c�ng b?ng, van minh.",
+                "text": "Là hệ thống đường lối, chủ trương chiến lược, hệ thống luật pháp, chính sách quy định cơ chế vận hành, điều chỉnh chức năng, hoạt động, mục tiêu, phương thức hoạt động, quan hệ lợi ích của các tổ chức, các chủ thể kinh tế nhằm tiến tới xác lập đồng bộ các yếu tố thị trường, các loại thị trường hiện đại theo hướng góp phần thúc đẩy dân giàu, nước mạnh, dân chủ, công bằng, văn minh.",
                 "correct": true
               },
               {
@@ -7312,20 +7312,20 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "G?n v?i kinh t? �p d?t v�o th? tru?ng x� h?i ch? nghia vi?t nam qua h�nh th?c ch? s? h?u",
+                "text": "Gắn với kinh tế áp đặt vào thị trường xã hội chủ nghĩa việt nam qua hình thức chủ sở hữu",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "K?t qu? d?u tranh ph�t tri?n l�u d�i c?a l?c lu?ng s?n xu?t v� x� h?i h�a c�c m?i quan h?",
+                "text": "Kết quả đấu tranh phát triển lâu dài của lực lượng sản xuất và xã hội hóa các mối quan hệ",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-16",
-            "prompt": "Kh�i ni?m n�o sau d�y d�ng d? ph?n �nh h? th?ng quy t?c, lu?t ph�p, b? m�y qu?n l� v� co ch? v?n h�nh nh?m di?u ch?nh h�nh vi c?a c�c ch? th? kinh t?, c�c h�nh vi s?n xu?t kinh doanh v� c�c quan h? kinh t??",
+            "prompt": "Khái niệm nào sau đây dùng để phản ánh hệ thống quy tắc, luật pháp, bộ máy quản lý và cơ chế vận hành nhằm điều chỉnh hành vi của các chủ thể kinh tế, các hành vi sản xuất kinh doanh và các quan hệ kinh tế?",
             "options": [
               {
                 "id": "a",
@@ -7348,19 +7348,19 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Th? ch? kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia",
+                "text": "Thể chế kinh tế thị trường định hướng xã hội chủ nghĩa",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-17",
-            "prompt": "Kh�i ni?m n�o sau d�y d�ng d? ph?n �nh h? th?ng du?ng l?i, ch? truong, h? th?ng lu?t ph�p, ch�nh s�ch quy d?nh co ch? v?n h�nh, di?u ch?nh ch?c nang, ho?t d?ng, m?c ti�u, phuong th?c ho?t d?ng, quan h? l?i �ch c?a c�c ch? th? kinh t? nh?m ti?n t?i x�c l?p d?ng b? c�c y?u t? th? tru?ng, c�c lo?i th? tru?ng hi?n d?i theo hu?ng g�p ph?n th�c d?y d�n gi�u, nu?c m?nh, d�n ch?, c�ng b?ng, van minh?",
+            "prompt": "Khái niệm nào sau đây dùng để phản ánh hệ thống đường lối, chủ trương, hệ thống luật pháp, chính sách quy định cơ chế vận hành, điều chỉnh chức năng, hoạt động, mục tiêu, phương thức hoạt động, quan hệ lợi ích của các chủ thể kinh tế nhằm tiến tới xác lập đồng bộ các yếu tố thị trường, các loại thị trường hiện đại theo hướng góp phần thúc đẩy dân giàu, nước mạnh, dân chủ, công bằng, văn minh?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Th? ch? kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia",
+                "text": "Thể chế kinh tế thị trường định hướng xã hội chủ nghĩa",
                 "correct": true
               },
               {
@@ -7372,7 +7372,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Th? ch? kinh t? th? tru?ng x� h?i",
+                "text": "Thể chế kinh tế thị trường xã hội",
                 "correct": false
               },
               {
@@ -7390,7 +7390,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "H? th?ng ng�n h�ng, th? tru?ng ch?ng kho�n v� c�c t? ch?c t�i ch�nh",
+                "text": "Hệ thống ngân hàng, thị trường chứng khoán và các tổ chức tài chính",
                 "correct": false
               },
               {
@@ -7402,7 +7402,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "H? th?ng ph�p lu?t v? kinh t? c?a nh� nu?c v� c�c quy t?c x� h?i du?c nh� nu?c th?a nh?n; h? th?ng c�c ch? th? th?c hi?n c�c ho?t d?ng kinh t?; c�c co ch?, phuong ph�p, th? t?c th?c hi?n c�c quy d?nh v� v?n h�nh n?n kinh t?.",
+                "text": "Hệ thống pháp luật về kinh tế của nhà nước và các quy tắc xã hội được nhà nước thừa nhận; hệ thống các chủ thể thực hiện các hoạt động kinh tế; các cơ chế, phương pháp, thủ tục thực hiện các quy định và vận hành nền kinh tế.",
                 "correct": true
               },
               {
@@ -7415,7 +7415,7 @@
           },
           {
             "id": "q-chuong-05-19",
-            "prompt": "N?i dung n�o sau d�y ph?n �nh s? ho�n thi?n th? ch? v? g?n tang tru?ng kinh t? v?i b?o d?m ph�t tri?n b?n v?ng, ti?n b? v� c�ng b?ng x� h?i?",
+            "prompt": "Nội dung nào sau đây phản ánh sự hoàn thiện thể chế về gắn tăng trưởng kinh tế với bảo đảm phát triển bền vững, tiến bộ và công bằng xã hội?",
             "options": [
               {
                 "id": "a",
@@ -7426,7 +7426,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "X�y d?ng h? th?ng th? ch? d? k?t h?p ch?t ch? ph�t tri?n kinh t? nhanh v� b?n v?ng v?i ph�t tri?n x� h?i b?n v?ng, th?c hi?n ti?n b? x� h?i, t?o co h?i cho m?i th�nh vi�n trong x� h?i tham gia v� th? hu?ng c�ng b?ng th�nh qu? ph�t tri?n.",
+                "text": "Xây dựng hệ thống thể chế để kết hợp chặt chẽ phát triển kinh tế nhanh và bền vững với phát triển xã hội bền vững, thực hiện tiến bộ xã hội, tạo cơ hội cho mọi thành viên trong xã hội tham gia và thụ hưởng công bằng thành quả phát triển.",
                 "correct": true
               },
               {
@@ -7445,7 +7445,7 @@
           },
           {
             "id": "q-chuong-05-20",
-            "prompt": "Kh�i ni?m n�o sau d�y d�ng d? ch? l?i �ch v?t ch?t thu du?c khi th?c hi?n c�c ho?t d?ng kinh t? c?a con ngu?i?",
+            "prompt": "Khái niệm nào sau đây dùng để chỉ lợi ích vật chất thu được khi thực hiện các hoạt động kinh tế của con người?",
             "options": [
               {
                 "id": "a",
@@ -7462,7 +7462,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Th? ch? kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia",
+                "text": "Thể chế kinh tế thị trường định hướng xã hội chủ nghĩa",
                 "correct": false
               },
               {
@@ -7492,7 +7492,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "L� h? th?ng du?ng l?i, ch? truong chi?n lu?c, h? th?ng lu?t ph�p, ch�nh s�ch quy d?nh co ch? v?n h�nh, di?u ch?nh ch?c nang, ho?t d?ng, m?c ti�u, phuong th?c ho?t d?ng, quan h? l?i �ch c?a c�c t? ch?c, c�c ch? th? kinh t? nh?m ti?n t?i x�c l?p d?ng b? c�c y?u t? th? tru?ng, c�c lo?i th? tru?ng hi?n d?i theo hu?ng g�p ph?n th�c d?y d�n gi�u, nu?c m?nh, d�n ch?, c�ng b?ng, van minh.",
+                "text": "Là hệ thống đường lối, chủ trương chiến lược, hệ thống luật pháp, chính sách quy định cơ chế vận hành, điều chỉnh chức năng, hoạt động, mục tiêu, phương thức hoạt động, quan hệ lợi ích của các tổ chức, các chủ thể kinh tế nhằm tiến tới xác lập đồng bộ các yếu tố thị trường, các loại thị trường hiện đại theo hướng góp phần thúc đẩy dân giàu, nước mạnh, dân chủ, công bằng, văn minh.",
                 "correct": false
               },
               {
@@ -7510,7 +7510,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Ph?n �nh m?c d�ch v� d?ng co c?a c�c quan h? gi?a c�c ch? th? trong n?n s?n xu?t x� h?i",
+                "text": "Phản ánh mục đích và động cơ của các quan hệ giữa các chủ thể trong nền sản xuất xã hội",
                 "correct": true
               },
               {
@@ -7672,7 +7672,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Th?c hi?n c�c l?i �ch ph?c v? c� nh�n",
+                "text": "Thực hiện các lợi ích phục vụ cá nhân",
                 "correct": false
               },
               {
@@ -7685,7 +7685,7 @@
           },
           {
             "id": "q-chuong-05-28",
-            "prompt": "Kh�i ni?m n�o sau d�y ph?n �nh s? thi?t l?p nh?ng tuong t�c gi?a ngu?i v?i ngu?i, gi?a c�c c?ng d?ng ngu?i, gi?a c�c t? ch?c kinh t?, gi?a c�c b? ph?n h?p th�nh n?n kinh t? nh?m x�c l?p c�c l?i �ch kinh t? trong m?i li�n h? v?i tr�nh d? ph�t tri?n c?a l?c lu?ng s?n xu?t v� ki?n tr�c thu?ng t?ng tuong ?ng c?a m?t x� h?i nh?t d?nh?",
+            "prompt": "Khái niệm nào sau đây phản ánh sự thiết lập những tương tác giữa người với người, giữa các cộng đồng người, giữa các tổ chức kinh tế, giữa các bộ phận hợp thành nền kinh tế nhằm xác lập các lợi ích kinh tế trong mối liên hệ với trình độ phát triển của lực lượng sản xuất và kiến trúc thượng tầng tương ứng của một xã hội nhất định?",
             "options": [
               {
                 "id": "a",
@@ -7715,7 +7715,7 @@
           },
           {
             "id": "q-chuong-05-29",
-            "prompt": "Tru?ng h?p n�o sau d�y bi?u hi?n quan h? l?i �ch kinh t? theo chi?u d?c?",
+            "prompt": "Trường hợp nào sau đây biểu hiện quan hệ lợi ích kinh tế theo chiều dọc?",
             "options": [
               {
                 "id": "a",
@@ -7726,13 +7726,13 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Quan h? l?i �ch kinh t? gi?a m?t t? ch?c kinh t? v?i m?t c� nh�n trong t? ch?c kinh t? d�",
+                "text": "Quan hệ lợi ích kinh tế giữa một tổ chức kinh tế với một cá nhân trong tổ chức kinh tế đó",
                 "correct": true
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "Quan h? l?i �ch kinh t? gi?a c�c c� nh�n trong c�ng m?t nh�m lao d?ng",
+                "text": "Quan hệ lợi ích kinh tế giữa các cá nhân trong cùng một nhóm lao động",
                 "correct": false
               },
               {
@@ -7745,12 +7745,12 @@
           },
           {
             "id": "q-chuong-05-30",
-            "prompt": "Tru?ng h?p n�o sau d�y bi?u hi?n quan h? l?i �ch kinh t? theo chi?u ngang?",
+            "prompt": "Trường hợp nào sau đây biểu hiện quan hệ lợi ích kinh tế theo chiều ngang?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Gi?a m?t t? ch?c kinh t? v?i c� nh�n trong t? ch?c",
+                "text": "Giữa một tổ chức kinh tế với cá nhân trong tổ chức",
                 "correct": false
               },
               {
@@ -7798,14 +7798,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Gi?a m?t t? ch?c kinh t? v?i c� nh�n trong t? ch?c",
+                "text": "Giữa một tổ chức kinh tế với cá nhân trong tổ chức",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-32",
-            "prompt": "Th? n�o l� c?a s? m�u thu?n c?a c�c quan h? l?i �ch kinh t??",
+            "prompt": "Thế nào là của sự mâu thuẫn của các quan hệ lợi ích kinh tế?",
             "options": [
               {
                 "id": "a",
@@ -7828,7 +7828,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Gi?a m?t t? ch?c kinh t? v?i c� nh�n trong t? ch?c",
+                "text": "Giữa một tổ chức kinh tế với cá nhân trong tổ chức",
                 "correct": false
               }
             ]
@@ -7846,13 +7846,13 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "�?a v? c?a c�c ch? th? kinh t? trong x� h?i v� ch�nh s�ch ph�n ph?i thu nh?p c?a Nh� nu?c",
+                "text": "Địa vị của các chủ thể kinh tế trong xã hội và chính sách phân phối thu nhập của Nhà nước",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "Tr�nh d? ph�t tri?n c?a l?c lu?ng s?n xu?t, d?a v? c?a c�c ch? th? kinh t? trong x� h?i, ch�nh s�ch ph�n ph?i thu nh?p c?a Nh� nu?c, m?c d? h?i nh?p kinh t? qu?c t?",
+                "text": "Trình độ phát triển của lực lượng sản xuất, địa vị của các chủ thể kinh tế trong xã hội, chính sách phân phối thu nhập của Nhà nước, mức độ hội nhập kinh tế quốc tế",
                 "correct": true
               },
               {
@@ -7876,7 +7876,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Nh?ng di?u ki?n kh�ch quan c?a kinh t? h�ng h�a ph�t tri?n ? tr�nh d? cao: s? ph�t tri?n c?a ph�n c�ng lao d?ng x� h?i v� s? t?n t?i da d?ng c�c lo?i h�nh s? h?u.",
+                "text": "Những điều kiện khách quan của kinh tế hàng hóa phát triển ở trình độ cao: sự phát triển của phân công lao động xã hội và sự tồn tại đa dạng các loại hình sở hữu.",
                 "correct": true
               },
               {
@@ -7888,14 +7888,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "V� n?n kinh t? Vi?t Nam ch? y?u d?a v�o s?n xu?t h�ng h�a c� nh�n",
+                "text": "Vì nền kinh tế Việt Nam chủ yếu dựa vào sản xuất hàng hóa cá nhân",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-35",
-            "prompt": "T�nh t?t y?u kh�ch quan c?a s? ph�t tri?n kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia ? Vi?t Nam th? hi?n ? n?i dung n�o sau d�y?",
+            "prompt": "Tính tất yếu khách quan của sự phát triển kinh tế thị trường định hướng xã hội chủ nghĩa ở Việt Nam thể hiện ở nội dung nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -7906,7 +7906,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Ph�t tri?n kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia l� s? l?a ch?n c�ch l�m bu?c di d�ng quy lu?t kinh t? kh�ch quan, l� phuong ti?n c?n thi?t d? di d?n m?c ti�u c?a ch? nghia x� h?i nhanh v� hi?u qu?",
+                "text": "Phát triển kinh tế thị trường định hướng xã hội chủ nghĩa là sự lựa chọn cách làm bước đi đúng quy luật kinh tế khách quan, là phương tiện cần thiết để đi đến mục tiêu của chủ nghĩa xã hội nhanh và hiệu quả",
                 "correct": true
               },
               {
@@ -7925,18 +7925,18 @@
           },
           {
             "id": "q-chuong-05-36",
-            "prompt": "T?i sao n�i vi?c ho�n thi?n th? ch? kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia l� c?n thi?t v� mang t�nh kh�ch quan?",
+            "prompt": "Tại sao nói việc hoàn thiện thể chế kinh tế thị trường định hướng xã hội chủ nghĩa là cần thiết và mang tính khách quan?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "V� th? ch? kinh t? th? tru?ng d� ho�n ch?nh v� kh�ng c?n thay d?i",
+                "text": "Vì thể chế kinh tế thị trường đã hoàn chỉnh và không cần thay đổi",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "V� th? ch? kinh t? th? tru?ng d?nh hu?ng x� h?i ch? nghia chua d?ng b?, c�c y?u t? th? tru?ng chua du?c thi?t l?p d?y d?. Do v?y, Nh� nu?c ph?i x�y d?ng v� ho�n thi?n th? ch? d? th?c hi?n m?c ti�u kinh t?",
+                "text": "Vì thể chế kinh tế thị trường định hướng xã hội chủ nghĩa chưa đồng bộ, các yếu tố thị trường chưa được thiết lập đầy đủ. Do vậy, Nhà nước phải xây dựng và hoàn thiện thể chế để thực hiện mục tiêu kinh tế",
                 "correct": true
               },
               {
@@ -7948,14 +7948,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "V� n?n kinh t? ch? y?u d?a v�o c�c doanh nghi?p tu nh�n",
+                "text": "Vì nền kinh tế chủ yếu dựa vào các doanh nghiệp tư nhân",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-37",
-            "prompt": "Tru?ng h?p n�o sau d�y kh�ng ph?i l� bi?u hi?n c?a l?i �ch kinh t??",
+            "prompt": "Trường hợp nào sau đây không phải là biểu hiện của lợi ích kinh tế?",
             "options": [
               {
                 "id": "a",
@@ -7990,7 +7990,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Coi l?i �ch kinh t? l� d?ng l?c c?a c�c ho?t d?ng kinh t?, ph?i t�n tr?ng l?i �ch c� nh�n ch�nh d�ng",
+                "text": "Coi lợi ích kinh tế là động lực của các hoạt động kinh tế, phải tôn trọng lợi ích cá nhân chính đáng",
                 "correct": true
               },
               {
@@ -8002,7 +8002,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "L�m thay d?i m?c thu nh?p v� tuong quan thu nh?p c?a c�c ch? th? kinh t?, t? d� l�m phuong th?c v� m?c d? th?a m�n c�c nhu c?u v?t ch?t.",
+                "text": "Làm thay đổi mức thu nhập và tương quan thu nhập của các chủ thể kinh tế, từ đó làm phương thức và mức độ thỏa mãn các nhu cầu vật chất.",
                 "correct": false
               },
               {
@@ -8015,18 +8015,18 @@
           },
           {
             "id": "q-chuong-05-39",
-            "prompt": "C�ng v?i vi?c theo du?i l?i �ch kinh t? ch�nh d�ng c?a m�nh, c�c ch? th? kinh t? d� g�p ph?n nhu th? n�o v�o s? ph�t tri?n kinh t? - x� h?i n�i chung?",
+            "prompt": "Cùng với việc theo đuổi lợi ích kinh tế chính đáng của mình, các chủ thể kinh tế đã góp phần như thế nào vào sự phát triển kinh tế - xã hội nói chung?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Ch? t?p trung v�o l?i �ch c� nh�n, kh�ng quan t�m d?n x� h?i",
+                "text": "Chỉ tập trung vào lợi ích cá nhân, không quan tâm đến xã hội",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Th�c d?y s? ph�t tri?n c?a l?c lu?ng s?n xu?t, g�p ph?n n�ng cao d?i s?ng c?a ngu?i d�n",
+                "text": "Thúc đẩy sự phát triển của lực lượng sản xuất, góp phần nâng cao đời sống của người dân",
                 "correct": true
               },
               {
@@ -8038,7 +8038,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "L�m gi?m nang su?t lao d?ng v� c?n tr? ti?n b? x� h?i",
+                "text": "Làm giảm năng suất lao động và cản trở tiến bộ xã hội",
                 "correct": false
               }
             ]
@@ -8050,13 +8050,13 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "Ch? doanh nghi?p ph?i t�m c�ch n�ng cao hi?u qu?, s? d?ng c�c ngu?n l?c, d�p ?ng c�c nhu c?u, n�ng cao ch?t lu?ng s?n ph?m, thay d?i m?u m�, n�ng cao tr�ch nhi?m ngu?i d�ng",
+                "text": "Chủ doanh nghiệp phải tìm cách nâng cao hiệu quả, sử dụng các nguồn lực, đáp ứng các nhu cầu, nâng cao chất lượng sản phẩm, thay đổi mẫu mã, nâng cao trách nhiệm người dùng",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "L�m thay d?i m?c thu nh?p v� tuong quan thu nh?p c?a c�c ch? th? kinh t?, t? d� l�m phuong th?c v� m?c d? th?a m�n c�c nhu c?u v?t ch?t.",
+                "text": "Làm thay đổi mức thu nhập và tương quan thu nhập của các chủ thể kinh tế, từ đó làm phương thức và mức độ thỏa mãn các nhu cầu vật chất.",
                 "correct": false
               },
               {
@@ -8068,25 +8068,25 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "M� h�nh kinh t? th? tru?ng ph� h?p v?i nguy?n v?ng c?a nh�n d�n mong mu?n d�n gi�u, nu?c m?nh, d�n ch?, c�ng b?ng, van minh",
+                "text": "Mô hình kinh tế thị trường phù hợp với nguyện vọng của nhân dân mong muốn dân giàu, nước mạnh, dân chủ, công bằng, văn minh",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-41",
-            "prompt": "Ch�nh s�ch ph�n ph?i thu nh?p c?a nh� nu?c ?nh hu?ng nhu th? n�o d?n quan h? l?i �ch kinh t??",
+            "prompt": "Chính sách phân phối thu nhập của nhà nước ảnh hưởng như thế nào đến quan hệ lợi ích kinh tế?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "L�m thay d?i m?c thu nh?p v� tuong quan thu nh?p c?a c�c ch? th? kinh t?, t? d� l�m phuong th?c v� m?c d? th?a m�n c�c nhu c?u v?t ch?t",
+                "text": "Làm thay đổi mức thu nhập và tương quan thu nhập của các chủ thể kinh tế, từ đó làm phương thức và mức độ thỏa mãn các nhu cầu vật chất",
                 "correct": true
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Thay d?i m?u m�, n�ng cao tinh th?n",
+                "text": "Thay đổi mẫu mã, nâng cao tinh thần",
                 "correct": false
               },
               {
@@ -8098,14 +8098,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "T�ch c?c lao d?ng s?n xu?t, n�ng cao tay ngh?",
+                "text": "Tích cực lao động sản xuất, nâng cao tay nghề",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-42",
-            "prompt": "Anh A l�m nh�n vi�n kinh doanh t?i c�ng ty c? ph?n B. Ngo�i ti?n luong nh?n du?c h�ng th�ng, A c�n c� kho?ng thu nh?p t? vi?c mua c? phi?u c?a c�ng ty B. Nh? l�m vi?c cham ch?, A du?c d?ng nghi?p qu� m?n. L?i �ch kinh t? m� A nh?n du?c l� g�?",
+            "prompt": "Anh A làm nhân viên kinh doanh tại công ty cổ phần B. Ngoài tiền lương nhận được hàng tháng, A còn có khoảng thu nhập từ việc mua cổ phiếu của công ty B. Nhờ làm việc chăm chỉ, A được đồng nghiệp quý mến. Lợi ích kinh tế mà A nhận được là gì?",
             "options": [
               {
                 "id": "a",
@@ -8135,12 +8135,12 @@
           },
           {
             "id": "q-chuong-05-43",
-            "prompt": "Hai doanh nghi?p k� k?t h?p d?ng xu?t kh?u h�ng h�a thu?c quan h? l?i �ch kinh t? n�o sau d�y?",
+            "prompt": "Hai doanh nghiệp kí kết hợp đồng xuất khẩu hàng hóa thuộc quan hệ lợi ích kinh tế nào sau đây?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Quan h? l?i �ch kinh t? gi?a m?t t? ch?c kinh t? v?i m?t c� nh�n trong t? ch?c kinh t? d�",
+                "text": "Quan hệ lợi ích kinh tế giữa một tổ chức kinh tế với một cá nhân trong tổ chức kinh tế đó",
                 "correct": false
               },
               {
@@ -8158,19 +8158,19 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Quan h? l?i �ch kinh t? gi?a c�c c� nh�n v?i nhau",
+                "text": "Quan hệ lợi ích kinh tế giữa các cá nhân với nhau",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-44",
-            "prompt": "Anh M l�m thu� cho c�ng ty A v� nh?n luong h�ng th�ng t? c�ng ty A thu?c quan h? l?i �ch kinh t? n�o sau d�y?",
+            "prompt": "Anh M làm thuê cho công ty A và nhận lương hàng tháng từ công ty A thuộc quan hệ lợi ích kinh tế nào sau đây?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Quan h? l?i �ch kinh t? gi?a m?t t? ch?c kinh t? v?i m?t c� nh�n trong t? ch?c kinh t? d�",
+                "text": "Quan hệ lợi ích kinh tế giữa một tổ chức kinh tế với một cá nhân trong tổ chức kinh tế đó",
                 "correct": true
               },
               {
@@ -8188,19 +8188,19 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Quan h? l?i �ch kinh t? gi?a c�c c� nh�n v?i nhau",
+                "text": "Quan hệ lợi ích kinh tế giữa các cá nhân với nhau",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-45",
-            "prompt": "C�c qu?c gia tham gia v�o c�c hi?p d?nh thuong m?i t? do nh?m m? r?ng th? tru?ng thu?c quan h? l?i �ch kinh t? n�o sau d�y?",
+            "prompt": "Các quốc gia tham gia vào các hiệp định thương mại tự do nhằm mở rộng thị trường thuộc quan hệ lợi ích kinh tế nào sau đây?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Quan h? l?i �ch kinh t? gi?a m?t t? ch?c kinh t? v?i m?t c� nh�n trong t? ch?c kinh t? d�",
+                "text": "Quan hệ lợi ích kinh tế giữa một tổ chức kinh tế với một cá nhân trong tổ chức kinh tế đó",
                 "correct": false
               },
               {
@@ -8218,19 +8218,19 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Quan h? l?i �ch kinh t? gi?a c�c c� nh�n v?i nhau",
+                "text": "Quan hệ lợi ích kinh tế giữa các cá nhân với nhau",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-46",
-            "prompt": "A v� B c?nh tranh v?i nhau d? gi�nh du?c v? tr� vi?c l�m trong m?t doanh nghi?p c� uy t�n thu?c quan h? l?i �ch kinh t? n�o sau d�y?",
+            "prompt": "A và B cạnh tranh với nhau để giành được vị trí việc làm trong một doanh nghiệp có uy tín thuộc quan hệ lợi ích kinh tế nào sau đây?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Quan h? l?i �ch kinh t? gi?a m?t t? ch?c kinh t? v?i m?t c� nh�n trong t? ch?c kinh t? d�",
+                "text": "Quan hệ lợi ích kinh tế giữa một tổ chức kinh tế với một cá nhân trong tổ chức kinh tế đó",
                 "correct": false
               },
               {
@@ -8248,7 +8248,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Quan h? l?i �ch kinh t? gi?a c�c c� nh�n v?i nhau",
+                "text": "Quan hệ lợi ích kinh tế giữa các cá nhân với nhau",
                 "correct": true
               }
             ]
@@ -8260,13 +8260,13 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "��i h?i tang luong m� kh�ng c?n n�ng cao hi?u qu? c�ng vi?c",
+                "text": "Đòi hỏi tăng lương mà không cần nâng cao hiệu quả công việc",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "T�ch c?c lao d?ng s?n xu?t, n�ng cao tay ngh?, c?i ti?n c�ng c? lao d?ng",
+                "text": "Tích cực lao động sản xuất, nâng cao tay nghề, cải tiến công cụ lao động",
                 "correct": true
               },
               {
@@ -8296,61 +8296,61 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Ch?y theo l?i nhu?n m� kh�ng c?n quan t�m d?n ch?t lu?ng s?n ph?m",
+                "text": "Chạy theo lợi nhuận mà không cần quan tâm đến chất lượng sản phẩm",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "N�ng cao hi?u qu? s? d?ng c�c ngu?n l?c, d�p ?ng c�c nhu c?u, th? hi?u c?a kh�ch h�ng b?ng c�ch n�ng cao ch?t lu?ng s?n ph?m, thay d?i m?u m�, n�ng cao tr�ch nhi?m trong ph?c v? ngu?i ti�u d�ng",
+                "text": "Nâng cao hiệu quả sử dụng các nguồn lực, đáp ứng các nhu cầu, thị hiếu của khách hàng bằng cách nâng cao chất lượng sản phẩm, thay đổi mẫu mã, nâng cao trách nhiệm trong phục vụ người tiêu dùng",
                 "correct": true
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "Ch? ch� tr?ng m? r?ng quy m� doanh nghi?p, kh�ng c?n quan t�m d?n nhu c?u th? tru?ng",
+                "text": "Chỉ chú trọng mở rộng quy mô doanh nghiệp, không cần quan tâm đến nhu cầu thị trường",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-49",
-            "prompt": "Tru?ng h?p n�o sau d�y th? hi?n s? th?ng nh?t trong quan h? l?i �ch kinh t??",
+            "prompt": "Trường hợp nào sau đây thể hiện sự thống nhất trong quan hệ lợi ích kinh tế?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Doanh nghi?p ch? ch� tr?ng l?i nhu?n, kh�ng quan t�m d?n quy?n l?i c?a ngu?i lao d?ng",
+                "text": "Doanh nghiệp chỉ chú trọng lợi nhuận, không quan tâm đến quyền lợi của người lao động",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "Ngu?i lao d?ng d�i h?i tang luong nhung kh�ng n�ng cao nang su?t",
+                "text": "Người lao động đòi hỏi tăng lương nhưng không nâng cao năng suất",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "Doanh nghi?p ho?t d?ng c�ng c� hi?u qu?, l?i �ch doanh nghi?p c�ng du?c d?m b?o th� l?i �ch ngu?i lao d?ng c�ng du?c th?c hi?n t?t: vi?c l�m du?c d?m b?o, thu nh?p ?n d?nh v� du?c n�ng cao",
+                "text": "Doanh nghiệp hoạt động càng có hiệu quả, lợi ích doanh nghiệp càng được đảm bảo thì lợi ích người lao động càng được thực hiện tốt: việc làm được đảm bảo, thu nhập ổn định và được nâng cao",
                 "correct": true
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "Nh� nu?c ch? di?u ti?t l?i �ch c?a doanh nghi?p m� kh�ng quan t�m d?n ngu?i d�n",
+                "text": "Nhà nước chỉ điều tiết lợi ích của doanh nghiệp mà không quan tâm đến người dân",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-05-50",
-            "prompt": "Tru?ng h?p n�o sau d�y th? hi?n s? m�u thu?n trong quan h? l?i �ch kinh t??",
+            "prompt": "Trường hợp nào sau đây thể hiện sự mâu thuẫn trong quan hệ lợi ích kinh tế?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Doanh nghi?p v� ngu?i lao d?ng c�ng ph?i h?p n�ng cao nang su?t lao d?ng",
+                "text": "Doanh nghiệp và người lao động cùng phối hợp nâng cao năng suất lao động",
                 "correct": false
               },
               {
@@ -8375,7 +8375,7 @@
           },
           {
             "id": "q-chuong-05-51",
-            "prompt": "L?i d?ng d?i d?ch vi�m ph?i c?p do ch?ng m?i vinus Corona (COVID- 19) g�y ra, nhi?u don v? kinh doanh thi?t b?, s?n ph?m y t? d� n�ng gi� kh?u trang y t?, ch?t s�t khu?n d? tr?c l?i b?t ch�nh. ��y l� bi?u hi?n c?a quan h? kinh t? n�o sau d�y?",
+            "prompt": "Lợi dụng đại dịch viêm phổi cấp do chủng mới vinus Corona (COVID- 19) gây ra, nhiều đơn vị kinh doanh thiết bị, sản phẩm y tế đã nâng giá khẩu trang y tế, chất sát khuẩn để trục lợi bất chính. Đây là biểu hiện của quan hệ kinh tế nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -8392,20 +8392,20 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Quan h? m�u thu?n v? l?i �ch gi?a ngu?i s? d?ng lao d?ng v?i ngu?i lao d?ng",
+                "text": "Quan hệ mâu thuẫn về lợi ích giữa người sử dụng lao động với người lao động",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "Quan h? m�u thu?n c?a c�c quan h? l?i �ch kinh t?",
+                "text": "Quan hệ mâu thuẫn của các quan hệ lợi ích kinh tế",
                 "correct": true
               }
             ]
           },
           {
             "id": "q-chuong-05-52",
-            "prompt": "Tru?ng h?p n�o sau d�y th? hi?n quan h? l?i �ch kinh t? gi?a ngu?i lao d?ng v� ngu?i s? d?ng lao d?ng?",
+            "prompt": "Trường hợp nào sau đây thể hiện quan hệ lợi ích kinh tế giữa người lao động và người sử dụng lao động?",
             "options": [
               {
                 "id": "a",
@@ -8435,7 +8435,7 @@
           },
           {
             "id": "q-chuong-05-53",
-            "prompt": "Tru?ng h?p n�o sau d�y th? hi?n quan h? l?i �ch kinh t? gi?a nh?ng ngu?i lao d?ng v?i nhau?",
+            "prompt": "Trường hợp nào sau đây thể hiện quan hệ lợi ích kinh tế giữa những người lao động với nhau?",
             "options": [
               {
                 "id": "a",
@@ -8465,7 +8465,7 @@
           },
           {
             "id": "q-chuong-05-54",
-            "prompt": "Tru?ng h?p n�o sau d�y th? hi?n quan h? l?i �ch kinh t? gi?a nh?ng ngu?i s? d?ng lao d?ng v?i nhau?",
+            "prompt": "Trường hợp nào sau đây thể hiện quan hệ lợi ích kinh tế giữa những người sử dụng lao động với nhau?",
             "options": [
               {
                 "id": "a",
@@ -8500,13 +8500,13 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "L�m vi?c cham ch?, kh�ng c?n quan t�m d?n quy?n l?i c?a m�nh",
+                "text": "Làm việc chăm chỉ, không cần quan tâm đến quyền lợi của mình",
                 "correct": false
               },
               {
                 "id": "b",
                 "label": "B",
-                "text": "T?p trung l�m vi?c v� tr�nh m�u thu?n v?i ngu?i s? d?ng lao d?ng b?ng m?i gi�",
+                "text": "Tập trung làm việc và tránh mâu thuẫn với người sử dụng lao động bằng mọi giá",
                 "correct": false
               },
               {
@@ -8525,7 +8525,7 @@
           },
           {
             "id": "q-chuong-05-56",
-            "prompt": "C�c cu?c d�nh c�ng, b�i c�ng trong c�c nh� m�y, x� nghi?p th? hi?n quan h? kinh t? n�o sau d�y?",
+            "prompt": "Các cuộc đình công, bãi công trong các nhà máy, xí nghiệp thể hiện quan hệ kinh tế nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -8548,7 +8548,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Quan h? gi?a l?i �ch c� nh�n, l?i �ch nh�m v� l?i �ch x� h?i",
+                "text": "Quan hệ giữa lợi ích cá nhân, lợi ích nhóm và lợi ích xã hội",
                 "correct": false
               }
             ]
@@ -8557,11 +8557,11 @@
       },
       {
         "id": "chuong-06",
-        "title": "Chương 06",
+        "title": "Ch??ng 06",
         "questions": [
           {
             "id": "q-chuong-06-1",
-            "prompt": "Qu� tr�nh ?ng d?ng v� trang b? nh?ng th�nh t?u khoa h?c c�ng ngh? ti�n ti?n hi?n d?i v�o qu� tr�nh s?n xu?t, kinh doanh, d?ch v?, qu?n l� kinh t? x� h?i l� qu� tr�nh n�o sau d�y?",
+            "prompt": "Quá trình ứng dụng và trang bị những thành tựu khoa học công nghệ tiên tiến hiện đại vào quá trình sản xuất, kinh doanh, dịch vụ, quản lí kinh tế xã hội là quá trình nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -8591,7 +8591,7 @@
           },
           {
             "id": "q-chuong-06-2",
-            "prompt": "Qu� tr�nh chuy?n d?i can b?n c�c ho?t d?ng s?n xu?t t? s? d?ng s?c lao d?ng th? c�ng sang s? d?ng s?c lao d?ng d?a tr�n s? ph�t tri?n c?a c�ng nghi?p co kh� l� qu� tr�nh n�o sau d�y?",
+            "prompt": "Quá trình chuyển đổi căn bản các hoạt động sản xuất từ sử dụng sức lao động thủ công sang sử dụng sức lao động dựa trên sự phát triển của công nghiệp cơ khí là quá trình nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -8692,7 +8692,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "T?o di?u ki?n d? ph�t tri?n l?c lu?ng s?n xu?t v� tang nang su?t lao d?ng lao d?ng x� h?i",
+                "text": "Tạo điều kiện để phát triển lực lượng sản xuất và tăng năng suất lao động lao động xã hội",
                 "correct": true
               },
               {
@@ -8704,7 +8704,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "N�ng cao uy t�n c?a nu?c ta tr�n tru?ng qu?c t?",
+                "text": "Nâng cao uy tín của nước ta trên trường quốc tế",
                 "correct": false
               }
             ]
@@ -8716,7 +8716,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "X�y d?ng co s? v?t ch?t ki thu?t c?a ch? nghia x� h?i",
+                "text": "Xây dựng cơ sở vật chất kĩ thuật của chủ nghĩa xã hội",
                 "correct": false
               },
               {
@@ -8734,7 +8734,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "T?o ra nang su?t lao d?ng x� h?i cao",
+                "text": "Tạo ra năng suất lao động xã hội cao",
                 "correct": false
               }
             ]
@@ -8801,7 +8801,7 @@
           },
           {
             "id": "q-chuong-06-9",
-            "prompt": "C�ch m?ng c�ng nghi?p d� dua d?n s? h�nh th�nh c�c giai c?p co b?n c?a x� h?i tu b?n, d� l� giai c?p n�o?",
+            "prompt": "Cách mạng công nghiệp đã đưa đến sự hình thành các giai cấp cơ bản của xã hội tư bản, đó là giai cấp nào?",
             "options": [
               {
                 "id": "a",
@@ -8842,19 +8842,19 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "qu� tr�nh h�nh th�nh c?a hai giai c?p tu s?n v� c�ng nh�n",
+                "text": "quá trình hình thành của hai giai cấp tư sản và công nhân",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "qu� tr�nh c�ng nghi?p h�a, hi?n d?i h�a c�c nu?c tu b?n ch�u �u",
+                "text": "quá trình công nghiệp hóa, hiện đại hóa các nước tư bản châu Âu",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "qu� tr�nh h�nh th�nh n?n t?ng kinh t? ch�nh c?a x� h?i tu b?n, c�ng nghi?p v� thuong nghi?p",
+                "text": "quá trình hình thành nền tảng kinh tế chính của xã hội tư bản, công nghiệp và thương nghiệp",
                 "correct": false
               }
             ]
@@ -8944,7 +8944,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Di?n d�n h?p t�c kinh t? Ch�u �- Th�i B�nh Duong",
+                "text": "Diễn đàn hợp tác kinh tế Châu Á- Thái Bình Dương",
                 "correct": false
               }
             ]
@@ -9004,14 +9004,14 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "Hi?u qu? kinh t? x� h?i",
+                "text": "Hiệu quả kinh tế xã hội",
                 "correct": false
               }
             ]
           },
           {
             "id": "q-chuong-06-16",
-            "prompt": "H�y di?n c?m t? c�n thi?u trong kh�i ni?m sau: �C�ng nghi?p ho� l� qu� tr�nh chuy?n d?i can b?n, to�n di?n c�c ho?t d?ng kinh t? x� h?i t? s? d?ng s?c lao d?ng �� l� ch�nh sang s? d?ng m?t c�ch ph? bi?n s?c lao d?ng c�ng v?i ��, t?o ra nang su?t lao d?ng x� h?i cao�",
+            "prompt": "Hãy điền cụm từ còn thiếu trong khái niệm sau: “Công nghiệp hoá là quá trình chuyển đổi căn bản, toàn diện các hoạt động kinh tế xã hội từ sử dụng sức lao động …… là chính sang sử dụng một cách phổ biến sức lao động cùng với ……, tạo ra năng suất lao động xã hội cao”",
             "options": [
               {
                 "id": "a",
@@ -9131,7 +9131,7 @@
           },
           {
             "id": "q-chuong-06-20",
-            "prompt": "�i d�i v?i chuy?n d?ch co c?u kinh t? ph?i chuy?n d?ch co c?u lao d?ng theo hu?ng c�ng nghi?p h�a � hi?n d?i h�a g?n v?i ph�t tri?n y?u t? n�o sau d�y?",
+            "prompt": "Đi đôi với chuyển dịch cơ cấu kinh tế phải chuyển dịch cơ cấu lao động theo hướng công nghiệp hóa – hiện đại hóa gắn với phát triển yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -9161,7 +9161,7 @@
           },
           {
             "id": "q-chuong-06-21",
-            "prompt": "Trong th?i k� qu� d? di l�n ch? nghia x� h?i ? nu?c ta t?n t?i n?n kinh t? nhi?u th�nh ph?n l� v� l� do g�?",
+            "prompt": "Trong thời kì quá độ đi lên chủ nghĩa xã hội ở nước ta tồn tại nền kinh tế nhiều thành phần là vì lý do gì?",
             "options": [
               {
                 "id": "a",
@@ -9172,7 +9172,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Nh?m h?n ch? s? ph�t tri?n c?a kinh t? tu nh�n",
+                "text": "Nhằm hạn chế sự phát triển của kinh tế tư nhân",
                 "correct": false
               },
               {
@@ -9202,7 +9202,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Chu?n b? du?c ti?n d? v? v?n, nh�n c�ng v� c?i ti?n ki thu?t",
+                "text": "Chuẩn bị được tiền đề về vốn, nhân công và cải tiến kĩ thuật",
                 "correct": false
               },
               {
@@ -9238,7 +9238,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Bi?n Lu�n ��n tr? th�nh trung t�m c�ng nghi?p v� thuong m?i d?u ti�n tr�n th? gi?i",
+                "text": "Biến Luân Đôn trở thành trung tâm công nghiệp và thương mại đầu tiên trên thế giới",
                 "correct": false
               },
               {
@@ -9256,7 +9256,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "N�ng cao nang su?t lao d?ng, x� h?i h�a qu� tr�nh l�nh d?o c?a ch? nghia tu b?n",
+                "text": "Nâng cao năng suất lao động, xã hội hóa quá trình lãnh đạo của chủ nghĩa tư bản",
                 "correct": false
               },
               {
@@ -9274,7 +9274,7 @@
               {
                 "id": "d",
                 "label": "D",
-                "text": "L�m xu?t hi?n hai giai c?p co b?n c?a x� h?i tu b?n l� tu s?n v� v� s?n",
+                "text": "Làm xuất hiện hai giai cấp cơ bản của xã hội tư bản là tư sản và vô sản",
                 "correct": true
               }
             ]
@@ -9401,7 +9401,7 @@
           },
           {
             "id": "q-chuong-06-29",
-            "prompt": "Cu?c c�ch m?ng n�o d� d?y nhanh qu� tr�nh x� h?i h�a s?n xu?t, th�c d?y CNTB chuy?n t? giai do?n t? do c?nh tranh sang giai do?n d?c quy?n?",
+            "prompt": "Cuộc cách mạng nào đã đẩy nhanh quá trình xã hội hóa sản xuất, thúc đẩy CNTB chuyển từ giai đoạn tự do cạnh tranh sang giai đoạn độc quyền?",
             "options": [
               {
                 "id": "a",
@@ -9431,7 +9431,7 @@
           },
           {
             "id": "q-chuong-06-30",
-            "prompt": "Cu?c c�ch m?ng n�o d� t?o di?u ki?n d? chuy?n bi?n c�c n?n kinh t? c�ng nghi?p sang n?n kinh t? tri th?c?",
+            "prompt": "Cuộc cách mạng nào đã tạo điều kiện để chuyển biến các nền kinh tế công nghiệp sang nền kinh tế tri thức?",
             "options": [
               {
                 "id": "a",
@@ -9461,7 +9461,7 @@
           },
           {
             "id": "q-chuong-06-31",
-            "prompt": "Cu?c c�ch m?ng n�o l�m thay d?i h? th?ng s?n xu?t t? t?p trung sang ph�n c?p?",
+            "prompt": "Cuộc cách mạng nào làm thay đổi hệ thống sản xuất từ tập trung sang phân cấp?",
             "options": [
               {
                 "id": "a",
@@ -9526,7 +9526,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "L�m tang d�n s? v� m? r?ng d� th? h�a",
+                "text": "Làm tăng dân số và mở rộng đô thị hóa",
                 "correct": false
               },
               {
@@ -9538,7 +9538,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "T?o di?u ki?n d? ph�t tri?n l?c lu?ng s?n xu?t v� tang nang su?t lao d?ng x� h?i",
+                "text": "Tạo điều kiện để phát triển lực lượng sản xuất và tăng năng suất lao động xã hội",
                 "correct": true
               },
               {
@@ -9551,7 +9551,7 @@
           },
           {
             "id": "q-chuong-06-34",
-            "prompt": "Chuy?n d?ch co c?u kinh t? ph?i chuy?n d?ch co c?u lao d?ng theo hu?ng c�ng nghi?p ho� - hi?n d?i ho� g?n v?i ph�t tri?n y?u t? n�o sau d�y?",
+            "prompt": "Chuyển dịch cơ cấu kinh tế phải chuyển dịch cơ cấu lao động theo hướng công nghiệp hoá - hiện đại hoá gắn với phát triển yếu tố nào sau đây?",
             "options": [
               {
                 "id": "a",
@@ -9622,7 +9622,7 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "�?u tu ph�t tri?n c�c ng�nh c�ng nghi?p n?ng, coi d� l� kh�u then ch?t",
+                "text": "Đầu tư phát triển các ngành công nghiệp nặng, coi đó là khâu then chốt",
                 "correct": false
               },
               {
@@ -9676,7 +9676,7 @@
               {
                 "id": "a",
                 "label": "A",
-                "text": "C�c tai bi?n thi�n nhi�n nhu b�o, lu l?t, h?n h�n",
+                "text": "Các tai biến thiên nhiên như bão, lũ lụt, hạn hán",
                 "correct": false
               },
               {
@@ -9688,13 +9688,13 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Quy m� d�n s? d�ng v� ph�n b? chua h?p l�",
+                "text": "Quy mô dân số đông và phân bố chưa hợp lí",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "Nu?c ta c� nhi?u th�nh ph?n d�n t?c",
+                "text": "Nước ta có nhiều thành phần dân tộc",
                 "correct": false
               }
             ]
@@ -9712,19 +9712,19 @@
               {
                 "id": "b",
                 "label": "B",
-                "text": "Qu� tr�nh h�nh th�nh c?a hai giai c?p tu s?n v� c�ng nh�n",
+                "text": "Quá trình hình thành của hai giai cấp tư sản và công nhân",
                 "correct": false
               },
               {
                 "id": "c",
                 "label": "C",
-                "text": "Qu� tr�nh c�ng nghi?p h�a, hi?n d?i h�a c�c nu?c tu b?n ch�u �u",
+                "text": "Quá trình công nghiệp hóa, hiện đại hóa các nước tư bản châu Âu",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "Qu� tr�nh h�nh th�nh n?n t?ng kinh t? ch�nh c?a x� h?i tu b?n: c�ng nghi?p v� thuong nghi?p",
+                "text": "Quá trình hình thành nền tảng kinh tế chính của xã hội tư bản: công nghiệp và thương nghiệp",
                 "correct": false
               }
             ]
@@ -9761,7 +9761,7 @@
           },
           {
             "id": "q-chuong-06-41",
-            "prompt": "Trong n�ng nghi?p, chuy?n t? h�nh th?c lao d?ng �con tr�u di tru?c, c�i c�y theo sau� sang lao d?ng b?ng m�y m�c l� th? hi?n qu� tr�nh n�o ? nu?c ta hi?n nay?",
+            "prompt": "Trong nông nghiệp, chuyển từ hình thức lao động “con trâu đi trước, cái cày theo sau” sang lao động bằng máy móc là thể hiện quá trình nào ở nước ta hiện nay?",
             "options": [
               {
                 "id": "a",
@@ -9791,12 +9791,12 @@
           },
           {
             "id": "q-chuong-06-42",
-            "prompt": "M?t trong nh?ng nhi?m v? kinh t? co b?n c?a th?i k� qu� d? l�n ch? nghia x� h?i ? nu?c ta hi?n nay l� g�?",
+            "prompt": "Một trong những nhiệm vụ kinh tế cơ bản của thời kì quá độ lên chủ nghĩa xã hội ở nước ta hiện nay là gì?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "X�y d?ng ch? nghia x� h?i",
+                "text": "Xây dựng chủ nghĩa xã hội",
                 "correct": false
               },
               {
@@ -9808,7 +9808,7 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "X�y d?ng nh� nu?c ph�p quy?n x� h?i ch? nghia",
+                "text": "Xây dựng nhà nước pháp quyền xã hội chủ nghĩa",
                 "correct": false
               },
               {
@@ -9821,12 +9821,12 @@
           },
           {
             "id": "q-chuong-06-43",
-            "prompt": "Sau 20 nam d?i m?i, d?t nu?c ta d� thu du?c nh?ng th�nh t?u to l?n, trong d� c� th�nh t?u n?i b?t c?a c�ng nghi?p h�a, hi?n d?i h�a l� g�?",
+            "prompt": "Sau 20 năm đổi mới, đất nước ta đã thu được những thành tựu to lớn, trong đó có thành tựu nổi bật của công nghiệp hóa, hiện đại hóa là gì?",
             "options": [
               {
                 "id": "a",
                 "label": "A",
-                "text": "Co s? v?t ch?t k? thu?t c?a d?t nu?c tang cu?ng d�ng k?, kh? nang d?c l?p t? ch? kinh t? du?c n�ng cao",
+                "text": "Cơ sở vật chất kỹ thuật của đất nước tăng cường đáng kể, khả năng độc lập tự chủ kinh tế được nâng cao",
                 "correct": true
               },
               {
@@ -9838,13 +9838,13 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Th�c d?y chuy?n d?ch co c?u kinh t? v� ph�n b? l?i c�c ng�nh s?n xu?t",
+                "text": "Thúc đẩy chuyển dịch cơ cấu kinh tế và phân bố lại các ngành sản xuất",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "X�c d?nh co c?u kinh t? h?p l� v� ph�n c�ng theo l�nh th?",
+                "text": "Xác định cơ cấu kinh tế hợp lí và phân công theo lãnh thổ",
                 "correct": false
               }
             ]
@@ -9868,13 +9868,13 @@
               {
                 "id": "c",
                 "label": "C",
-                "text": "Th�c d?y chuy?n d?ch co c?u kinh t? v� ph�n b? l?i c�c ng�nh s?n xu?t",
+                "text": "Thúc đẩy chuyển dịch cơ cấu kinh tế và phân bố lại các ngành sản xuất",
                 "correct": false
               },
               {
                 "id": "d",
                 "label": "D",
-                "text": "X�c d?nh co c?u kinh t? h?p l� v� ph�n c�ng theo l�nh th?",
+                "text": "Xác định cơ cấu kinh tế hợp lí và phân công theo lãnh thổ",
                 "correct": false
               }
             ]

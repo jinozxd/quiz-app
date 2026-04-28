@@ -1,4 +1,4 @@
-# Campus Quiz
+# Quiz ôn tập
 
 Starter nền cho web cộng đồng làm quiz trong trường học.
 

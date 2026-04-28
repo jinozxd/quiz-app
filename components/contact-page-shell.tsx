@@ -8,7 +8,7 @@ import { ContactCard } from "@/components/contact-card";
 import { SettingsDialog, restoreSettings } from "@/components/quiz-app";
 import type { AppSettings } from "@/components/quiz-app";
 
-const SETTINGS_KEY = "campus-quiz-settings-v1";
+const SETTINGS_KEY = "quiz-on-tap-settings-v1";
 
 export function ContactPageShell() {
   const [settings, setSettings] = useState<AppSettings>(() => restoreSettings());

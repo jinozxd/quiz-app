@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const STORAGE_KEY = "campus-quiz-floating-emoji-count";
-const FLOATING_EMOJI_COUNT_EVENT = "campus-quiz-floating-emoji-count-change";
+const STORAGE_KEY = "quiz-on-tap-floating-emoji-count";
+const LEGACY_STORAGE_KEY = "campus-quiz-floating-emoji-count";
+const FLOATING_EMOJI_COUNT_EVENT = "quiz-on-tap-floating-emoji-count-change";
 const MAX_FLOATERS = 9;
 
 const EMOJIS = [
@@ -39,7 +40,10 @@ function readStoredCount() {
     return 3;
   }
 
-  const saved = window.localStorage.getItem(STORAGE_KEY);
+  const saved = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (saved !== null && !window.localStorage.getItem(STORAGE_KEY)) {
+    window.localStorage.setItem(STORAGE_KEY, saved);
+  }
   return saved === null ? 3 : clampCount(saved);
 }
 
