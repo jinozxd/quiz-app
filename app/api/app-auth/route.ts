@@ -69,7 +69,6 @@ export async function POST(request: Request) {
     }
 
     const { hash, salt } = await hashPassword(parsed.data.password);
-    const role = parsed.data.name.toLowerCase() === "adminvn" ? "admin" : "member";
     const { data, error } = await service
       .from("app_users")
       .insert({
@@ -77,7 +76,7 @@ export async function POST(request: Request) {
         name: parsed.data.name,
         password_hash: hash,
         password_salt: salt,
-        role
+        role: "member"
       })
       .select("id,name,role")
       .single();
