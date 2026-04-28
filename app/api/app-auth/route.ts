@@ -8,6 +8,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 export const runtime = "nodejs";
 
 const PASSWORD_CHANGE_COOLDOWN_MS = 15 * 24 * 60 * 60 * 1000;
+const RESERVED_PUBLIC_NAMES = new Set(["admin", "administrator", "admintrator"]);
 
 const loginSchema = z.object({
   action: z.literal("login"),
@@ -40,6 +41,10 @@ function cleanUser(user: { id: string; name: string; role: "admin" | "member" })
   };
 }
 
+function normalizeName(name: string) {
+  return name.trim().toLowerCase().replace(/\s+/g, "");
+}
+
 export async function POST(request: Request) {
   const ip = getIp(request);
   const limited = rateLimit({ key: `app-auth:${ip}`, limit: 15, windowMs: 60_000 });
@@ -66,6 +71,10 @@ export async function POST(request: Request) {
 
     if (parsed.data.password !== parsed.data.confirmPassword) {
       return NextResponse.json({ error: "Mật khẩu xác nhận không khớp." }, { status: 400 });
+    }
+
+    if (RESERVED_PUBLIC_NAMES.has(normalizeName(parsed.data.name))) {
+      return NextResponse.json({ error: "Tên này được giữ riêng cho quản trị, vui lòng chọn tên khác." }, { status: 400 });
     }
 
     const { hash, salt } = await hashPassword(parsed.data.password);
