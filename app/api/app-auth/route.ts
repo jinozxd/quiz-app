@@ -108,11 +108,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Tài khoản này đăng nhập sai quá nhiều lần. Thử lại sau ít phút." }, { status: 429 });
     }
 
-    const { data: user } = await service
+    const { data: user, error } = await service
       .from("app_users")
       .select("id,name,role,password_hash,password_salt")
       .eq("name", parsed.data.name)
       .maybeSingle();
+
+    if (error) {
+      return NextResponse.json({ error: "Không kết nối được database tài khoản. Kiểm tra Supabase URL/key và redeploy." }, { status: 500 });
+    }
 
     if (!user || !(await verifyPassword(parsed.data.password, user.password_hash, user.password_salt))) {
       return NextResponse.json({ error: "Sai tên đăng nhập hoặc mật khẩu." }, { status: 401 });
