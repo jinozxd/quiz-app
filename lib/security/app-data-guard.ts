@@ -172,6 +172,16 @@ function getChapterTitle(subject: QuizSubject, chapterId: string, fallback: stri
   return fallback.slice(0, 180);
 }
 
+function isStandaloneResultChapter(chapterId: string) {
+  return (
+    chapterId.startsWith("mode-exam-40") ||
+    chapterId.startsWith("mode-all-random") ||
+    chapterId.startsWith("mode-practice-starred") ||
+    chapterId.startsWith("mode-survival") ||
+    chapterId.startsWith("mode-match")
+  );
+}
+
 function calculateScore(subject: QuizSubject, item: ProgressItem) {
   const questions = getChapterQuestions(subject, item.chapterId);
   const questionById = new Map(questions.map((question) => [question.id, question]));
@@ -206,7 +216,7 @@ function getXpForPercent(percent: number) {
   if (percent >= 75) return 20;
   if (percent >= 50) return 15;
   if (percent >= 25) return 10;
-  return 0;
+  return 5;
 }
 
 function recomputeProfileProgress(results: ResultItem[]) {
@@ -316,18 +326,22 @@ export function sanitizeAppDataPayload(payload: unknown, session: { id: string; 
     }
 
     const backing = result.chapterId ? submittedByProgressKey.get(`${result.subjectId}:${result.chapterId}`) : undefined;
-    if (!backing) {
+    if (!backing && (!result.chapterId || !isStandaloneResultChapter(result.chapterId))) {
       continue;
     }
+
+    const total = backing ? backing.score.total : Math.min(Math.max(1, Math.floor(result.total)), getAllQuestions(subject).length || 1);
+    const score = backing ? backing.score.score : Math.min(total, Math.max(0, Math.floor(result.score)));
+    const chapterId = result.chapterId;
 
     results.push({
       id: result.id,
       subjectId: result.subjectId,
-      chapterId: result.chapterId,
-      chapterTitle: getChapterTitle(backing.subject, backing.item.chapterId, result.chapterTitle),
+      chapterId,
+      chapterTitle: chapterId ? getChapterTitle(subject, chapterId, result.chapterTitle) : result.chapterTitle.slice(0, 180),
       userName: session.name,
-      score: backing.score.score,
-      total: backing.score.total,
+      score,
+      total,
       submittedAt: clampTime(result.submittedAt),
       pinnedAt: result.pinnedAt ? clampTime(result.pinnedAt) : undefined
     });

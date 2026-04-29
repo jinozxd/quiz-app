@@ -792,7 +792,19 @@ function getXpForPercent(percent: number) {
     return 10;
   }
 
-  return 0;
+  return 5;
+}
+
+function getSubjectEmoji(subjectId: string) {
+  if (subjectId.includes("ktct")) {
+    return "🏛️";
+  }
+
+  if (subjectId.includes("logic")) {
+    return "🧠";
+  }
+
+  return "✨";
 }
 
 function modeResultMatches(result: ResultItem, mode: "exam" | "all" | "practice" | "survival" | "match") {
@@ -2251,7 +2263,9 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                 <CardHeader>
                   <CardTitle className="flex items-start justify-between gap-3">
                     <span>{subject.title}</span>
-                    <BookOpenCheck className="size-5 text-primary" aria-hidden />
+                    <span className="text-2xl leading-none" aria-hidden>
+                      {getSubjectEmoji(subject.id)}
+                    </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -2263,16 +2277,19 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                     <ModeCard
                       title="Thi thử"
                       badge="40 câu"
+                      icon="🧪"
                       onClick={() => startExamMode(subject)}
                     />
                     <ModeCard
                       title="Trộn tất cả"
                       badge={`${subjectQuestionCount} câu`}
+                      icon="🔀"
                       onClick={() => startAllRandomMode(subject)}
                     />
                     <ModeCard
                       title="Chế độ học"
                       badge={`${subject.chapters.length} chương`}
+                      icon="📚"
                       onClick={() => {
                         if (requireLogin()) {
                           return;
@@ -2284,11 +2301,13 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                       title="Luyện tập"
                       badge={`${subjectStarredCount} câu`}
                       disabled={subjectStarredCount === 0}
+                      icon="⭐"
                       onClick={() => startPracticeMode(subject)}
                     />
                     <ModeCard
                       title="Sinh tồn"
                       badge="1/3 mạng + khiêng"
+                      icon="🛡️"
                       onClick={() => {
                         if (requireLogin()) {
                           return;
@@ -2300,6 +2319,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                     <ModeCard
                       title="Nối câu hỏi"
                       badge="8 câu/round"
+                      icon="🧩"
                       onClick={() => {
                         if (requireLogin()) {
                           return;
@@ -3262,11 +3282,13 @@ function RecentResults({
 function ModeCard({
   title,
   badge,
+  icon,
   onClick,
   disabled = false
 }: {
   title: string;
   badge: string;
+  icon: string;
   onClick: () => void;
   disabled?: boolean;
 }) {
@@ -3275,7 +3297,9 @@ function ModeCard({
       <CardHeader className="pb-2 sm:pb-3">
         <CardTitle className="flex items-start justify-between gap-3 text-lg sm:text-xl">
           <span>{title}</span>
-          <BookOpenCheck className="size-5 text-primary" aria-hidden />
+          <span className="text-2xl leading-none" aria-hidden>
+            {icon}
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-between gap-4 sm:gap-5">
