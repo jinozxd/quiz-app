@@ -5272,12 +5272,12 @@ export function SettingsDialog({
                       Thông tin bản phát hành hiện tại của Quiz ôn tập.
                     </p>
                   </div>
-                  <Badge variant="secondary">v1.1.3</Badge>
+                  <Badge variant="secondary">v1.2.9</Badge>
                 </div>
 
                 <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
                   <p className="text-sm font-black text-muted-foreground">Bản hiện tại</p>
-                  <p className="mt-2 text-4xl font-black">1.1.3</p>
+                  <p className="mt-2 text-4xl font-black">1.2.9</p>
                 </div>
               </section>
             )}
@@ -5666,7 +5666,7 @@ function AccountFrame({
               </div>
 
               <p className="mt-3 rounded-xl border-2 border-foreground bg-background px-3 py-2 text-xs font-black text-muted-foreground">
-                Profile chỉ hỗ trợ sync avatar và ảnh bìa khi đạt LV {PROFILE_MEDIA_SYNC_LEVEL} trở lên hoặc tài khoản admin. Chưa đủ LV thì ảnh vẫn được lưu mã hóa trên máy này.
+                Profile chỉ hỗ trợ sync avatar và ảnh bìa khi đạt LV {PROFILE_MEDIA_SYNC_LEVEL} trở lên hoặc tài khoản ủy quyền. Chưa đủ LV thì ảnh vẫn được lưu mã hóa trên máy này.
               </p>
 
               {mediaMessage && (
