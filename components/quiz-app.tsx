@@ -1456,7 +1456,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [deleteResultsOpen, setDeleteResultsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [authOpen, setAuthOpen] = useState(!authRef.current.session);
+  const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [adminControlOpen, setAdminControlOpen] = useState(false);
   const [survivalConfigOpen, setSurvivalConfigOpen] = useState(false);
@@ -1527,6 +1527,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       setAuth(normalizedAuth);
       setProfileMedia(localMedia);
       setProfileProgress(normalizedProfile);
+      setAuthOpen(!normalizedAuth.session);
       localDataHydratedRef.current = true;
       writeEncryptedLocalStorage(STORAGE_KEY, LEGACY_STORAGE_KEY, normalizedSaved);
       writeEncryptedLocalStorage(SETTINGS_KEY, LEGACY_SETTINGS_KEY, localSettings);
@@ -1555,6 +1556,12 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     }
     writeEncryptedLocalStorage(AUTH_STORAGE_KEY, LEGACY_AUTH_STORAGE_KEY, auth);
   }, [auth]);
+
+  useEffect(() => {
+    if (auth.session && authOpen) {
+      setAuthOpen(false);
+    }
+  }, [auth.session, authOpen]);
 
   useEffect(() => {
     profileMediaRef.current = profileMedia;
