@@ -2,8 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const STORAGE_KEY = "quiz-on-tap-floating-emoji-count";
-const LEGACY_STORAGE_KEY = "campus-quiz-floating-emoji-count";
 const FLOATING_EMOJI_COUNT_EVENT = "quiz-on-tap-floating-emoji-count-change";
 const MAX_FLOATERS = 9;
 
@@ -36,15 +34,7 @@ function clampCount(value: unknown) {
 }
 
 function readStoredCount() {
-  if (typeof window === "undefined") {
-    return 3;
-  }
-
-  const saved = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY);
-  if (saved !== null && !window.localStorage.getItem(STORAGE_KEY)) {
-    window.localStorage.setItem(STORAGE_KEY, saved);
-  }
-  return saved === null ? 3 : clampCount(saved);
+  return 3;
 }
 
 function createFloater(id: number, width: number, height: number): Floater {
@@ -71,10 +61,13 @@ export function FloatingEmojiBackground() {
   useEffect(() => {
     setCount(readStoredCount());
 
-    const onCountChange = () => setCount(readStoredCount());
+    const onCountChange = (event: Event) => {
+      const nextCount = event instanceof CustomEvent ? event.detail : undefined;
+      setCount(clampCount(nextCount ?? readStoredCount()));
+    };
     const onStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) {
-        onCountChange();
+      if (event.key === "quiz-on-tap-floating-emoji-count") {
+        setCount(readStoredCount());
       }
     };
 
@@ -165,8 +158,9 @@ export function EmojiBackgroundSettingsControl() {
   function updateCount(nextCount: number) {
     const normalizedCount = clampCount(nextCount);
     setCount(normalizedCount);
-    window.localStorage.setItem(STORAGE_KEY, String(normalizedCount));
-    window.dispatchEvent(new Event(FLOATING_EMOJI_COUNT_EVENT));
+    window.localStorage.removeItem("quiz-on-tap-floating-emoji-count");
+    window.localStorage.removeItem("campus-quiz-floating-emoji-count");
+    window.dispatchEvent(new CustomEvent(FLOATING_EMOJI_COUNT_EVENT, { detail: normalizedCount }));
   }
 
   return (

@@ -90,6 +90,9 @@ const LEGACY_SETTINGS_KEY = "campus-quiz-settings-v1";
 const LEGACY_AUTH_STORAGE_KEY = "campus-quiz-auth-v1";
 const LEGACY_PROFILE_MEDIA_KEY = "campus-quiz-profile-media-v1";
 const LEGACY_PROFILE_PROGRESS_KEY = "campus-quiz-profile-progress-v1";
+const LOCAL_ENCRYPTION_KEY = "quiz-on-tap-local-encryption-key-v1";
+const ENCRYPTED_LOCAL_PREFIX = "enc:v1:";
+const PROFILE_MEDIA_SYNC_LEVEL = 36;
 const PASSWORD_CHANGE_COOLDOWN_MS = 15 * 24 * 60 * 60 * 1000;
 const MAX_PINNED = 1;
 const PART_SIZE = 15;
@@ -303,11 +306,152 @@ function emptySaved(): SavedProgress {
 }
 
 function readLocalStorageWithFallback(key: string, legacyKey: string) {
-  const raw = window.localStorage.getItem(key) ?? window.localStorage.getItem(legacyKey);
-  if (raw && !window.localStorage.getItem(key)) {
-    window.localStorage.setItem(key, raw);
+  return window.localStorage.getItem(key) ?? window.localStorage.getItem(legacyKey);
+}
+
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return window.btoa(binary);
+}
+
+function base64ToBytes(value: string) {
+  const binary = window.atob(value);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+
+async function getLocalCryptoKey() {
+  let raw = window.localStorage.getItem(LOCAL_ENCRYPTION_KEY);
+  if (!raw) {
+    const bytes = new Uint8Array(32);
+    window.crypto.getRandomValues(bytes);
+    raw = bytesToBase64(bytes);
+    window.localStorage.setItem(LOCAL_ENCRYPTION_KEY, raw);
   }
-  return raw;
+
+  return window.crypto.subtle.importKey(
+    "raw",
+    base64ToBytes(raw),
+    "AES-GCM",
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptLocalValue(value: unknown) {
+  const iv = new Uint8Array(12);
+  window.crypto.getRandomValues(iv);
+  const key = await getLocalCryptoKey();
+  const encoded = new TextEncoder().encode(JSON.stringify(value));
+  const encrypted = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+  return `${ENCRYPTED_LOCAL_PREFIX}${bytesToBase64(iv)}.${bytesToBase64(new Uint8Array(encrypted))}`;
+}
+
+async function decryptLocalValue<T>(raw: string, fallback: T) {
+  if (!raw.startsWith(ENCRYPTED_LOCAL_PREFIX)) {
+    return JSON.parse(raw) as T;
+  }
+
+  const [ivText, dataText] = raw.slice(ENCRYPTED_LOCAL_PREFIX.length).split(".");
+  if (!ivText || !dataText) {
+    return fallback;
+  }
+
+  const key = await getLocalCryptoKey();
+  const decrypted = await window.crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: base64ToBytes(ivText) },
+    key,
+    base64ToBytes(dataText)
+  );
+  return JSON.parse(new TextDecoder().decode(decrypted)) as T;
+}
+
+async function readEncryptedLocalStorage<T>(key: string, legacyKey: string, fallback: T) {
+  const raw = window.localStorage.getItem(key) ?? window.localStorage.getItem(legacyKey);
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    return await decryptLocalValue(raw, fallback);
+  } catch {
+    return fallback;
+  }
+}
+
+function writeEncryptedLocalStorage(key: string, legacyKey: string, value: unknown) {
+  void encryptLocalValue(value)
+    .then((encrypted) => {
+      window.localStorage.setItem(key, encrypted);
+      window.localStorage.removeItem(legacyKey);
+    })
+    .catch(() => undefined);
+}
+
+function purgeLocalUserData() {
+  [
+    STORAGE_KEY,
+    SETTINGS_KEY,
+    AUTH_STORAGE_KEY,
+    PROFILE_MEDIA_KEY,
+    PROFILE_PROGRESS_KEY,
+    LEGACY_STORAGE_KEY,
+    LEGACY_SETTINGS_KEY,
+    LEGACY_AUTH_STORAGE_KEY,
+    LEGACY_PROFILE_MEDIA_KEY,
+    LEGACY_PROFILE_PROGRESS_KEY,
+    LOCAL_ENCRYPTION_KEY
+  ].forEach((key) => window.localStorage.removeItem(key));
+
+  if ("caches" in window) {
+    void window.caches.keys().then((keys) => Promise.all(keys.map((key) => window.caches.delete(key))));
+  }
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Unable to read image."));
+      }
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Unable to read image."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(dataUrl: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Unable to load image."));
+    image.src = dataUrl;
+  });
+}
+
+async function resizeProfileImage(file: File, kind: "avatar" | "cover") {
+  const source = await readFileAsDataUrl(file);
+  const image = await loadImage(source);
+  const maxWidth = kind === "avatar" ? 512 : 1600;
+  const maxHeight = kind === "avatar" ? 512 : 640;
+  const scale = Math.min(1, maxWidth / image.width, maxHeight / image.height);
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    return source;
+  }
+
+  context.drawImage(image, 0, 0, width, height);
+  return canvas.toDataURL("image/jpeg", kind === "avatar" ? 0.82 : 0.78);
 }
 
 function restoreSaved(): SavedProgress {
@@ -385,6 +529,57 @@ function normalizeProfileProgress(parsed?: Partial<ProfileProgress>): ProfilePro
     xp,
     awardedResultIds: Array.isArray(parsed?.awardedResultIds) ? parsed.awardedResultIds : [],
     unlockedAchievementIds: Array.isArray(parsed?.unlockedAchievementIds) ? parsed.unlockedAchievementIds : []
+  };
+}
+
+function getProfileProgressPoints(profile: ProfileProgress) {
+  return (profile.level - 1) * 100 + profile.xp;
+}
+
+function mergeProfileProgress(current: ProfileProgress, incoming: ProfileProgress): ProfileProgress {
+  const currentPoints = getProfileProgressPoints(current);
+  const incomingPoints = getProfileProgressPoints(incoming);
+  const base = incomingPoints > currentPoints ? incoming : current;
+
+  return {
+    ...base,
+    awardedResultIds: Array.from(new Set([...incoming.awardedResultIds, ...current.awardedResultIds])).slice(0, 300),
+    unlockedAchievementIds: Array.from(new Set([...incoming.unlockedAchievementIds, ...current.unlockedAchievementIds]))
+  };
+}
+
+function awardResultsToProfile(profile: ProfileProgress, results: ResultItem[]): ProfileProgress {
+  const awarded = new Set(profile.awardedResultIds);
+  const pendingResults = [...results]
+    .filter((result) => !awarded.has(result.id))
+    .sort((a, b) => a.submittedAt - b.submittedAt);
+
+  if (pendingResults.length === 0) {
+    return profile;
+  }
+
+  let level = profile.level;
+  let xp = profile.xp;
+  const nextAwardedIds = [...profile.awardedResultIds];
+
+  for (const result of pendingResults) {
+    if (level >= 100) {
+      xp = 0;
+    } else {
+      const totalXp = xp + getXpForPercent(getResultPercentValue(result));
+      level = Math.min(100, level + Math.floor(totalXp / 100));
+      xp = level >= 100 ? 0 : totalXp % 100;
+    }
+
+    nextAwardedIds.unshift(result.id);
+    awarded.add(result.id);
+  }
+
+  return {
+    ...profile,
+    level,
+    xp,
+    awardedResultIds: nextAwardedIds.slice(0, 300)
   };
 }
 
@@ -1282,6 +1477,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const survivalResultSavedRef = useRef<string | null>(null);
   const achievementToastReadyRef = useRef(false);
   const cloudDataLoadedRef = useRef(false);
+  const localDataHydratedRef = useRef(false);
   const currentUser = auth.session;
   const isGuest = !currentUser;
   const isPomodoroActive = Boolean(state.subject && state.chapter && !state.submitted);
@@ -1297,22 +1493,83 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    let cancelled = false;
+
+    Promise.all([
+      readEncryptedLocalStorage(STORAGE_KEY, LEGACY_STORAGE_KEY, savedRef.current),
+      readEncryptedLocalStorage(SETTINGS_KEY, LEGACY_SETTINGS_KEY, settingsRef.current),
+      readEncryptedLocalStorage(AUTH_STORAGE_KEY, LEGACY_AUTH_STORAGE_KEY, authRef.current),
+      readEncryptedLocalStorage(PROFILE_MEDIA_KEY, LEGACY_PROFILE_MEDIA_KEY, profileMediaRef.current),
+      readEncryptedLocalStorage(PROFILE_PROGRESS_KEY, LEGACY_PROFILE_PROGRESS_KEY, profileProgressRef.current)
+    ]).then(([localSaved, localSettings, localAuth, localMedia, localProfile]) => {
+      if (cancelled) {
+        return;
+      }
+
+      const normalizedSaved = {
+        ...emptySaved(),
+        ...localSaved,
+        items: localSaved.items ?? {},
+        order: localSaved.order ?? Object.keys(localSaved.items ?? {}),
+        starredQuestionIds: localSaved.starredQuestionIds ?? [],
+        results: localSaved.results ?? []
+      };
+      const normalizedAuth = normalizeAuthState(localAuth);
+      const normalizedProfile = normalizeProfileProgress(localProfile);
+
+      savedRef.current = normalizedSaved;
+      settingsRef.current = localSettings;
+      authRef.current = normalizedAuth;
+      profileMediaRef.current = localMedia;
+      profileProgressRef.current = normalizedProfile;
+      setSaved(normalizedSaved);
+      setSettings(localSettings);
+      setAuth(normalizedAuth);
+      setProfileMedia(localMedia);
+      setProfileProgress(normalizedProfile);
+      localDataHydratedRef.current = true;
+      writeEncryptedLocalStorage(STORAGE_KEY, LEGACY_STORAGE_KEY, normalizedSaved);
+      writeEncryptedLocalStorage(SETTINGS_KEY, LEGACY_SETTINGS_KEY, localSettings);
+      writeEncryptedLocalStorage(AUTH_STORAGE_KEY, LEGACY_AUTH_STORAGE_KEY, normalizedAuth);
+      writeEncryptedLocalStorage(PROFILE_MEDIA_KEY, LEGACY_PROFILE_MEDIA_KEY, localMedia);
+      writeEncryptedLocalStorage(PROFILE_PROGRESS_KEY, LEGACY_PROFILE_PROGRESS_KEY, normalizedProfile);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    savedRef.current = saved;
+    if (!localDataHydratedRef.current) {
+      return;
+    }
+    writeEncryptedLocalStorage(STORAGE_KEY, LEGACY_STORAGE_KEY, saved);
   }, [saved]);
 
   useEffect(() => {
     authRef.current = auth;
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
+    if (!localDataHydratedRef.current) {
+      return;
+    }
+    writeEncryptedLocalStorage(AUTH_STORAGE_KEY, LEGACY_AUTH_STORAGE_KEY, auth);
   }, [auth]);
 
   useEffect(() => {
     profileMediaRef.current = profileMedia;
-    window.localStorage.setItem(PROFILE_MEDIA_KEY, JSON.stringify(profileMedia));
+    if (!localDataHydratedRef.current) {
+      return;
+    }
+    writeEncryptedLocalStorage(PROFILE_MEDIA_KEY, LEGACY_PROFILE_MEDIA_KEY, profileMedia);
   }, [profileMedia]);
 
   useEffect(() => {
     profileProgressRef.current = profileProgress;
-    window.localStorage.setItem(PROFILE_PROGRESS_KEY, JSON.stringify(profileProgress));
+    if (!localDataHydratedRef.current) {
+      return;
+    }
+    writeEncryptedLocalStorage(PROFILE_PROGRESS_KEY, LEGACY_PROFILE_PROGRESS_KEY, profileProgress);
   }, [profileProgress]);
 
   useEffect(() => {
@@ -1351,11 +1608,15 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             results: data.saved.results ?? []
           });
         }
-        if (data.profileMedia) {
-          setProfileMedia(data.profileMedia);
-        }
         if (data.profileProgress) {
-          setProfileProgress(normalizeProfileProgress(data.profileProgress));
+          const incomingProfile = normalizeProfileProgress(data.profileProgress);
+          setProfileProgress((current) => mergeProfileProgress(current, incomingProfile));
+        }
+        if (data.profileMedia && Object.keys(data.profileMedia).length > 0) {
+          setProfileMedia((current) => ({
+            ...current,
+            ...data.profileMedia
+          }));
         }
         cloudDataLoadedRef.current = true;
       })
@@ -1381,16 +1642,18 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ saved, profileMedia, profileProgress })
+        body: JSON.stringify({ saved, profileMedia: {}, profileProgress })
       });
     }, 900);
 
     return () => window.clearTimeout(timer);
-  }, [auth.sessionToken, saved, profileMedia, profileProgress]);
+  }, [auth.sessionToken, saved, profileProgress]);
 
   useEffect(() => {
     settingsRef.current = settings;
-    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    if (localDataHydratedRef.current) {
+      writeEncryptedLocalStorage(SETTINGS_KEY, LEGACY_SETTINGS_KEY, settings);
+    }
     document.documentElement.dataset.background = settings.background;
     document.documentElement.classList.toggle("dark", settings.theme === "dark");
     document.documentElement.dataset.motion = settings.motion;
@@ -1574,6 +1837,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
 
     achievementToastReadyRef.current = true;
   }, [achievements, profileProgress.unlockedAchievementIds]);
+
+  useEffect(() => {
+    setProfileProgress((current) => awardResultsToProfile(current, saved.results ?? []));
+  }, [saved.results]);
 
   useEffect(() => {
     if (activeAchievementToast || achievementQueue.length === 0) {
@@ -2089,7 +2356,19 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function logoutUser() {
-    setAuth((current) => ({ users: [], rememberedName: current.rememberedName, rememberPassword: current.rememberPassword }));
+    purgeLocalUserData();
+    const emptyProgress = emptySaved();
+    const emptyProfile = normalizeProfileProgress();
+    savedRef.current = emptyProgress;
+    authRef.current = normalizeAuthState();
+    profileMediaRef.current = {};
+    profileProgressRef.current = emptyProfile;
+    cloudDataLoadedRef.current = false;
+    setSaved(emptyProgress);
+    setAuth(normalizeAuthState());
+    setProfileMedia({});
+    setProfileProgress(emptyProfile);
+    setState(getInitialState(subjects, emptyProgress));
     setAuthMode("login");
     setAuthOpen(true);
   }
@@ -2134,6 +2413,44 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       ...current,
       ...(result.user && result.token ? authStateForSession(result.user, result.token, false) : {}),
       rememberPassword: false
+    }));
+    return undefined;
+  }
+
+  async function updateProfileMedia(kind: "avatar" | "cover", dataUrl: string) {
+    setProfileMedia((current) => ({
+      ...current,
+      [displayUser.name]: {
+        ...current[displayUser.name],
+        [kind]: dataUrl
+      }
+    }));
+
+    if (!auth.sessionToken || !currentUser || (currentUser.role !== "admin" && profileProgress.level < PROFILE_MEDIA_SYNC_LEVEL)) {
+      return currentUser?.role === "admin" || profileProgress.level >= PROFILE_MEDIA_SYNC_LEVEL
+        ? undefined
+        : `Profile chỉ hỗ trợ sync khi đạt LV ${PROFILE_MEDIA_SYNC_LEVEL} trở lên. Ảnh hiện được lưu mã hóa trên máy này.`;
+    }
+
+    const response = await fetch("/api/profile-media", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.sessionToken}`
+      },
+      body: JSON.stringify({ kind, dataUrl })
+    });
+    const result = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
+    if (!response.ok || !result.url) {
+      return result.error ?? "Không sync được ảnh profile lên server.";
+    }
+
+    setProfileMedia((current) => ({
+      ...current,
+      [displayUser.name]: {
+        ...current[displayUser.name],
+        [kind]: result.url
+      }
     }));
     return undefined;
   }
@@ -2227,15 +2544,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             user={displayUser}
             media={displayProfileMedia}
             profile={profileProgress}
-            onMediaChange={(media) =>
-              setProfileMedia((current) => ({
-                ...current,
-                [displayUser.name]: {
-                  ...current[displayUser.name],
-                  ...media
-                }
-              }))
-            }
+            onMediaChange={updateProfileMedia}
           />
           {adminControlOpen && isAdmin ? (
             <AdminControlPanel auth={auth} saved={saved} subjects={subjects} questionStats={questionStats} />
@@ -5225,29 +5534,33 @@ function AccountFrame({
   user
 }: {
   media?: ProfileMediaItem;
-  onMediaChange: (media: ProfileMediaItem) => void;
+  onMediaChange: (kind: "avatar" | "cover", dataUrl: string) => Promise<string | undefined>;
   profile: ProfileProgress;
   user: AuthSession;
 }) {
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mediaMessage, setMediaMessage] = useState("");
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const canSyncProfileMedia = user.role === "admin" || profile.level >= PROFILE_MEDIA_SYNC_LEVEL;
 
-  function updateImage(kind: "avatar" | "cover", event: ChangeEvent<HTMLInputElement>) {
+  async function updateImage(kind: "avatar" | "cover", event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        onMediaChange({ [kind]: reader.result });
-      }
-    };
-    reader.readAsDataURL(file);
-    event.target.value = "";
+    setMediaMessage("Đang xử lý ảnh...");
+    try {
+      const dataUrl = await resizeProfileImage(file, kind);
+      const message = await onMediaChange(kind, dataUrl);
+      setMediaMessage(message ?? (canSyncProfileMedia ? "Đã sync ảnh profile lên server." : `Profile chỉ hỗ trợ sync khi đạt LV ${PROFILE_MEDIA_SYNC_LEVEL} trở lên.`));
+    } catch {
+      setMediaMessage("Không xử lý được ảnh này.");
+    } finally {
+      event.target.value = "";
+    }
   }
 
   return (
@@ -5351,6 +5664,16 @@ function AccountFrame({
                   <span className="block h-full bg-primary transition-all duration-500" style={{ width: `${profile.level >= 100 ? 100 : profile.xp}%` }} />
                 </div>
               </div>
+
+              <p className="mt-3 rounded-xl border-2 border-foreground bg-background px-3 py-2 text-xs font-black text-muted-foreground">
+                Profile chỉ hỗ trợ sync avatar và ảnh bìa khi đạt LV {PROFILE_MEDIA_SYNC_LEVEL} trở lên hoặc tài khoản admin. Chưa đủ LV thì ảnh vẫn được lưu mã hóa trên máy này.
+              </p>
+
+              {mediaMessage && (
+                <p className="mt-3 rounded-xl border-2 border-foreground bg-secondary px-3 py-2 text-xs font-black">
+                  {mediaMessage}
+                </p>
+              )}
 
               <Button className="mt-5 w-full" type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>
                 Đóng

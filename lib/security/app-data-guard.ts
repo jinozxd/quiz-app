@@ -52,7 +52,7 @@ type ProfileProgress = {
 
 export type SanitizedAppData = {
   saved: SavedProgress;
-  profileMedia: Record<string, { avatar?: string; cover?: string }>;
+  profileMedia: Record<string, { avatar?: string; cover?: string; avatarPath?: string; coverPath?: string }>;
   profileProgress: ProfileProgress;
 };
 
@@ -99,11 +99,17 @@ const mediaValueSchema = z.object({
 });
 
 const profileMediaSchema = z.record(z.string().max(80), mediaValueSchema).default({});
+const profileProgressSchema = z.object({
+  level: z.number().finite().optional(),
+  xp: z.number().finite().optional(),
+  awardedResultIds: z.array(z.string().min(1).max(180)).max(300).optional(),
+  unlockedAchievementIds: z.array(z.string().min(1).max(80)).max(100).optional()
+});
 
 const payloadSchema = z.object({
   saved: savedSchema.default({ items: {}, order: [], starredQuestionIds: [], results: [] }),
   profileMedia: profileMediaSchema,
-  profileProgress: z.unknown().optional()
+  profileProgress: profileProgressSchema.optional()
 });
 
 function clampTime(value: number, fallback = Date.now()) {
@@ -172,16 +178,6 @@ function getChapterTitle(subject: QuizSubject, chapterId: string, fallback: stri
   return fallback.slice(0, 180);
 }
 
-function isStandaloneResultChapter(chapterId: string) {
-  return (
-    chapterId.startsWith("mode-exam-40") ||
-    chapterId.startsWith("mode-all-random") ||
-    chapterId.startsWith("mode-practice-starred") ||
-    chapterId.startsWith("mode-survival") ||
-    chapterId.startsWith("mode-match")
-  );
-}
-
 function calculateScore(subject: QuizSubject, item: ProgressItem) {
   const questions = getChapterQuestions(subject, item.chapterId);
   const questionById = new Map(questions.map((question) => [question.id, question]));
@@ -246,6 +242,43 @@ function recomputeProfileProgress(results: ResultItem[]) {
     xp,
     awardedResultIds: awardedResultIds.slice(0, 300),
     unlockedAchievementIds: []
+  };
+}
+
+function getProfileProgressPoints(profile: ProfileProgress) {
+  return (profile.level - 1) * 100 + profile.xp;
+}
+
+function normalizeProfileProgress(profile: z.infer<typeof profileProgressSchema> | undefined): ProfileProgress | undefined {
+  if (!profile) {
+    return undefined;
+  }
+
+  const level = typeof profile.level === "number" ? Math.min(100, Math.max(1, Math.floor(profile.level))) : 1;
+  const xp = typeof profile.xp === "number" && level < 100 ? Math.min(99, Math.max(0, Math.floor(profile.xp))) : 0;
+
+  return {
+    level,
+    xp,
+    awardedResultIds: Array.isArray(profile.awardedResultIds) ? profile.awardedResultIds.slice(0, 300) : [],
+    unlockedAchievementIds: Array.isArray(profile.unlockedAchievementIds) ? profile.unlockedAchievementIds : []
+  };
+}
+
+function sanitizeProfileProgress(profile: z.infer<typeof profileProgressSchema> | undefined, recomputed: ProfileProgress): ProfileProgress {
+  const normalized = normalizeProfileProgress(profile);
+  if (!normalized) {
+    return recomputed;
+  }
+
+  const base = getProfileProgressPoints(normalized) >= getProfileProgressPoints(recomputed)
+    ? normalized
+    : recomputed;
+
+  return {
+    ...base,
+    awardedResultIds: Array.from(new Set([...normalized.awardedResultIds, ...recomputed.awardedResultIds])).slice(0, 300),
+    unlockedAchievementIds: Array.from(new Set([...normalized.unlockedAchievementIds, ...recomputed.unlockedAchievementIds]))
   };
 }
 
@@ -325,14 +358,15 @@ export function sanitizeAppDataPayload(payload: unknown, session: { id: string; 
       continue;
     }
 
-    const backing = result.chapterId ? submittedByProgressKey.get(`${result.subjectId}:${result.chapterId}`) : undefined;
-    if (!backing && (!result.chapterId || !isStandaloneResultChapter(result.chapterId))) {
+    const chapterId = result.chapterId;
+    const chapterQuestions = chapterId ? getChapterQuestions(subject, chapterId) : [];
+    const backing = chapterId ? submittedByProgressKey.get(`${result.subjectId}:${chapterId}`) : undefined;
+    if (!backing && (!chapterId || chapterQuestions.length === 0)) {
       continue;
     }
 
-    const total = backing ? backing.score.total : Math.min(Math.max(1, Math.floor(result.total)), getAllQuestions(subject).length || 1);
+    const total = backing ? backing.score.total : Math.min(Math.max(1, Math.floor(result.total)), chapterQuestions.length || getAllQuestions(subject).length || 1);
     const score = backing ? backing.score.score : Math.min(total, Math.max(0, Math.floor(result.score)));
-    const chapterId = result.chapterId;
 
     results.push({
       id: result.id,
@@ -350,6 +384,7 @@ export function sanitizeAppDataPayload(payload: unknown, session: { id: string; 
   const starredQuestionIds = parsed.data.saved.starredQuestionIds
     .filter((questionId) => subjects.some((subject) => getAllQuestions(subject).some((question) => question.id === questionId)))
     .slice(0, MAX_STARRED);
+  const recomputedProfileProgress = recomputeProfileProgress(results);
 
   return {
     saved: {
@@ -361,6 +396,6 @@ export function sanitizeAppDataPayload(payload: unknown, session: { id: string; 
       results
     },
     profileMedia: sanitizeProfileMedia(parsed.data.profileMedia),
-    profileProgress: recomputeProfileProgress(results)
+    profileProgress: sanitizeProfileProgress(parsed.data.profileProgress, recomputedProfileProgress)
   };
 }

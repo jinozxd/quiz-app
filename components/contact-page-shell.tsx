@@ -8,14 +8,11 @@ import { ContactCard } from "@/components/contact-card";
 import { SettingsDialog, restoreSettings } from "@/components/quiz-app";
 import type { AppSettings } from "@/components/quiz-app";
 
-const SETTINGS_KEY = "quiz-on-tap-settings-v1";
-
 export function ContactPageShell() {
   const [settings, setSettings] = useState<AppSettings>(() => restoreSettings());
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
-    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     document.documentElement.dataset.background = settings.background;
     document.documentElement.dataset.motion = settings.motion;
     document.documentElement.classList.toggle("dark", settings.theme === "dark");

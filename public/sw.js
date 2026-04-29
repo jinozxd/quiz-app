@@ -25,8 +25,13 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
+  const url = new URL(request.url);
 
   if (request.method !== "GET") {
+    return;
+  }
+
+  if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) {
     return;
   }
 
@@ -43,6 +48,9 @@ self.addEventListener("fetch", (event) => {
         return cached;
       }
       return fetch(request).then((response) => {
+        if (!STATIC_ASSETS.includes(url.pathname)) {
+          return response;
+        }
         const copy = response.clone();
         caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy));
         return response;

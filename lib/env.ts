@@ -17,7 +17,8 @@ const envSchema = z.object({
   TURNSTILE_SECRET_KEY: optionalEnv,
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: optionalEnv,
   VAPID_PRIVATE_KEY: optionalEnv,
-  AUDIT_LOG_SECRET: optionalEnv
+  AUDIT_LOG_SECRET: optionalEnv,
+  APP_DATA_ENCRYPTION_KEY: optionalEnv
 });
 
 export const env = envSchema.parse(process.env);
