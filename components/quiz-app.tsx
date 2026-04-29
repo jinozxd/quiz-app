@@ -1272,6 +1272,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const [itemActionId, setItemActionId] = useState<string | null>(null);
   const [resultActionId, setResultActionId] = useState<string | null>(null);
   const [latestSubmitId, setLatestSubmitId] = useState<string | null>(null);
+  const [submitPopupResult, setSubmitPopupResult] = useState<ResultItem | null>(null);
   const [emojiSweepItems, setEmojiSweepItems] = useState<EmojiSweepItem[]>([]);
   const [achievementQueue, setAchievementQueue] = useState<Achievement[]>([]);
   const [activeAchievementToast, setActiveAchievementToast] = useState<Achievement | null>(null);
@@ -1624,6 +1625,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       results: [result, ...(current.results ?? [])].slice(0, 30)
     }));
     setLatestSubmitId(result.id);
+    setSubmitPopupResult(result);
     awardProfileProgress(result);
   }, [currentProgressId, currentUser?.name, state.answers, state.chapter, state.subject, state.submitted, state.survival?.gameOver]);
 
@@ -1807,6 +1809,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       results: [result, ...(current.results ?? [])].slice(0, 30)
     }));
     setLatestSubmitId(result.id);
+    setSubmitPopupResult(result);
     awardProfileProgress(result);
     setState((current) => ({ ...current, submitted: true }));
   }
@@ -1899,6 +1902,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       results: [result, ...(current.results ?? [])].slice(0, 30)
     }));
     setLatestSubmitId(result.id);
+    setSubmitPopupResult(result);
     awardProfileProgress(result);
     setState((current) => ({ ...current, submitted: true }));
   }
@@ -2850,7 +2854,78 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       {activeMemoryTip && (
         <MemoryTipDialog tip={activeMemoryTip} onClose={() => setMemoryTipId(null)} />
       )}
+      <ResultSubmitPopup result={submitPopupResult} onClose={() => setSubmitPopupResult(null)} />
     </main>
+  );
+}
+
+function ResultSubmitPopup({ result, onClose }: { result: ResultItem | null; onClose: () => void }) {
+  if (!result) {
+    return null;
+  }
+
+  const percent = getResultPercentValue(result);
+  const mood = getResultMood(percent);
+  const quote = getResultQuote(percent, result.id);
+  const celebration = getResultCelebration(percent);
+  const percentEffect = getResultPercentEffect(percent);
+
+  return (
+    <div className="result-submit-overlay fixed inset-0 z-[80] grid place-items-center bg-black/45 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="result-submit-popup relative w-full max-w-xl overflow-hidden rounded-[24px] border-4 border-foreground bg-card p-4 text-card-foreground shadow-[10px_10px_0_0_hsl(var(--foreground))] sm:p-5"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Kết quả vừa nộp"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="absolute right-3 top-3 z-20 grid size-9 place-items-center rounded-full border-2 border-foreground bg-card shadow-[3px_3px_0_0_hsl(var(--foreground))]"
+          onClick={onClose}
+          aria-label="Đóng kết quả"
+        >
+          <XCircle className="size-5" aria-hidden />
+        </button>
+
+        <div className="result-submit-stamp" aria-hidden>
+          <span className="result-stamp-emoji">{mood.emoji}</span>
+          <span className="result-stamp-label">{mood.label}</span>
+        </div>
+
+        <div className="result-submit-heading relative z-10">
+          <p className="text-xs font-black uppercase text-muted-foreground">Vừa nộp bài</p>
+          <h2 className="mt-1 line-clamp-2 text-2xl font-black leading-tight">{result.chapterTitle}</h2>
+        </div>
+
+        <div className="relative z-10 mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-md border-2 border-foreground bg-secondary p-3 shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+            <p className="text-xs font-black text-muted-foreground">Tỷ lệ đúng</p>
+            <p className={cn("result-percent-effect mt-1 text-4xl font-black", percentEffect)}>{percent}%</p>
+          </div>
+          <div className="rounded-md border-2 border-foreground bg-muted p-3">
+            <p className="text-xs font-black text-muted-foreground">Số câu đúng</p>
+            <p className="mt-1 text-3xl font-black">{result.score}/{result.total}</p>
+          </div>
+          <div className="rounded-md border-2 border-foreground bg-accent/90 p-3">
+            <p className="text-xs font-black text-muted-foreground">Xếp loại</p>
+            <p className="mt-1 text-xl font-black">{mood.label}</p>
+          </div>
+        </div>
+
+        <p className="result-quote relative z-10 mt-4">{quote}</p>
+        {celebration && (
+          <p className={cn("result-celebration relative z-10 mt-4", percent === 100 && "result-celebration-perfect")}>
+            {celebration}
+          </p>
+        )}
+        <div className="relative z-10 mt-5 flex justify-end">
+          <Button type="button" onClick={onClose}>
+            Xem bài đã chấm
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
