@@ -1,13 +1,13 @@
 [
   {
     "id": "ktct-mac-lenin",
-    "title": "KTCT M?c-L?nin",
-    "description": "B? c?u h?i ?n t?p Kinh t? ch?nh tr? M?c-L?nin.",
+    "title": "KTCT Mác-Lênin",
+    "description": "Bộ câu hỏi ôn tập Kinh tế chính trị Mác-Lênin.",
     "source": "ktct_all_chapters.json",
     "chapters": [
       {
         "id": "chuong-01",
-        "title": "Ch??ng 01",
+        "title": "Chương 01",
         "questions": [
           {
             "id": "q-chuong-01-1",
@@ -523,7 +523,7 @@
       },
       {
         "id": "chuong-02",
-        "title": "Ch??ng 02",
+        "title": "Chương 02",
         "questions": [
           {
             "id": "q-chuong-02-1",
@@ -2899,7 +2899,7 @@
       },
       {
         "id": "chuong-03",
-        "title": "Ch??ng 03",
+        "title": "Chương 03",
         "questions": [
           {
             "id": "q-chuong-03-1",
@@ -5215,7 +5215,7 @@
       },
       {
         "id": "chuong-04",
-        "title": "Ch??ng 04",
+        "title": "Chương 04",
         "questions": [
           {
             "id": "q-chuong-04-1",
@@ -6871,7 +6871,7 @@
       },
       {
         "id": "chuong-05",
-        "title": "Ch??ng 05",
+        "title": "Chương 05",
         "questions": [
           {
             "id": "q-chuong-05-1",
@@ -8557,7 +8557,7 @@
       },
       {
         "id": "chuong-06",
-        "title": "Ch??ng 06",
+        "title": "Chương 06",
         "questions": [
           {
             "id": "q-chuong-06-1",
