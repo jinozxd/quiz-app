@@ -882,7 +882,9 @@ function getChapter(subject: QuizSubject | undefined, chapterId?: string, questi
   }
 
   if (chapterId.endsWith("-shuffle")) {
-    const baseChapter = subject.chapters.find((chapter) => chapter.id === getBaseChapterId(chapterId));
+    const baseChapterId = getBaseChapterId(chapterId);
+    const baseChapter = subject.chapters.find((chapter) => chapter.id === baseChapterId)
+      ?? subject.chapters.flatMap((chapter) => splitChapter(chapter)).find((chapter) => chapter.id === baseChapterId);
     if (baseChapter) {
       return reorderChapter(
         {
@@ -1478,9 +1480,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const achievementToastReadyRef = useRef(false);
   const cloudDataLoadedRef = useRef(false);
   const localDataHydratedRef = useRef(false);
+  const wasPomodoroActiveRef = useRef(false);
   const currentUser = auth.session;
   const isGuest = !currentUser;
-  const isPomodoroActive = Boolean(state.subject && state.chapter && !state.submitted);
+  const isPomodoroActive = Boolean(state.subject);
 
   function requireLogin() {
     if (currentUser) {
@@ -1673,8 +1676,18 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
 
   useEffect(() => {
     const now = Date.now();
-    setPomodoroCycleStartedAt(now);
-    setPomodoroBreakOpen(false);
+    if (!isPomodoroActive) {
+      wasPomodoroActiveRef.current = false;
+      setPomodoroBreakOpen(false);
+      return;
+    }
+
+    if (!wasPomodoroActiveRef.current) {
+      setPomodoroCycleStartedAt(now);
+      setPomodoroBreakOpen(false);
+    }
+
+    wasPomodoroActiveRef.current = true;
   }, [isPomodoroActive]);
 
   useEffect(() => {
@@ -2797,39 +2810,56 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                         {parts.map((part) => {
                           const partId = progressId(state.subject!.id, part.id);
                           const partItem = saved.items[partId];
+                          const shuffledPartId = progressId(state.subject!.id, `${part.id}-shuffle`);
+                          const shuffledPartItem = saved.items[shuffledPartId];
                           const partAnswers = partItem
                             ? part.questions.filter((question) => Boolean(partItem.answers[question.id])).length
                             : 0;
+                          const shuffledPartAnswers = shuffledPartItem
+                            ? part.questions.filter((question) => Boolean(shuffledPartItem.answers[question.id])).length
+                            : 0;
 
                           return (
-                            <Button
-                              key={part.id}
-                              variant="outline"
-                              className="h-auto justify-between gap-3 px-3 py-2"
-                              onClick={() => {
-                                if (requireLogin()) {
-                                  return;
-                                }
-                                setState({
-                                  subject: state.subject,
-                                  chapter: part,
-                                  answers: partItem?.answers ?? {},
-                                  submitted: partItem?.submitted ?? false
-                                });
-                              }}
-                            >
-                              <span className="text-left">
-                                {part.title.replace(`${chapter.title} - `, "")}
-                                <span className="block text-xs font-normal text-muted-foreground">
-                                  {part.rangeLabel} · {part.questions.length} câu
+                            <div key={part.id} className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                className="h-auto min-w-0 flex-1 justify-between gap-3 px-3 py-2"
+                                onClick={() => {
+                                  if (requireLogin()) {
+                                    return;
+                                  }
+                                  setState({
+                                    subject: state.subject,
+                                    chapter: part,
+                                    answers: partItem?.answers ?? {},
+                                    submitted: partItem?.submitted ?? false
+                                  });
+                                }}
+                              >
+                                <span className="min-w-0 text-left">
+                                  {part.title.replace(`${chapter.title} - `, "")}
+                                  <span className="block text-xs font-normal text-muted-foreground">
+                                    {part.rangeLabel} · {part.questions.length} câu
+                                  </span>
                                 </span>
-                              </span>
-                              {partAnswers > 0 && (
-                                <Badge variant="secondary">
-                                  {partAnswers}/{part.questions.length}
-                                </Badge>
-                              )}
-                            </Button>
+                                {partAnswers > 0 && (
+                                  <Badge variant="secondary">
+                                    {partAnswers}/{part.questions.length}
+                                  </Badge>
+                                )}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant={shuffledPartAnswers > 0 ? "secondary" : "outline"}
+                                className="h-auto min-h-[3.25rem] w-12 shrink-0"
+                                title={shuffledPartAnswers > 0 ? `Xáo trộn phần này · đã làm ${shuffledPartAnswers}/${part.questions.length}` : "Xáo trộn phần này"}
+                                aria-label="Xáo trộn phần này"
+                                onClick={() => startShuffledChapter(state.subject!, part)}
+                              >
+                                <Shuffle className="size-4" aria-hidden />
+                              </Button>
+                            </div>
                           );
                         })}
                       </div>
