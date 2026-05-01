@@ -12,6 +12,11 @@ const PROFILE_MEDIA_BUCKET = "profile-media";
 const MIN_SYNC_LEVEL = 36;
 const MAX_AVATAR_BYTES = 512 * 1024;
 const MAX_COVER_BYTES = 1536 * 1024;
+const PROFILE_MEDIA_BUCKET_OPTIONS = {
+  public: false,
+  fileSizeLimit: MAX_COVER_BYTES,
+  allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"]
+};
 const EMPTY_PROFILE_MEDIA = {};
 const EMPTY_PROFILE_PROGRESS = { level: 1, xp: 0, awardedResultIds: [], unlockedAchievementIds: [] };
 
@@ -61,6 +66,54 @@ function parseImageDataUrl(dataUrl: string) {
     extension,
     mimeType
   };
+}
+
+function getStorageErrorMessage(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return "Không rõ lỗi Supabase Storage.";
+  }
+
+  const maybeError = error as { message?: unknown; status?: unknown; statusCode?: unknown };
+  if (typeof maybeError.message === "string" && maybeError.message.trim()) {
+    return maybeError.message;
+  }
+  if (typeof maybeError.statusCode === "string" && maybeError.statusCode.trim()) {
+    return `Mã lỗi ${maybeError.statusCode}`;
+  }
+  if (typeof maybeError.status === "number") {
+    return `HTTP ${maybeError.status}`;
+  }
+
+  return "Không rõ lỗi Supabase Storage.";
+}
+
+function isMissingBucketError(error: unknown) {
+  const maybeError = error as { message?: unknown; status?: unknown; statusCode?: unknown };
+  const message = typeof maybeError?.message === "string" ? maybeError.message.toLowerCase() : "";
+  return maybeError?.status === 404 || maybeError?.statusCode === "404" || message.includes("bucket not found") || message.includes("not found");
+}
+
+async function ensureProfileMediaBucket(service: NonNullable<ReturnType<typeof createServiceClient>>) {
+  const { error: getError } = await service.storage.getBucket(PROFILE_MEDIA_BUCKET);
+
+  if (getError && !isMissingBucketError(getError)) {
+    return { ok: false as const, error: getError };
+  }
+
+  if (getError) {
+    const { error: createError } = await service.storage.createBucket(PROFILE_MEDIA_BUCKET, PROFILE_MEDIA_BUCKET_OPTIONS);
+    if (createError) {
+      return { ok: false as const, error: createError };
+    }
+    return { ok: true as const };
+  }
+
+  const { error: updateError } = await service.storage.updateBucket(PROFILE_MEDIA_BUCKET, PROFILE_MEDIA_BUCKET_OPTIONS);
+  if (updateError) {
+    return { ok: false as const, error: updateError };
+  }
+
+  return { ok: true as const };
 }
 
 async function getEligibility(service: NonNullable<ReturnType<typeof createServiceClient>>, session: AppSession) {
@@ -156,6 +209,11 @@ export async function POST(request: Request) {
   const oldPath = parsed.data.kind === "avatar" ? currentMedia.avatarPath : currentMedia.coverPath;
   const newPath = `${session.id}/${parsed.data.kind}-${Date.now()}.${image.extension}`;
 
+  const bucket = await ensureProfileMediaBucket(liveUser.service);
+  if (!bucket.ok) {
+    return NextResponse.json({ error: `Không chuẩn bị được bucket Supabase Storage "${PROFILE_MEDIA_BUCKET}": ${getStorageErrorMessage(bucket.error)}` }, { status: 500 });
+  }
+
   const { error: uploadError } = await liveUser.service.storage
     .from(PROFILE_MEDIA_BUCKET)
     .upload(newPath, image.buffer, {
@@ -164,7 +222,7 @@ export async function POST(request: Request) {
     });
 
   if (uploadError) {
-    return NextResponse.json({ error: "Không upload được ảnh profile. Kiểm tra bucket Supabase Storage." }, { status: 500 });
+    return NextResponse.json({ error: `Không upload được ảnh profile lên bucket "${PROFILE_MEDIA_BUCKET}": ${getStorageErrorMessage(uploadError)}` }, { status: 500 });
   }
 
   const nextMedia = {
