@@ -221,6 +221,11 @@ type Achievement = {
   unlocked: boolean;
 };
 
+type LevelUpNotice = {
+  from: number;
+  to: number;
+};
+
 type QuizState = {
   subject?: QuizSubject;
   chapter?: QuizChapter;
@@ -1470,6 +1475,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const [resultActionId, setResultActionId] = useState<string | null>(null);
   const [latestSubmitId, setLatestSubmitId] = useState<string | null>(null);
   const [submitPopupResult, setSubmitPopupResult] = useState<ResultItem | null>(null);
+  const [levelUpNotice, setLevelUpNotice] = useState<LevelUpNotice | null>(null);
   const [emojiSweepItems, setEmojiSweepItems] = useState<EmojiSweepItem[]>([]);
   const [achievementQueue, setAchievementQueue] = useState<Achievement[]>([]);
   const [activeAchievementToast, setActiveAchievementToast] = useState<Achievement | null>(null);
@@ -1482,6 +1488,8 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const localDataHydratedRef = useRef(false);
   const pomodoroPausedElapsedMsRef = useRef(0);
   const wasPomodoroRunningRef = useRef(false);
+  const levelPopupArmedRef = useRef(false);
+  const previousProfileLevelRef = useRef(profileProgressRef.current.level);
   const currentUser = auth.session;
   const isGuest = !currentUser;
   const isPomodoroRunning = Boolean(state.subject && state.chapter && !state.submitted);
@@ -1582,6 +1590,17 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     }
     writeEncryptedLocalStorage(PROFILE_PROGRESS_KEY, LEGACY_PROFILE_PROGRESS_KEY, profileProgress);
   }, [profileProgress]);
+
+  useEffect(() => {
+    const previousLevel = previousProfileLevelRef.current;
+
+    if (levelPopupArmedRef.current && profileProgress.level > previousLevel) {
+      setLevelUpNotice({ from: previousLevel, to: profileProgress.level });
+    }
+
+    previousProfileLevelRef.current = profileProgress.level;
+    levelPopupArmedRef.current = false;
+  }, [profileProgress.awardedResultIds.length, profileProgress.level, profileProgress.xp]);
 
   useEffect(() => {
     const token = auth.sessionToken;
@@ -2054,8 +2073,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     const percent = getResultPercentValue(result);
     const xpGain = getXpForPercent(percent);
 
+    levelPopupArmedRef.current = true;
     setProfileProgress((current) => {
       if (current.awardedResultIds.includes(result.id)) {
+        levelPopupArmedRef.current = false;
         return current;
       }
 
@@ -3212,7 +3233,53 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
         <MemoryTipDialog tip={activeMemoryTip} onClose={() => setMemoryTipId(null)} />
       )}
       <ResultSubmitPopup result={submitPopupResult} onClose={() => setSubmitPopupResult(null)} />
+      <LevelUpPopup notice={levelUpNotice} onClose={() => setLevelUpNotice(null)} />
     </main>
+  );
+}
+
+function LevelUpPopup({ notice, onClose }: { notice: LevelUpNotice | null; onClose: () => void }) {
+  if (!notice) {
+    return null;
+  }
+
+  return (
+    <div className="level-up-overlay fixed inset-0 z-[90] grid place-items-center bg-black/45 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="level-up-popup relative w-full max-w-md overflow-hidden rounded-[22px] border-4 border-foreground bg-card p-5 text-card-foreground shadow-[10px_10px_0_0_hsl(var(--foreground))]"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Lên cấp"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="absolute right-3 top-3 z-20 grid size-9 place-items-center rounded-full border-2 border-foreground bg-card shadow-[3px_3px_0_0_hsl(var(--foreground))]"
+          onClick={onClose}
+          aria-label="Đóng thông báo lên cấp"
+        >
+          <XCircle className="size-5" aria-hidden />
+        </button>
+
+        <div className="relative z-10 pr-10">
+          <p className="text-sm font-black uppercase text-muted-foreground">Lên cấp</p>
+          <h2 className="mt-1 text-3xl font-black leading-tight">LV {notice.to}</h2>
+          <p className="mt-3 rounded-xl border-2 border-foreground bg-secondary p-3 text-sm font-black shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+            Từ LV {notice.from} lên LV {notice.to}. Quá cháy, tiếp tục giữ nhịp học nha.
+          </p>
+        </div>
+
+        <div className="level-up-badge" aria-hidden>
+          LV
+        </div>
+
+        <div className="relative z-10 mt-5 flex justify-end">
+          <Button type="button" onClick={onClose}>
+            Nhận năng lượng
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -3627,7 +3694,7 @@ function RecentResults({
   }
 
   return (
-    <Card className="mt-6 max-w-full overflow-hidden motion-safe-card">
+    <Card className="mt-6 max-w-full motion-safe-card">
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center justify-between gap-3 pr-2">
           <span>Kết quả gần đây</span>
@@ -3644,8 +3711,8 @@ function RecentResults({
             <p className="mt-2 text-sm text-muted-foreground">Sau khi nộp bài, kết quả sẽ xuất hiện ở đây.</p>
           </div>
         ) : (
-          <div className="max-w-full overflow-x-auto pb-8">
-            <div className="flex w-max items-center gap-4 px-1">
+          <div className="p-1 pb-3 pr-3">
+            <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {sortedResults.map((result, index) => {
                 const subject = getSubject(subjects, result.subjectId);
                 const percent = Math.round((result.score / result.total) * 100);
@@ -3659,7 +3726,7 @@ function RecentResults({
                   <div
                     key={`${result.id}-${animationRun}`}
                     className={cn(
-                      "result-card motion-safe-card shrink-0 rounded-[22px] border-2 border-foreground bg-secondary shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-colors duration-200 hover:bg-secondary/90",
+                      "result-card motion-safe-card rounded-[22px] border-2 border-foreground bg-secondary shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-colors duration-200 hover:bg-secondary/90",
                       isLatest && "result-card-latest"
                     )}
                     onPointerDown={() => startLongPress(result.id)}
@@ -5320,12 +5387,12 @@ export function SettingsDialog({
                       Thông tin bản phát hành hiện tại của Quiz ôn tập.
                     </p>
                   </div>
-                  <Badge variant="secondary">v1.2.9</Badge>
+                  <Badge variant="secondary">v2.2.2</Badge>
                 </div>
 
                 <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
                   <p className="text-sm font-black text-muted-foreground">Bản hiện tại</p>
-                  <p className="mt-2 text-4xl font-black">1.2.9</p>
+                  <p className="mt-2 text-4xl font-black">2.2.2</p>
                 </div>
               </section>
             )}
