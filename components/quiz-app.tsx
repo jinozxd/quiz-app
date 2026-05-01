@@ -1480,10 +1480,11 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const achievementToastReadyRef = useRef(false);
   const cloudDataLoadedRef = useRef(false);
   const localDataHydratedRef = useRef(false);
-  const wasPomodoroActiveRef = useRef(false);
+  const pomodoroPausedElapsedMsRef = useRef(0);
+  const wasPomodoroRunningRef = useRef(false);
   const currentUser = auth.session;
   const isGuest = !currentUser;
-  const isPomodoroActive = Boolean(state.subject);
+  const isPomodoroRunning = Boolean(state.subject && state.chapter && !state.submitted);
 
   function requireLogin() {
     if (currentUser) {
@@ -1670,28 +1671,34 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }, [settings]);
 
   useEffect(() => {
+    pomodoroPausedElapsedMsRef.current = 0;
+    wasPomodoroRunningRef.current = false;
     setPomodoroCycleStartedAt(Date.now());
     setPomodoroBreakOpen(false);
   }, [settings.pomodoroEnabled, settings.pomodoroFocusMinutes]);
 
   useEffect(() => {
     const now = Date.now();
-    if (!isPomodoroActive) {
-      wasPomodoroActiveRef.current = false;
+    if (!isPomodoroRunning) {
+      if (wasPomodoroRunningRef.current) {
+        const focusMs = settingsRef.current.pomodoroFocusMinutes * 60_000;
+        pomodoroPausedElapsedMsRef.current = Math.min(focusMs, Math.max(0, now - pomodoroCycleStartedAt));
+      }
+      wasPomodoroRunningRef.current = false;
       setPomodoroBreakOpen(false);
       return;
     }
 
-    if (!wasPomodoroActiveRef.current) {
-      setPomodoroCycleStartedAt(now);
+    if (!wasPomodoroRunningRef.current) {
+      setPomodoroCycleStartedAt(now - pomodoroPausedElapsedMsRef.current);
       setPomodoroBreakOpen(false);
     }
 
-    wasPomodoroActiveRef.current = true;
-  }, [isPomodoroActive]);
+    wasPomodoroRunningRef.current = true;
+  }, [isPomodoroRunning, pomodoroCycleStartedAt]);
 
   useEffect(() => {
-    if (!isPomodoroActive || !settings.pomodoroEnabled || settings.pomodoroFocusMinutes < 10) {
+    if (!isPomodoroRunning || !settings.pomodoroEnabled || settings.pomodoroFocusMinutes < 10) {
       return;
     }
 
@@ -1705,13 +1712,14 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       if (settings.pomodoroBreakEnabled) {
         setPomodoroBreakOpen(true);
       } else {
+        pomodoroPausedElapsedMsRef.current = 0;
         setPomodoroCycleStartedAt(now);
       }
     }, 1000);
 
     return () => window.clearInterval(timer);
   }, [
-    isPomodoroActive,
+    isPomodoroRunning,
     pomodoroCycleStartedAt,
     settings.pomodoroBreakEnabled,
     settings.pomodoroEnabled,
@@ -2481,7 +2489,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
         <FloatingEmojiBackground />
         <EmojiSweepOverlay items={emojiSweepItems} />
         <AchievementToast achievement={activeAchievementToast} />
-        <PomodoroStatus active={isPomodoroActive} settings={settings} startedAt={pomodoroCycleStartedAt} />
+        <PomodoroStatus active={isPomodoroRunning} settings={settings} startedAt={pomodoroCycleStartedAt} />
         <TopNav
           user={currentUser}
           onHome={() => {
@@ -2526,9 +2534,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           onChangePassword={changeCurrentPassword}
         />
         <PomodoroBreakDialog
-          open={isPomodoroActive && pomodoroBreakOpen}
+          open={isPomodoroRunning && pomodoroBreakOpen}
           breakMinutes={settings.pomodoroBreakMinutes}
           onClose={() => {
+            pomodoroPausedElapsedMsRef.current = 0;
             setPomodoroBreakOpen(false);
             setPomodoroCycleStartedAt(Date.now());
           }}
@@ -2702,7 +2711,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
         <FloatingEmojiBackground />
         <EmojiSweepOverlay items={emojiSweepItems} />
         <AchievementToast achievement={activeAchievementToast} />
-        <PomodoroStatus active={isPomodoroActive} settings={settings} startedAt={pomodoroCycleStartedAt} />
+        <PomodoroStatus active={isPomodoroRunning} settings={settings} startedAt={pomodoroCycleStartedAt} />
         <TopNav
           user={currentUser}
           onHome={() => {
@@ -2747,9 +2756,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           onChangePassword={changeCurrentPassword}
         />
         <PomodoroBreakDialog
-          open={isPomodoroActive && pomodoroBreakOpen}
+          open={isPomodoroRunning && pomodoroBreakOpen}
           breakMinutes={settings.pomodoroBreakMinutes}
           onClose={() => {
+            pomodoroPausedElapsedMsRef.current = 0;
             setPomodoroBreakOpen(false);
             setPomodoroCycleStartedAt(Date.now());
           }}
@@ -2879,7 +2889,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       <FloatingEmojiBackground />
       <EmojiSweepOverlay items={emojiSweepItems} />
       <AchievementToast achievement={activeAchievementToast} />
-      <PomodoroStatus active={isPomodoroActive} settings={settings} startedAt={pomodoroCycleStartedAt} />
+      <PomodoroStatus active={isPomodoroRunning} settings={settings} startedAt={pomodoroCycleStartedAt} />
       <TopNav
         user={currentUser}
         onHome={() => {
@@ -2924,9 +2934,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
         onChangePassword={changeCurrentPassword}
       />
       <PomodoroBreakDialog
-        open={isPomodoroActive && pomodoroBreakOpen}
+        open={isPomodoroRunning && pomodoroBreakOpen}
         breakMinutes={settings.pomodoroBreakMinutes}
         onClose={() => {
+          pomodoroPausedElapsedMsRef.current = 0;
           setPomodoroBreakOpen(false);
           setPomodoroCycleStartedAt(Date.now());
         }}
