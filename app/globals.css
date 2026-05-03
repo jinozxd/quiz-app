@@ -173,15 +173,12 @@
   html[data-background="cheese"] body,
   html[data-background="cheese"] .bg-background {
     background-image:
-      radial-gradient(circle at 22% 28%, hsl(var(--background)) 0 0.55rem, transparent 0.6rem),
-      radial-gradient(circle at 72% 62%, hsl(var(--background)) 0 0.85rem, transparent 0.9rem),
-      radial-gradient(circle at 42% 82%, hsl(var(--foreground) / 0.18) 0 0.16rem, transparent 0.18rem),
-      linear-gradient(135deg, hsl(45 100% 66% / 0.78) 0 38%, hsl(38 100% 58% / 0.78) 38% 64%, hsl(51 100% 72% / 0.78) 64%),
-      linear-gradient(90deg, hsl(var(--foreground) / 0.08) 1px, transparent 1px),
-      linear-gradient(hsl(var(--foreground) / 0.08) 1px, transparent 1px);
-    background-size: 96px 96px, 140px 140px, 54px 54px, 220px 150px, 16px 16px, 16px 16px;
-    background-position: 0 0, 30px 20px, 0 0, 0 0, 0 0, 0 0;
-    background-color: hsl(45 100% 72%);
+      radial-gradient(circle at 20% 30%, hsl(var(--background)) 0 0.45rem, transparent 0.5rem),
+      radial-gradient(circle at 75% 65%, hsl(var(--background)) 0 0.65rem, transparent 0.7rem),
+      linear-gradient(135deg, hsl(45 100% 66% / 0.86) 0 38%, hsl(38 100% 58% / 0.86) 38% 64%, hsl(51 100% 72% / 0.86) 64%);
+    background-size: 80px 80px, 80px 80px, 80px 80px;
+    background-position: 0 0, 40px 40px, 0 0;
+    background-color: hsl(45 100% 66%);
   }
 
   html[data-background="autumn"] body,
@@ -215,12 +212,12 @@
   html[data-background="chalk"] body,
   html[data-background="chalk"] .bg-background {
     background-image:
-      repeating-linear-gradient(2deg, transparent 0 18px, hsl(146 18% 84% / 0.11) 18px 20px, transparent 20px 42px),
-      repeating-linear-gradient(92deg, transparent 0 24px, hsl(146 18% 84% / 0.08) 24px 26px, transparent 26px 58px),
+      repeating-linear-gradient(2deg, transparent 0 18px, hsl(146 18% 84% / 0.11) 18px 20px, transparent 20px 100px),
+      repeating-linear-gradient(92deg, transparent 0 24px, hsl(146 18% 84% / 0.08) 24px 26px, transparent 26px 100px),
       linear-gradient(28deg, transparent 0 42%, hsl(44 92% 74% / 0.18) 42% 47%, transparent 47%),
       linear-gradient(118deg, transparent 0 45%, hsl(0 0% 100% / 0.14) 45% 49%, transparent 49%);
-    background-size: 220px 150px, 190px 170px, 180px 130px, 240px 180px;
-    background-position: 0 0, 24px 10px, 0 0, 18px 18px;
+    background-size: 100px 100px, 100px 100px, 100px 100px, 100px 100px;
+    background-position: 0 0, 0 0, 0 0, 0 0;
     background-color: hsl(158 32% 23%);
   }
 
@@ -323,6 +320,35 @@
     background-size: 100vw 100vh;
     background-attachment: fixed;
     background-color: hsl(240 50% 5%);
+  }
+
+
+  html[data-background="forest"] body,
+  html[data-background="forest"] .bg-background {
+    background-image:
+      repeating-linear-gradient(90deg, transparent 0 40px, hsl(142 45% 15% / 0.15) 40px 42px, transparent 42px 80px),
+      linear-gradient(180deg, hsl(142 45% 15%), hsl(142 45% 25%));
+    background-size: 80px 100%, 100% 100%;
+    background-color: hsl(142 45% 15%);
+  }
+
+  html[data-background="ocean"] body,
+  html[data-background="ocean"] .bg-background {
+    background-image:
+      radial-gradient(ellipse at 50% 100%, transparent 0 48%, hsl(200 45% 45% / 0.2) 49% 52%, transparent 53%),
+      linear-gradient(180deg, #1e3a8a, #3b82f6);
+    background-size: 120px 80px, 100% 100%;
+    background-color: #1e3a8a;
+  }
+
+  html[data-background="meadow"] body,
+  html[data-background="meadow"] .bg-background {
+    background-image:
+      radial-gradient(circle at 20% 20%, #fde047 0 3px, transparent 4px),
+      radial-gradient(circle at 80% 60%, #fca5a5 0 3px, transparent 4px),
+      linear-gradient(180deg, #bbf7d0, #4ade80);
+    background-size: 100px 100px, 120px 120px, 100% 100%;
+    background-color: #bbf7d0;
   }
 
   ::selection {
@@ -626,11 +652,11 @@
 
   .settings-background-cheese::before {
     background-image:
-      radial-gradient(circle at 22% 30%, hsl(var(--background)) 0 0.42rem, transparent 0.46rem),
-      radial-gradient(circle at 72% 62%, hsl(var(--background)) 0 0.62rem, transparent 0.66rem),
+      radial-gradient(circle at 20% 30%, hsl(var(--background)) 0 0.45rem, transparent 0.5rem),
+      radial-gradient(circle at 75% 65%, hsl(var(--background)) 0 0.65rem, transparent 0.7rem),
       linear-gradient(135deg, hsl(45 100% 66% / 0.86) 0 38%, hsl(38 100% 58% / 0.86) 38% 64%, hsl(51 100% 72% / 0.86) 64%);
-    background-position: 0 0, 18px 10px, 0 0;
-    background-size: 72px 72px, 98px 98px, 120px 90px;
+    background-size: 80px 80px, 80px 80px, 80px 80px;
+    background-position: 0 0, 40px 40px, 0 0;
   }
 
   .settings-background-autumn::before {
@@ -655,11 +681,12 @@
 
   .settings-background-chalk::before {
     background-image:
-      repeating-linear-gradient(2deg, transparent 0 14px, hsl(146 18% 84% / 0.18) 14px 16px, transparent 16px 34px),
-      repeating-linear-gradient(92deg, transparent 0 18px, hsl(146 18% 84% / 0.12) 18px 20px, transparent 20px 44px),
-      linear-gradient(28deg, transparent 0 42%, hsl(44 92% 74% / 0.25) 42% 50%, transparent 50%);
-    background-position: 0 0, 14px 8px, 0 0;
-    background-size: 128px 90px, 116px 100px, 120px 88px;
+      repeating-linear-gradient(2deg, transparent 0 18px, hsl(146 18% 84% / 0.11) 18px 20px, transparent 20px 100px),
+      repeating-linear-gradient(92deg, transparent 0 24px, hsl(146 18% 84% / 0.08) 24px 26px, transparent 26px 100px),
+      linear-gradient(28deg, transparent 0 42%, hsl(44 92% 74% / 0.18) 42% 47%, transparent 47%),
+      linear-gradient(118deg, transparent 0 45%, hsl(0 0% 100% / 0.14) 45% 49%, transparent 49%);
+    background-size: 100px 100px, 100px 100px, 100px 100px, 100px 100px;
+    background-position: 0 0, 0 0, 0 0, 0 0;
     background-color: hsl(158 32% 23%);
   }
 
@@ -738,6 +765,28 @@
       radial-gradient(1px 1px at 30% 30%, white 100%, transparent),
       radial-gradient(1.5px 1.5px at 70% 60%, white 100%, transparent);
     background-color: hsl(240 50% 5%);
+  }
+
+  .settings-background-forest::before {
+    background-image:
+      repeating-linear-gradient(90deg, transparent 0 15px, rgba(0,0,0,0.1) 15px 16px, transparent 16px 30px),
+      linear-gradient(180deg, #14532d, #166534);
+    background-size: 30px 100%, 100% 100%;
+  }
+
+  .settings-background-ocean::before {
+    background-image:
+      radial-gradient(ellipse at 50% 100%, transparent 0 48%, rgba(255,255,255,0.1) 49% 52%, transparent 53%),
+      linear-gradient(180deg, #1e3a8a, #3b82f6);
+    background-size: 40px 30px, 100% 100%;
+  }
+
+  .settings-background-meadow::before {
+    background-image:
+      radial-gradient(circle at 20% 20%, #fde047 0 2px, transparent 3px),
+      radial-gradient(circle at 80% 60%, #fca5a5 0 2px, transparent 3px),
+      linear-gradient(180deg, #bbf7d0, #4ade80);
+    background-size: 30px 30px, 40px 40px, 100% 100%;
   }
 
   .settings-background-chalk > span,

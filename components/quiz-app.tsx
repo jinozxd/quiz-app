@@ -290,7 +290,7 @@ type MatchingCount = 25 | 40 | "full";
 type MotionLevel = "low" | "normal" | "high" | "off";
 type ThemeMode = "light" | "dark";
 type SweepAnimationType = "emoji" | "stars" | "hearts" | "off";
-type BackgroundMode = "grid" | "blast" | "stickers" | "checker" | "poster" | "tape" | "notebook" | "neon" | "waves" | "cheese" | "autumn" | "lastday" | "chalk" | "library" | "rain" | "orbit" | "spark" | "stars" | "aurora" | "sunset" | "galaxy";
+type BackgroundMode = "grid" | "blast" | "stickers" | "checker" | "poster" | "tape" | "notebook" | "neon" | "waves" | "cheese" | "autumn" | "lastday" | "chalk" | "library" | "rain" | "orbit" | "spark" | "stars" | "aurora" | "sunset" | "galaxy" | "forest" | "ocean" | "meadow";
 type BackgroundRandomMinutes = 2 | 3 | 5;
 
 export type AppSettings = {
@@ -708,7 +708,10 @@ function isBackgroundMode(value: unknown): value is BackgroundMode {
     value === "stars" ||
     value === "aurora" ||
     value === "sunset" ||
-    value === "galaxy"
+    value === "galaxy" ||
+    value === "forest" ||
+    value === "ocean" ||
+    value === "meadow"
   );
 }
 
@@ -1381,7 +1384,7 @@ function makeEmojiSweepItems(motion: MotionLevel, style: SweepAnimationType) {
 }
 
 function getNextBackground(current: BackgroundMode) {
-  const backgrounds: BackgroundMode[] = ["grid", "blast", "stickers", "checker", "poster", "tape", "notebook", "neon", "waves", "cheese", "autumn", "lastday", "chalk", "library", "rain", "orbit", "spark", "stars", "aurora", "sunset", "galaxy"];
+  const backgrounds: BackgroundMode[] = ["grid", "blast", "stickers", "checker", "poster", "tape", "notebook", "neon", "waves", "cheese", "autumn", "lastday", "chalk", "library", "rain", "orbit", "spark", "stars", "aurora", "sunset", "galaxy", "forest", "ocean", "meadow"];
   const candidates = backgrounds.filter((background) => background !== current);
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
@@ -5863,7 +5866,10 @@ export function SettingsDialog({
                       stars: "Ngôi sao đêm",
                       aurora: "Cực quang",
                       sunset: "Hoàng hôn",
-                      galaxy: "Ngân hà"
+                      galaxy: "Ngân hà",
+                      forest: "Rừng xanh",
+                      ocean: "Biển cả",
+                      meadow: "Cánh đồng"
                     }[settings.background]}
                   </Badge>
                 </div>
@@ -5890,7 +5896,10 @@ export function SettingsDialog({
                     { id: "stars" as const, label: "Ngôi sao đêm", icon: "☆☆" },
                     { id: "aurora" as const, label: "Cực quang", icon: "AUR" },
                     { id: "sunset" as const, label: "Hoàng hôn", icon: "SUN" },
-                    { id: "galaxy" as const, label: "Ngân hà", icon: "GAL" }
+                    { id: "galaxy" as const, label: "Ngân hà", icon: "GAL" },
+                    { id: "forest" as const, label: "Rừng xanh", icon: "FT" },
+                    { id: "ocean" as const, label: "Biển cả", icon: "OC" },
+                    { id: "meadow" as const, label: "Cánh đồng", icon: "MD" }
                   ].map((background) => (
                     <button
                       key={background.id}
@@ -6120,12 +6129,12 @@ export function SettingsDialog({
                       Thông tin bản phát hành hiện tại của Quiz ôn tập.
                     </p>
                   </div>
-                  <Badge variant="secondary">v4.2.2</Badge>
+                  <Badge variant="secondary">v4.6.1</Badge>
                 </div>
 
                 <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
                   <p className="text-sm font-black text-muted-foreground">Bản hiện tại</p>
-                  <p className="mt-2 text-4xl font-black">4.2.2</p>
+                  <p className="mt-2 text-4xl font-black">4.6.1</p>
                 </div>
               </section>
             )}
