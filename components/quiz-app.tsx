@@ -290,7 +290,7 @@ type MatchingCount = 25 | 40 | "full";
 type MotionLevel = "low" | "normal" | "high" | "off";
 type ThemeMode = "light" | "dark";
 type SweepAnimationType = "emoji" | "stars" | "hearts" | "off";
-type BackgroundMode = "grid" | "blast" | "stickers" | "checker" | "poster" | "tape" | "notebook" | "neon" | "waves" | "cheese" | "autumn" | "lastday" | "chalk" | "library" | "rain" | "orbit" | "spark" | "stars";
+type BackgroundMode = "grid" | "blast" | "stickers" | "checker" | "poster" | "tape" | "notebook" | "neon" | "waves" | "cheese" | "autumn" | "lastday" | "chalk" | "library" | "rain" | "orbit" | "spark" | "stars" | "aurora" | "sunset" | "galaxy";
 type BackgroundRandomMinutes = 2 | 3 | 5;
 
 export type AppSettings = {
@@ -705,7 +705,10 @@ function isBackgroundMode(value: unknown): value is BackgroundMode {
     value === "rain" ||
     value === "orbit" ||
     value === "spark" ||
-    value === "stars"
+    value === "stars" ||
+    value === "aurora" ||
+    value === "sunset" ||
+    value === "galaxy"
   );
 }
 
@@ -1378,7 +1381,7 @@ function makeEmojiSweepItems(motion: MotionLevel, style: SweepAnimationType) {
 }
 
 function getNextBackground(current: BackgroundMode) {
-  const backgrounds: BackgroundMode[] = ["grid", "blast", "stickers", "checker", "poster", "tape", "notebook", "neon", "waves", "cheese", "autumn", "lastday", "chalk", "library", "rain", "orbit", "spark"];
+  const backgrounds: BackgroundMode[] = ["grid", "blast", "stickers", "checker", "poster", "tape", "notebook", "neon", "waves", "cheese", "autumn", "lastday", "chalk", "library", "rain", "orbit", "spark", "stars", "aurora", "sunset", "galaxy"];
   const candidates = backgrounds.filter((background) => background !== current);
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
@@ -2872,6 +2875,31 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     await loadAdminUsers();
   }
 
+  async function editAdminUserProfile(userId: string, data: { name?: string; email?: string; password?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) {
+    if (!auth.sessionToken || currentUser?.role !== "admin") {
+      setAdminMessage("Chỉ admin gốc mới được tinh chỉnh tài khoản.");
+      return;
+    }
+
+    setAdminMessage("");
+    const response = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.sessionToken}`
+      },
+      body: JSON.stringify({ userId, action: "editProfile", ...data })
+    });
+    const resData = (await response.json().catch(() => ({}))) as { error?: string };
+
+    if (!response.ok) {
+      setAdminMessage(resData.error ?? "Không tinh chỉnh được tài khoản.");
+      return;
+    }
+
+    await loadAdminUsers();
+  }
+
   useEffect(() => {
     if (adminControlOpen && canUseAdminControl) {
       void loadAdminUsers();
@@ -2980,6 +3008,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
               subjects={subjects}
               onRefresh={loadAdminUsers}
               onUpdateUser={updateAdminUser}
+              onEditProfile={editAdminUserProfile}
             />
           ) : (
             <>
@@ -5578,9 +5607,7 @@ export function SettingsDialog({
                       <p className="mt-1 text-2xl font-black">{user?.name ?? "Chưa đăng nhập"}</p>
                     </div>
                     {user?.role && (
-                      <Badge variant={user.role === "admin" ? "secondary" : "outline"}>
-                        {user.role === "admin" ? "Admin" : "Thành viên"}
-                      </Badge>
+                      <RoleBadge role={user.role} delegated={user.delegated} />
                     )}
                   </div>
                 </div>
@@ -5832,7 +5859,10 @@ export function SettingsDialog({
                       rain: "Sân trường mưa",
                       orbit: "Quỹ đạo neon",
                       spark: "Tia chớp pop",
-                      stars: "Ngôi sao đêm"
+                      stars: "Ngôi sao đêm",
+                      aurora: "Cực quang",
+                      sunset: "Hoàng hôn",
+                      galaxy: "Ngân hà"
                     }[settings.background]}
                   </Badge>
                 </div>
@@ -5856,7 +5886,10 @@ export function SettingsDialog({
                     { id: "rain" as const, label: "Sân trường mưa", icon: "MR" },
                     { id: "orbit" as const, label: "Quỹ đạo neon", icon: "QĐ" },
                     { id: "spark" as const, label: "Tia chớp pop", icon: "TZ" },
-                    { id: "stars" as const, label: "Ngôi sao đêm", icon: "☆☆" }
+                    { id: "stars" as const, label: "Ngôi sao đêm", icon: "☆☆" },
+                    { id: "aurora" as const, label: "Cực quang", icon: "AUR" },
+                    { id: "sunset" as const, label: "Hoàng hôn", icon: "SUN" },
+                    { id: "galaxy" as const, label: "Ngân hà", icon: "GAL" }
                   ].map((background) => (
                     <button
                       key={background.id}
@@ -6086,12 +6119,12 @@ export function SettingsDialog({
                       Thông tin bản phát hành hiện tại của Quiz ôn tập.
                     </p>
                   </div>
-                  <Badge variant="secondary">v4.1.6</Badge>
+                  <Badge variant="secondary">v4.2.2</Badge>
                 </div>
 
                 <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
                   <p className="text-sm font-black text-muted-foreground">Bản hiện tại</p>
-                  <p className="mt-2 text-4xl font-black">4.1.6</p>
+                  <p className="mt-2 text-4xl font-black">4.2.2</p>
                 </div>
               </section>
             )}
@@ -6354,6 +6387,100 @@ function getAdminUserPulse(user: AdminUserWithStats, now: number) {
   };
 }
 
+function AdminProfileEditForm({
+  user,
+  allAchievements,
+  onSave
+}: {
+  user: AdminUserRecord;
+  allAchievements: Achievement[];
+  onSave: (data: { name?: string; email?: string; password?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
+}) {
+  const [name, setName] = useState(user.name);
+  const [email, setEmail] = useState(user.email);
+  const [password, setPassword] = useState("");
+  const [level, setLevel] = useState(user.profileProgress.level);
+  const [xp, setXp] = useState(user.profileProgress.xp);
+  const [unlocked, setUnlocked] = useState<Set<string>>(new Set(user.profileProgress.unlockedAchievementIds));
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setName(user.name);
+    setEmail(user.email);
+    setPassword("");
+    setLevel(user.profileProgress.level);
+    setXp(user.profileProgress.xp);
+    setUnlocked(new Set(user.profileProgress.unlockedAchievementIds));
+  }, [user]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    await onSave({
+      name: name !== user.name ? name : undefined,
+      email: email !== user.email ? email : undefined,
+      password: password || undefined,
+      level: level !== user.profileProgress.level ? level : undefined,
+      xp: xp !== user.profileProgress.xp ? xp : undefined,
+      unlockedAchievementIds: Array.from(unlocked)
+    });
+    setSaving(false);
+    setPassword("");
+  }
+
+  function toggleAchievement(id: string) {
+    const next = new Set(unlocked);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setUnlocked(next);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-4 rounded-xl border-2 border-foreground bg-secondary/30 p-3 shadow-inner">
+      <p className="text-sm font-black text-muted-foreground uppercase">Tinh chỉnh tài khoản</p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-1">
+          <label className="text-xs font-black">Tên hiển thị</label>
+          <input className="rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={name} onChange={e => setName(e.target.value)} required minLength={2} maxLength={40} />
+        </div>
+        <div className="grid gap-1">
+          <label className="text-xs font-black">Email</label>
+          <input type="email" className="rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={email} onChange={e => setEmail(e.target.value)} required maxLength={120} />
+        </div>
+        <div className="grid gap-1">
+          <label className="text-xs font-black">Mật khẩu mới (để trống nếu không đổi)</label>
+          <input type="password" placeholder="Nhập mật khẩu mới..." className="rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={password} onChange={e => setPassword(e.target.value)} minLength={8} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-1">
+            <label className="text-xs font-black">Level</label>
+            <input type="number" className="rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={level} onChange={e => setLevel(Number(e.target.value))} required min={1} max={9999} />
+          </div>
+          <div className="grid gap-1">
+            <label className="text-xs font-black">% XP</label>
+            <input type="number" className="rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={xp} onChange={e => setXp(Number(e.target.value))} required min={0} max={100} />
+          </div>
+        </div>
+      </div>
+      <div className="mt-3">
+        <label className="text-xs font-black">Thành tựu đã mở ({unlocked.size}/{allAchievements.length})</label>
+        <div className="mt-2 flex max-h-32 flex-wrap gap-2 overflow-auto pr-2 pb-2">
+          {allAchievements.map(a => (
+            <button key={a.id} type="button" onClick={() => toggleAchievement(a.id)} className={cn("rounded-md border-2 border-foreground px-2 py-1 text-xs font-black transition-transform active:scale-95 shadow-[2px_2px_0_0_hsl(var(--foreground))]", unlocked.has(a.id) ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground opacity-60")}>
+              {a.title}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-4 flex justify-end">
+        <Button size="sm" type="submit" disabled={saving}>
+          {saving ? "Đang lưu..." : "Lưu tinh chỉnh"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 function AdminControlPanel({
   adminUsers,
   currentUser,
@@ -6361,7 +6488,8 @@ function AdminControlPanel({
   message,
   subjects,
   onRefresh,
-  onUpdateUser
+  onUpdateUser,
+  onEditProfile
 }: {
   adminUsers: AdminUserRecord[];
   currentUser?: AuthSession;
@@ -6371,6 +6499,7 @@ function AdminControlPanel({
   subjects: QuizSubject[];
   onRefresh: () => void;
   onUpdateUser: (userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote") => void;
+  onEditProfile: (userId: string, data: { name?: string; email?: string; password?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
 }) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [userSort, setUserSort] = useState<"recent" | "most" | "accuracy" | "risk">("recent");
@@ -6454,6 +6583,10 @@ function AdminControlPanel({
       return bRate - aRate;
     })[0];
   const adminModeLabel = canWrite ? "Toàn quyền" : "Chỉ xem";
+
+  const allAchievements = useMemo(() => {
+    return getAchievements(subjects[0], [], { level: 0, xp: 0, awardedResultIds: [], unlockedAchievementIds: [] });
+  }, [subjects]);
 
   return (
     <section className="admin-dashboard rounded-[2rem] border-4 border-[#202226] bg-[#eef0ef] p-3 text-[#202226] shadow-[12px_12px_0_0_#202226,0_24px_70px_rgba(24,31,36,0.16)] sm:p-5">
@@ -6734,9 +6867,7 @@ function AdminControlPanel({
                   {getBrowserName(user.lastUserAgent)} · {formatAdminDate(user.lastLoginAt ?? user.dataUpdatedAt)}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1">
-                  <Badge variant={user.role === "admin" ? "secondary" : "outline"}>{user.role === "admin" ? "Admin" : "Member"}</Badge>
-                  {user.delegated && <Badge variant="secondary">Ủy quyền</Badge>}
-                  {user.banned && <Badge variant="destructive">Ban</Badge>}
+                  <RoleBadge role={user.role} delegated={user.delegated} />
                 </div>
               </button>
             ))}
@@ -6842,9 +6973,12 @@ function AdminControlPanel({
                   </Button>
                 </div>
               )}
+              {canWrite && selectedUser && (
+                <AdminProfileEditForm user={selectedUser} allAchievements={allAchievements} onSave={(data) => onEditProfile(selectedUser.id, data)} />
+              )}
               {!canWrite && (
                 <p className="mt-4 rounded-xl border-2 border-foreground bg-muted px-3 py-2 text-sm font-black text-muted-foreground">
-                  Tài khoản được ủy quyền chỉ được xem kiểm soát, không thể ban, nâng quyền hoặc ủy quyền cho người khác.
+                  Tài khoản được ủy quyền chỉ được xem kiểm soát, không thể tinh chỉnh, ban hoặc nâng quyền người khác.
                 </p>
               )}
             </div>
@@ -7147,6 +7281,28 @@ function getLevelStyle(level: number) {
   return "bg-secondary/95 text-foreground";
 }
 
+export function RoleBadge({ role, delegated, className }: { role: "admin" | "member"; delegated?: boolean; className?: string }) {
+  if (role === "admin") {
+    return (
+      <Badge className={cn("animate-pulse border-2 border-foreground bg-yellow-400 font-black uppercase text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]", className)} variant="secondary">
+        Admin
+      </Badge>
+    );
+  }
+  if (delegated) {
+    return (
+      <Badge className={cn("border-2 border-foreground bg-blue-400 font-black uppercase text-white shadow-[2px_2px_0_0_hsl(var(--foreground))]", className)} variant="secondary">
+        Ủy quyền
+      </Badge>
+    );
+  }
+  return (
+    <Badge className={cn("border-2 border-foreground bg-muted font-bold uppercase text-muted-foreground shadow-[2px_2px_0_0_hsl(var(--foreground))]", className)} variant="outline">
+      User
+    </Badge>
+  );
+}
+
 function AccountFrame({
   media,
   onMediaChange,
@@ -7219,11 +7375,9 @@ function AccountFrame({
               <span className="block h-full bg-foreground transition-all duration-500" style={{ width: `${profile.level >= 100 ? 100 : profile.xp}%` }} />
             </div>
           </div>
-          {user.role === "admin" && (
-            <Badge className="mt-2 animate-pulse border-2 border-foreground bg-yellow-400 font-black uppercase text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]" variant="secondary">
-              Admin
-            </Badge>
-          )}
+          <div className="mt-2 flex">
+            <RoleBadge role={user.role} delegated={user.delegated} />
+          </div>
         </div>
       </button>
 
@@ -7281,15 +7435,7 @@ function AccountFrame({
               <div>
                 <p className="text-xs font-black uppercase text-muted-foreground">Tài khoản</p>
                 <h2 className="mt-1 truncate text-3xl font-black leading-tight">{user.name}</h2>
-                {user.role === "admin" ? (
-                  <Badge className="mt-3 animate-pulse border-2 border-foreground bg-yellow-400 font-black uppercase text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]" variant="secondary">
-                    Admin
-                  </Badge>
-                ) : (
-                  <Badge className="mt-3" variant="outline">
-                    Thành viên
-                  </Badge>
-                )}
+                <RoleBadge className="mt-3" role={user.role} delegated={user.delegated} />
               </div>
 
               <div className="mt-5 rounded-2xl border-2 border-foreground bg-muted p-4">

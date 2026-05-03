@@ -1,20 +1,32 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { AppSession } from "@/lib/app-auth";
-import { getBearerToken, verifySessionToken } from "@/lib/app-auth";
-import { decryptJsonForUser } from "@/lib/security/app-data-crypto";
+import { getBearerToken, hashPassword, verifySessionToken } from "@/lib/app-auth";
+import { decryptJsonForUser, encryptJsonForUser } from "@/lib/security/app-data-crypto";
 import { getIp, rateLimit } from "@/lib/security/rate-limit";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
 
 const EMPTY_SAVED = { items: {}, order: [], starredQuestionIds: [], results: [] };
-const EMPTY_PROFILE_PROGRESS = { level: 1, xp: 0, awardedResultIds: [], unlockedAchievementIds: [] };
+const EMPTY_PROFILE_PROGRESS = { level: 1, xp: 0, awardedResultIds: [] as string[], unlockedAchievementIds: [] as string[] };
 
-const updateSchema = z.object({
-  userId: z.string().uuid(),
-  action: z.enum(["ban", "unban", "delegate", "revokeDelegate", "promote", "demote"])
-});
+const updateSchema = z.discriminatedUnion("action", [
+  z.object({
+    userId: z.string().uuid(),
+    action: z.enum(["ban", "unban", "delegate", "revokeDelegate", "promote", "demote"])
+  }),
+  z.object({
+    userId: z.string().uuid(),
+    action: z.literal("editProfile"),
+    name: z.string().trim().min(2).max(40).regex(/^[\p{L}\p{N}_ .-]+$/u).optional(),
+    email: z.string().trim().email().max(120).optional(),
+    password: z.string().min(8).max(128).optional(),
+    level: z.number().int().min(1).max(9999).optional(),
+    xp: z.number().int().min(0).max(100).optional(),
+    unlockedAchievementIds: z.array(z.string()).optional()
+  })
+]);
 
 function getSession(request: Request) {
   return verifySessionToken(getBearerToken(request));
@@ -147,6 +159,56 @@ export async function PATCH(request: Request) {
 
   if (parsed.data.userId === session.id && ["ban", "demote"].includes(parsed.data.action)) {
     return NextResponse.json({ error: "Không thể tự khóa hoặc hạ quyền chính mình." }, { status: 400 });
+  }
+
+  if (parsed.data.action === "editProfile") {
+    const { userId, name, email, password, level, xp, unlockedAchievementIds } = parsed.data;
+    
+    const userPatch: Record<string, any> = {};
+    if (name) userPatch.name = name;
+    if (email) userPatch.email = email.toLowerCase();
+    if (password) {
+      const { hash, salt } = await hashPassword(password);
+      userPatch.password_hash = hash;
+      userPatch.password_salt = salt;
+      userPatch.password_changed_at = new Date().toISOString();
+    }
+    
+    if (Object.keys(userPatch).length > 0) {
+      const { error: userError } = await admin.service
+        .from("app_users")
+        .update({ ...userPatch, updated_at: new Date().toISOString() })
+        .eq("id", userId);
+      if (userError) return NextResponse.json({ error: "Không cập nhật được thông tin tài khoản." }, { status: 500 });
+    }
+
+    if (level !== undefined || xp !== undefined || unlockedAchievementIds !== undefined) {
+      const { data: userData, error: dataError } = await admin.service
+        .from("app_user_data")
+        .select("profile_progress")
+        .eq("user_id", userId)
+        .maybeSingle();
+      
+      if (dataError) return NextResponse.json({ error: "Không đọc được dữ liệu tiến trình." }, { status: 500 });
+
+      const currentProgress = decryptJsonForUser(userData?.profile_progress, userId, "profile_progress", EMPTY_PROFILE_PROGRESS);
+      const newProgress = { ...currentProgress };
+      if (level !== undefined) newProgress.level = level;
+      if (xp !== undefined) newProgress.xp = xp;
+      if (unlockedAchievementIds !== undefined) newProgress.unlockedAchievementIds = unlockedAchievementIds;
+
+      const { error: saveError } = await admin.service
+        .from("app_user_data")
+        .update({
+          profile_progress: encryptJsonForUser(newProgress, userId, "profile_progress"),
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", userId);
+      
+      if (saveError) return NextResponse.json({ error: "Không lưu được tiến trình." }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
   }
 
   const patch = {
