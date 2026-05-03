@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowUp,
   BarChart3,
   BookOpenCheck,
   CheckCircle2,
@@ -13,7 +14,9 @@ import {
   CircleHelp,
   Eye,
   EyeOff,
+  Flag,
   Lightbulb,
+  List,
   LogIn,
   LogOut,
   MoreVertical,
@@ -52,6 +55,7 @@ type AuthSession = {
   id?: string;
   name: string;
   role: AuthUser["role"];
+  delegated?: boolean;
 };
 
 type AuthState = {
@@ -60,6 +64,32 @@ type AuthState = {
   sessionToken?: string;
   rememberedName?: string;
   rememberPassword?: boolean;
+};
+
+type AdminUserRecord = {
+  id: string;
+  email: string;
+  name: string;
+  role: AuthUser["role"];
+  banned: boolean;
+  delegated: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  passwordChangedAt?: string;
+  lastLoginAt?: string;
+  lastLoginIp?: string;
+  lastUserAgent?: string;
+  loginCount: number;
+  deviceCount: number;
+  loginEvents: Array<{
+    ip?: string;
+    userAgent?: string;
+    deviceKey?: string;
+    createdAt?: string;
+  }>;
+  dataUpdatedAt?: string;
+  saved: SavedProgress;
+  profileProgress: ProfileProgress;
 };
 
 type QuestionStat = {
@@ -85,6 +115,7 @@ const SETTINGS_KEY = "quiz-on-tap-settings-v1";
 const AUTH_STORAGE_KEY = "quiz-on-tap-auth-v1";
 const PROFILE_MEDIA_KEY = "quiz-on-tap-profile-media-v1";
 const PROFILE_PROGRESS_KEY = "quiz-on-tap-profile-progress-v1";
+const WEEKLY_RECAP_KEY = "quiz-on-tap-weekly-recap-v1";
 const LEGACY_STORAGE_KEY = "campus-quiz-progress-v2";
 const LEGACY_SETTINGS_KEY = "campus-quiz-settings-v1";
 const LEGACY_AUTH_STORAGE_KEY = "campus-quiz-auth-v1";
@@ -195,6 +226,7 @@ type ResultItem = {
   score: number;
   total: number;
   submittedAt: number;
+  durationMs?: number;
   pinnedAt?: number;
 };
 
@@ -254,7 +286,7 @@ type MatchingCount = 25 | 40 | "full";
 
 type MotionLevel = "low" | "normal" | "high" | "off";
 type ThemeMode = "light" | "dark";
-type BackgroundMode = "grid" | "blast" | "stickers" | "checker" | "poster" | "tape" | "notebook" | "neon" | "waves";
+type BackgroundMode = "grid" | "blast" | "stickers" | "checker" | "poster" | "tape" | "notebook" | "neon" | "waves" | "cheese" | "autumn" | "lastday" | "chalk" | "library" | "rain" | "orbit" | "spark";
 type BackgroundRandomMinutes = 2 | 3 | 5;
 
 export type AppSettings = {
@@ -266,8 +298,35 @@ export type AppSettings = {
   pomodoroBreakMinutes: number;
   pomodoroEnabled: boolean;
   pomodoroFocusMinutes: number;
+  entryAnimation: boolean;
   motion: MotionLevel;
   theme: ThemeMode;
+};
+
+type WeeklyChapterRecap = {
+  id: string;
+  subjectTitle: string;
+  title: string;
+  correct: number;
+  wrong: number;
+  total: number;
+  attempts: number;
+  durationMs: number;
+  lastActivity: number;
+};
+
+export type WeeklyRecapData = {
+  generatedAt: number;
+  userName: string;
+  weekStart: number;
+  weekEnd: number;
+  correct: number;
+  wrong: number;
+  total: number;
+  attempts: number;
+  durationMs: number;
+  hasTimedResults: boolean;
+  chapters: WeeklyChapterRecap[];
 };
 
 type EmojiSweepItem = {
@@ -611,6 +670,7 @@ function defaultSettings(): AppSettings {
     pomodoroBreakMinutes: 5,
     pomodoroEnabled: false,
     pomodoroFocusMinutes: 20,
+    entryAnimation: true,
     motion: "normal",
     theme: "light"
   };
@@ -626,7 +686,15 @@ function isBackgroundMode(value: unknown): value is BackgroundMode {
     value === "tape" ||
     value === "notebook" ||
     value === "neon" ||
-    value === "waves"
+    value === "waves" ||
+    value === "cheese" ||
+    value === "autumn" ||
+    value === "lastday" ||
+    value === "chalk" ||
+    value === "library" ||
+    value === "rain" ||
+    value === "orbit" ||
+    value === "spark"
   );
 }
 
@@ -657,6 +725,7 @@ export function restoreSettings(): AppSettings {
       pomodoroBreakMinutes: breakMinutes,
       pomodoroEnabled: Boolean(parsed.pomodoroEnabled) && focusMinutes >= 10,
       pomodoroFocusMinutes: focusMinutes,
+      entryAnimation: parsed.entryAnimation !== false,
       motion: parsed.motion === "low" || parsed.motion === "normal" || parsed.motion === "high" || parsed.motion === "off" ? parsed.motion : "normal",
       theme: parsed.theme === "dark" ? "dark" : "light"
     };
@@ -670,6 +739,7 @@ type AppAuthResponse = {
     id?: string;
     name: string;
     role: AuthUser["role"];
+    delegated?: boolean;
   };
   token?: string;
   error?: string;
@@ -696,7 +766,7 @@ async function requestAppAuth(body: Record<string, unknown>, token?: string) {
 function authStateForSession(user: NonNullable<AppAuthResponse["user"]>, token: string, rememberPassword: boolean): AuthState {
   return {
     users: [],
-    session: { id: user.id, name: user.name, role: user.role },
+    session: { id: user.id, name: user.name, role: user.role, delegated: user.delegated },
     sessionToken: token,
     rememberedName: rememberPassword ? user.name : undefined,
     rememberPassword
@@ -977,6 +1047,109 @@ function getResultPercentValue(result: ResultItem) {
   return result.total ? Math.round((result.score / result.total) * 100) : 0;
 }
 
+function getWeekRange(now = Date.now()) {
+  const current = new Date(now);
+  current.setHours(0, 0, 0, 0);
+  const day = current.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const weekStart = current.getTime() + mondayOffset * 86_400_000;
+  return {
+    weekStart,
+    weekEnd: weekStart + 7 * 86_400_000
+  };
+}
+
+function formatStudyDuration(ms: number) {
+  const minutes = Math.max(0, Math.round(ms / 60_000));
+  if (minutes < 60) {
+    return `${minutes} phút`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const restMinutes = minutes % 60;
+  return restMinutes ? `${hours} giờ ${restMinutes} phút` : `${hours} giờ`;
+}
+
+function getWeeklyRecap(saved: SavedProgress, subjects: QuizSubject[], userName = "user"): WeeklyRecapData {
+  const now = Date.now();
+  const { weekStart, weekEnd } = getWeekRange(now);
+  const chapters = new Map<string, WeeklyChapterRecap>();
+  const weekResults = (saved.results ?? []).filter((result) => result.submittedAt >= weekStart && result.submittedAt < weekEnd);
+
+  let correct = 0;
+  let wrong = 0;
+  let durationMs = 0;
+  let hasTimedResults = false;
+
+  for (const result of weekResults) {
+    const subject = getSubject(subjects, result.subjectId);
+    const chapterId = result.chapterId ?? result.chapterTitle;
+    const chapter = getChapter(subject, result.chapterId);
+    const title = chapter?.title ?? result.chapterTitle;
+    const key = `${result.subjectId}:${chapterId}`;
+    const resultWrong = Math.max(0, result.total - result.score);
+    const resultDuration = result.durationMs ?? 0;
+    const current = chapters.get(key) ?? {
+      id: key,
+      subjectTitle: subject?.title ?? "Môn ôn tập",
+      title,
+      correct: 0,
+      wrong: 0,
+      total: 0,
+      attempts: 0,
+      durationMs: 0,
+      lastActivity: 0
+    };
+
+    correct += result.score;
+    wrong += resultWrong;
+    durationMs += resultDuration;
+    hasTimedResults = hasTimedResults || typeof result.durationMs === "number";
+    current.correct += result.score;
+    current.wrong += resultWrong;
+    current.total += result.total;
+    current.attempts += 1;
+    current.durationMs += resultDuration;
+    current.lastActivity = Math.max(current.lastActivity, result.submittedAt);
+    chapters.set(key, current);
+  }
+
+  return {
+    generatedAt: now,
+    userName,
+    weekStart,
+    weekEnd,
+    correct,
+    wrong,
+    total: correct + wrong,
+    attempts: weekResults.length,
+    durationMs,
+    hasTimedResults,
+    chapters: [...chapters.values()].sort((a, b) => b.total - a.total || b.lastActivity - a.lastActivity).slice(0, 6)
+  };
+}
+
+function writeWeeklyRecapSnapshot(recap: WeeklyRecapData) {
+  try {
+    window.localStorage.setItem(WEEKLY_RECAP_KEY, JSON.stringify(recap));
+  } catch {
+    // Recap is a local convenience widget; failing to cache it should not block the quiz.
+  }
+}
+
+export function restoreWeeklyRecapSnapshot(): WeeklyRecapData {
+  if (typeof window === "undefined") {
+    return getWeeklyRecap(emptySaved(), [], "user");
+  }
+
+  try {
+    const raw = window.localStorage.getItem(WEEKLY_RECAP_KEY);
+    return raw ? (JSON.parse(raw) as WeeklyRecapData) : getWeeklyRecap(emptySaved(), [], "user");
+  } catch {
+    return getWeeklyRecap(emptySaved(), [], "user");
+  }
+}
+
 function getXpForPercent(percent: number) {
   if (percent >= 100) {
     return 35;
@@ -1180,7 +1353,7 @@ function makeEmojiSweepItems(motion: MotionLevel) {
 }
 
 function getNextBackground(current: BackgroundMode) {
-  const backgrounds: BackgroundMode[] = ["grid", "blast", "stickers", "checker", "poster", "tape", "notebook", "neon", "waves"];
+  const backgrounds: BackgroundMode[] = ["grid", "blast", "stickers", "checker", "poster", "tape", "notebook", "neon", "waves", "cheese", "autumn", "lastday", "chalk", "library", "rain", "orbit", "spark"];
   const candidates = backgrounds.filter((background) => background !== current);
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
@@ -1456,6 +1629,9 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const [auth, setAuth] = useState<AuthState>(authRef.current);
   const [profileMedia, setProfileMedia] = useState<ProfileMedia>(profileMediaRef.current);
   const [profileProgress, setProfileProgress] = useState<ProfileProgress>(profileProgressRef.current);
+  const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>([]);
+  const [adminMessage, setAdminMessage] = useState("");
+  const [adminLoading, setAdminLoading] = useState(false);
   const [state, setState] = useState<QuizState>(() => getInitialState(subjects, savedRef.current));
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [memoryTipId, setMemoryTipId] = useState<string | null>(null);
@@ -1479,6 +1655,12 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const [emojiSweepItems, setEmojiSweepItems] = useState<EmojiSweepItem[]>([]);
   const [achievementQueue, setAchievementQueue] = useState<Achievement[]>([]);
   const [activeAchievementToast, setActiveAchievementToast] = useState<Achievement | null>(null);
+  const [quizNavOpen, setQuizNavOpen] = useState(false);
+  const [uncertainQuestionIds, setUncertainQuestionIds] = useState<string[]>([]);
+  const [pageActive, setPageActive] = useState(true);
+  const [awayWarningOpen, setAwayWarningOpen] = useState(false);
+  const [quizTimerStartedAt, setQuizTimerStartedAt] = useState(() => Date.now());
+  const [quizElapsedMs, setQuizElapsedMs] = useState(0);
   const [pomodoroBreakOpen, setPomodoroBreakOpen] = useState(false);
   const [pomodoroCycleStartedAt, setPomodoroCycleStartedAt] = useState(() => Date.now());
   const transitionKeyRef = useRef<string | null>(null);
@@ -1488,11 +1670,24 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const localDataHydratedRef = useRef(false);
   const pomodoroPausedElapsedMsRef = useRef(0);
   const wasPomodoroRunningRef = useRef(false);
+  const quizPausedElapsedMsRef = useRef(0);
+  const wasQuizTimerRunningRef = useRef(false);
   const levelPopupArmedRef = useRef(false);
   const previousProfileLevelRef = useRef(profileProgressRef.current.level);
   const currentUser = auth.session;
   const isGuest = !currentUser;
-  const isPomodoroRunning = Boolean(state.subject && state.chapter && !state.submitted);
+  const isActiveAttempt = Boolean(state.subject && state.chapter && !state.submitted);
+  const isPomodoroRunning = Boolean(isActiveAttempt && pageActive);
+
+  useEffect(() => {
+    setQuizNavOpen(false);
+    setUncertainQuestionIds([]);
+    setAwayWarningOpen(false);
+    quizPausedElapsedMsRef.current = 0;
+    wasQuizTimerRunningRef.current = false;
+    setQuizElapsedMs(0);
+    setQuizTimerStartedAt(Date.now());
+  }, [state.subject?.id, state.chapter?.id]);
 
   function requireLogin() {
     if (currentUser) {
@@ -1687,7 +1882,60 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     document.documentElement.dataset.background = settings.background;
     document.documentElement.classList.toggle("dark", settings.theme === "dark");
     document.documentElement.dataset.motion = settings.motion;
+    document.documentElement.dataset.entryMotion = settings.entryAnimation ? "on" : "off";
   }, [settings]);
+
+  useEffect(() => {
+    const updateActiveState = () => {
+      const active = document.visibilityState === "visible" && document.hasFocus();
+      setPageActive(active);
+      if (!active && state.subject && state.chapter && !state.submitted) {
+        setAwayWarningOpen(true);
+      }
+    };
+
+    updateActiveState();
+    document.addEventListener("visibilitychange", updateActiveState);
+    window.addEventListener("blur", updateActiveState);
+    window.addEventListener("focus", updateActiveState);
+
+    return () => {
+      document.removeEventListener("visibilitychange", updateActiveState);
+      window.removeEventListener("blur", updateActiveState);
+      window.removeEventListener("focus", updateActiveState);
+    };
+  }, [state.chapter, state.subject, state.submitted]);
+
+  useEffect(() => {
+    const now = Date.now();
+    if (!isActiveAttempt || !pageActive) {
+      if (wasQuizTimerRunningRef.current) {
+        quizPausedElapsedMsRef.current = Math.max(0, now - quizTimerStartedAt);
+        setQuizElapsedMs(quizPausedElapsedMsRef.current);
+      }
+      wasQuizTimerRunningRef.current = false;
+      return;
+    }
+
+    if (!wasQuizTimerRunningRef.current) {
+      setQuizTimerStartedAt(now - quizPausedElapsedMsRef.current);
+    }
+
+    wasQuizTimerRunningRef.current = true;
+  }, [isActiveAttempt, pageActive, quizTimerStartedAt]);
+
+  useEffect(() => {
+    if (!isActiveAttempt || !pageActive) {
+      return;
+    }
+
+    setQuizElapsedMs(Math.max(0, Date.now() - quizTimerStartedAt));
+    const timer = window.setInterval(() => {
+      setQuizElapsedMs(Math.max(0, Date.now() - quizTimerStartedAt));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [isActiveAttempt, pageActive, quizTimerStartedAt]);
 
   useEffect(() => {
     pomodoroPausedElapsedMsRef.current = 0;
@@ -1852,9 +2100,18 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const activeMemoryTip = memoryTipId ? memoryTips[memoryTipId] : undefined;
   const pendingMemoryTip = pendingMemoryTipId ? memoryTips[pendingMemoryTipId] : undefined;
   const isAdmin = currentUser?.role === "admin";
+  const canUseAdminControl = Boolean(currentUser && (currentUser.role === "admin" || currentUser.delegated));
   const questionStats = useMemo(() => getQuestionStats(subjects, saved), [subjects, saved]);
   const achievements = useMemo(() => getAchievements(primarySubject, saved.results ?? [], profileProgress), [primarySubject, profileProgress, saved.results]);
   const completedAchievementCount = achievements.filter((achievement) => achievement.unlocked).length;
+  const weeklyRecap = useMemo(
+    () => getWeeklyRecap(saved, subjects, currentUser?.name ?? displayUser.name),
+    [currentUser?.name, displayUser.name, saved, subjects]
+  );
+
+  useEffect(() => {
+    writeWeeklyRecapSnapshot(weeklyRecap);
+  }, [weeklyRecap]);
 
   useEffect(() => {
     const unlockedIds = achievements.filter((achievement) => achievement.unlocked).map((achievement) => achievement.id);
@@ -1930,7 +2187,8 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       userName: currentUser?.name,
       score: finalScore,
       total: state.chapter.questions.length,
-      submittedAt: Date.now()
+      submittedAt: Date.now(),
+      durationMs: quizElapsedMs
     };
 
     survivalResultSavedRef.current = currentProgressId;
@@ -1941,7 +2199,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     setLatestSubmitId(result.id);
     setSubmitPopupResult(result);
     awardProfileProgress(result);
-  }, [currentProgressId, currentUser?.name, state.answers, state.chapter, state.subject, state.submitted, state.survival?.gameOver]);
+  }, [currentProgressId, currentUser?.name, quizElapsedMs, state.answers, state.chapter, state.subject, state.submitted, state.survival?.gameOver]);
 
   const progressItems = saved.order
     .map((id) => saved.items[id])
@@ -2117,7 +2375,8 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       userName: currentUser?.name,
       score: scoreValue,
       total: totalValue,
-      submittedAt: Date.now()
+      submittedAt: Date.now(),
+      durationMs: quizElapsedMs
     };
 
     setSaved((current) => ({
@@ -2193,6 +2452,43 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     });
   }
 
+  function toggleUncertainQuestion(questionId: string) {
+    setUncertainQuestionIds((current) =>
+      current.includes(questionId)
+        ? current.filter((id) => id !== questionId)
+        : [...current, questionId]
+    );
+  }
+
+  function resetCurrentQuizAttempt() {
+    setState((current) => ({
+      ...current,
+      answers: {},
+      submitted: false,
+      survival: current.survival
+        ? {
+            ...current.survival,
+            livesLeft: current.survival.livesTotal,
+            shieldAvailable: current.survival.shieldEnabled,
+            gameOver: false
+          }
+        : undefined
+    }));
+  }
+
+  function scrollToQuizTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setQuizNavOpen(false);
+  }
+
+  function scrollToQuestion(questionIndex: number) {
+    document.getElementById(`quiz-question-${questionIndex + 1}`)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+    setQuizNavOpen(false);
+  }
+
   function submitCurrentQuiz() {
     if (requireLogin()) {
       return;
@@ -2210,7 +2506,8 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       userName: currentUser?.name,
       score,
       total: state.chapter.questions.length,
-      submittedAt: Date.now()
+      submittedAt: Date.now(),
+      durationMs: quizElapsedMs
     };
 
     setSaved((current) => ({
@@ -2475,8 +2772,8 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       }
     }));
 
-    if (!auth.sessionToken || !currentUser || (currentUser.role !== "admin" && profileProgress.level < PROFILE_MEDIA_SYNC_LEVEL)) {
-      return currentUser?.role === "admin" || profileProgress.level >= PROFILE_MEDIA_SYNC_LEVEL
+    if (!auth.sessionToken || !currentUser || (currentUser.role !== "admin" && !currentUser.delegated && profileProgress.level < PROFILE_MEDIA_SYNC_LEVEL)) {
+      return currentUser?.role === "admin" || currentUser?.delegated || profileProgress.level >= PROFILE_MEDIA_SYNC_LEVEL
         ? undefined
         : `Profile chỉ hỗ trợ sync khi đạt LV ${PROFILE_MEDIA_SYNC_LEVEL} trở lên. Ảnh hiện được lưu mã hóa trên máy này.`;
     }
@@ -2504,6 +2801,58 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     return undefined;
   }
 
+  async function loadAdminUsers() {
+    if (!auth.sessionToken || !canUseAdminControl) {
+      return;
+    }
+
+    setAdminLoading(true);
+    setAdminMessage("");
+    const response = await fetch("/api/admin/users", {
+      headers: { Authorization: `Bearer ${auth.sessionToken}` }
+    });
+    const data = (await response.json().catch(() => ({}))) as { users?: AdminUserRecord[]; error?: string };
+    setAdminLoading(false);
+
+    if (!response.ok || !data.users) {
+      setAdminMessage(data.error ?? "Không tải được dữ liệu kiểm soát.");
+      return;
+    }
+
+    setAdminUsers(data.users);
+  }
+
+  async function updateAdminUser(userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote") {
+    if (!auth.sessionToken || currentUser?.role !== "admin") {
+      setAdminMessage("Chỉ admin gốc mới được đổi quyền hoặc khóa tài khoản.");
+      return;
+    }
+
+    setAdminMessage("");
+    const response = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.sessionToken}`
+      },
+      body: JSON.stringify({ userId, action })
+    });
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+
+    if (!response.ok) {
+      setAdminMessage(data.error ?? "Không cập nhật được tài khoản.");
+      return;
+    }
+
+    await loadAdminUsers();
+  }
+
+  useEffect(() => {
+    if (adminControlOpen && canUseAdminControl) {
+      void loadAdminUsers();
+    }
+  }, [adminControlOpen, auth.sessionToken, canUseAdminControl]);
+
   if (!state.subject) {
     return (
       <main className="min-h-screen bg-background">
@@ -2518,14 +2867,14 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             setState({ answers: {}, submitted: false });
           }}
           onAdmin={() => {
-            if (requireLogin()) {
+            if (requireLogin() || !canUseAdminControl) {
               return;
             }
             setAdminControlOpen(true);
             setState({ answers: {}, submitted: false });
           }}
           onSettings={() => {
-            if (requireLogin()) {
+            if (requireLogin() || !canUseAdminControl) {
               return;
             }
             setSettingsOpen(true);
@@ -2596,21 +2945,35 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             profile={profileProgress}
             onMediaChange={updateProfileMedia}
           />
-          {adminControlOpen && isAdmin ? (
-            <AdminControlPanel auth={auth} saved={saved} subjects={subjects} questionStats={questionStats} />
+          {adminControlOpen && canUseAdminControl ? (
+            <AdminControlPanel
+              adminUsers={adminUsers}
+              currentUser={currentUser}
+              loading={adminLoading}
+              message={adminMessage}
+              saved={saved}
+              subjects={subjects}
+              onRefresh={loadAdminUsers}
+              onUpdateUser={updateAdminUser}
+            />
           ) : (
             <>
-          <WelcomeBanner user={currentUser} hasProgress={progressItems.length > 0} />
-          <ProgressPanel
-            items={progressItems}
-            subjects={subjects}
-            menuOpen={menuOpen}
-            setMenuOpen={setMenuOpen}
-            onOpen={openProgress}
-            onMove={moveProgress}
-            onLongPress={setItemActionId}
-            onDeleteAll={() => setDeleteAllOpen(true)}
-          />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.8fr)]">
+            <div className="min-w-0">
+              <WelcomeBanner user={currentUser} hasProgress={progressItems.length > 0} />
+              <ProgressPanel
+                items={progressItems}
+                subjects={subjects}
+                menuOpen={menuOpen}
+                setMenuOpen={setMenuOpen}
+                onOpen={openProgress}
+                onMove={moveProgress}
+                onLongPress={setItemActionId}
+                onDeleteAll={() => setDeleteAllOpen(true)}
+              />
+            </div>
+            <WeeklyRecapCard compact recap={weeklyRecap} />
+          </div>
           <RecentResults
             results={saved.results ?? []}
             subjects={subjects}
@@ -2918,7 +3281,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           setState({ answers: {}, submitted: false });
         }}
         onAdmin={() => {
-          if (requireLogin()) {
+          if (requireLogin() || !canUseAdminControl) {
             return;
           }
           setAdminControlOpen(true);
@@ -2999,6 +3362,12 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
               <p className="mt-2 text-sm text-muted-foreground">
                 Đã làm {answeredCount}/{state.chapter.questions.length} câu
               </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Badge variant="outline">{isExamMode ? "Thời gian thi" : "Thời gian làm bài"} {formatTimer(quizElapsedMs)}</Badge>
+                {!pageActive && (
+                  <Badge variant="destructive">Đang tạm dừng</Badge>
+                )}
+              </div>
               {state.survival && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Badge variant={state.survival.livesLeft > 0 ? "secondary" : "destructive"}>
@@ -3020,6 +3389,34 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                 </p>
               </div>
             )}
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setState((current) => ({ ...current, chapter: undefined, submitted: false }))}
+              >
+                <ArrowLeft className="mr-2 size-4" aria-hidden />
+                Chương
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={resetCurrentQuizAttempt}>
+                <RotateCcw className="mr-2 size-4" aria-hidden />
+                Làm lại
+              </Button>
+              <Button type="button" variant="outline" size="icon" onClick={scrollToQuizTop} aria-label="Lên đầu trang">
+                <ArrowUp className="size-4" aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                variant={quizNavOpen ? "secondary" : "outline"}
+                size="icon"
+                onClick={() => setQuizNavOpen((current) => !current)}
+                aria-label="Mở mục lục câu hỏi"
+                aria-expanded={quizNavOpen}
+              >
+                <List className="size-4" aria-hidden />
+              </Button>
+            </div>
           </div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
             <div
@@ -3027,6 +3424,37 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
               style={{ width: `${Math.round((answeredCount / state.chapter.questions.length) * 100)}%` }}
             />
           </div>
+          {quizNavOpen && (
+            <div className="absolute right-3 top-[calc(100%+0.75rem)] z-20 w-[min(22rem,calc(100vw-2rem))] rounded-xl border-2 border-foreground bg-card p-3 shadow-[7px_7px_0_0_hsl(var(--foreground))]">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-black">Mục lục câu hỏi</p>
+                <Badge variant="outline">{answeredCount}/{state.chapter.questions.length}</Badge>
+              </div>
+              <div className="grid max-h-[50vh] grid-cols-5 gap-2 overflow-auto pr-1 sm:grid-cols-6">
+                {state.chapter.questions.map((question, index) => {
+                  const answered = Boolean(state.answers[question.id]);
+                  const uncertain = uncertainQuestionIds.includes(question.id);
+
+                  return (
+                    <button
+                      key={question.id}
+                      type="button"
+                      className={cn(
+                        "relative grid min-h-11 place-items-center rounded-lg border-2 border-foreground text-sm font-black shadow-[3px_3px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5",
+                        answered ? "bg-secondary text-secondary-foreground" : "bg-white text-black",
+                        uncertain && "ring-4 ring-destructive"
+                      )}
+                      onClick={() => scrollToQuestion(index)}
+                      aria-label={`Đến câu ${index + 1}${uncertain ? " đã cắm cờ" : ""}`}
+                    >
+                      {index + 1}
+                      {uncertain && <Flag className="absolute -right-1 -top-1 size-4 fill-destructive text-destructive" aria-hidden />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {state.submitted && (
@@ -3077,9 +3505,14 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             const selectedOptionId = state.answers[question.id];
             const hasMemoryTip = Boolean(memoryTips[question.id]);
             const canOpenMemoryTip = hasMemoryTip && (state.submitted || !isExamMode);
+            const uncertain = uncertainQuestionIds.includes(question.id);
 
             return (
-              <Card key={question.id} className="motion-safe-card">
+              <Card
+                key={question.id}
+                id={`quiz-question-${questionIndex + 1}`}
+                className={cn("motion-safe-card scroll-mt-40", uncertain && "border-destructive")}
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between gap-3">
                     <CardTitle className="text-base leading-7 sm:text-lg">
@@ -3097,6 +3530,21 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                           <CircleHelp className="size-5 text-primary" aria-hidden />
                         </Button>
                       )}
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant={uncertain ? "secondary" : "ghost"}
+                      onClick={() => toggleUncertainQuestion(question.id)}
+                      aria-label={uncertain ? "Bỏ cờ chưa chắc chắn" : "Cắm cờ chưa chắc chắn"}
+                    >
+                      <Flag
+                        className={cn(
+                          "size-5",
+                          uncertain && "fill-destructive text-destructive"
+                        )}
+                        aria-hidden
+                      />
+                    </Button>
                     <Button
                       type="button"
                       size="icon"
@@ -3171,13 +3619,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
               {state.submitted && (
                 <Button
                   variant="outline"
-                  onClick={() =>
-                    setState((current) => ({
-                      ...current,
-                      answers: {},
-                      submitted: false
-                    }))
-                  }
+                  onClick={resetCurrentQuizAttempt}
                 >
                   <RotateCcw className="mr-2 size-4" aria-hidden />
                   Làm lại
@@ -3231,6 +3673,16 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       )}
       {activeMemoryTip && (
         <MemoryTipDialog tip={activeMemoryTip} onClose={() => setMemoryTipId(null)} />
+      )}
+      {awayWarningOpen && state.subject && state.chapter && !state.submitted && (
+        <ConfirmDialog
+          title="Bạn đã thoát khi đang làm"
+          body={`App đã tạm dừng Pomodoro và ${isExamMode ? "thời gian thi" : "thời gian làm bài"} ở ${formatTimer(quizElapsedMs)} vì bạn rời tab hoặc chuyển sang app khác. Khi quay lại, thời gian sẽ chạy tiếp từ mốc này.`}
+          cancelLabel="Đã hiểu"
+          confirmLabel="Tiếp tục làm"
+          onCancel={() => setAwayWarningOpen(false)}
+          onConfirm={() => setAwayWarningOpen(false)}
+        />
       )}
       <ResultSubmitPopup result={submitPopupResult} onClose={() => setSubmitPopupResult(null)} />
       <LevelUpPopup notice={levelUpNotice} onClose={() => setLevelUpNotice(null)} />
@@ -3540,6 +3992,98 @@ function WelcomeBanner({ hasProgress, user }: { hasProgress: boolean; user?: Aut
           “{welcomeQuotes[quoteIndex]}”
         </blockquote>
       </div>
+    </section>
+  );
+}
+
+export function WeeklyRecapCard({ compact = false, recap }: { compact?: boolean; recap: WeeklyRecapData }) {
+  const accuracy = recap.total ? Math.round((recap.correct / recap.total) * 100) : 0;
+  const animatedCorrect = useAnimatedNumber(recap.correct);
+  const animatedWrong = useAnimatedNumber(recap.wrong);
+  const animatedTotal = useAnimatedNumber(recap.total);
+  const maxChapterTotal = Math.max(1, ...recap.chapters.map((chapter) => chapter.total));
+  const weekStart = new Date(recap.weekStart).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+  const weekEnd = new Date(recap.weekEnd - 1).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+
+  return (
+    <section className={cn("weekly-recap-card overflow-hidden rounded-[24px] border-2 border-[#202226] bg-[#eef0ef] p-4 text-[#202226] shadow-[8px_8px_0_0_#202226]", compact ? "h-full" : "mx-auto w-full max-w-3xl")}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase text-[#72746f]">Recap tuần</p>
+          <h2 className="mt-1 text-2xl font-black leading-tight">{recap.userName}</h2>
+          <p className="mt-1 text-xs font-black text-[#72746f]">{weekStart} - {weekEnd}</p>
+        </div>
+        <Badge className="border-[#202226] bg-[#f07d88] text-white" variant="outline">
+          {accuracy}% đúng
+        </Badge>
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="rounded-2xl bg-[#fffaf3] p-3">
+          <CheckCircle2 className="size-5" aria-hidden />
+          <p className="mt-5 text-3xl font-black tracking-normal">{animatedCorrect}</p>
+          <p className="text-xs font-black text-[#72746f]">Đúng</p>
+        </div>
+        <div className="rounded-2xl bg-[#f4828d] p-3 text-white">
+          <XCircle className="size-5" aria-hidden />
+          <p className="mt-5 text-3xl font-black tracking-normal">{animatedWrong}</p>
+          <p className="text-xs font-black text-white/75">Sai</p>
+        </div>
+        <div className="rounded-2xl bg-[#202226] p-3 text-white">
+          <BarChart3 className="size-5" aria-hidden />
+          <p className="mt-5 text-3xl font-black tracking-normal">{animatedTotal}</p>
+          <p className="text-xs font-black text-white/75">Tổng câu</p>
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <div className="rounded-2xl bg-[#dfe8e1] p-3">
+          <p className="text-xs font-black uppercase text-[#72746f]">Bài đã nộp</p>
+          <p className="mt-2 text-3xl font-black tracking-normal">{recap.attempts}</p>
+        </div>
+        <div className="rounded-2xl bg-[#fffaf3] p-3">
+          <p className="text-xs font-black uppercase text-[#72746f]">Thời gian</p>
+          <p className="mt-2 text-2xl font-black tracking-normal">{formatStudyDuration(recap.durationMs)}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl bg-[#202226] p-4 text-white">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-black text-white/70">Theo chương/phần</p>
+          <Trophy className="size-5 text-[#ffd95d]" aria-hidden />
+        </div>
+        <div className="mt-4 grid gap-3">
+          {recap.chapters.length === 0 ? (
+            <p className="rounded-xl bg-white/10 p-3 text-sm font-black text-white/70">Tuần này chưa có bài nộp để recap.</p>
+          ) : (
+            recap.chapters.map((chapter, index) => {
+              const rate = Math.round((chapter.total / maxChapterTotal) * 100);
+              const chapterAccuracy = chapter.total ? Math.round((chapter.correct / chapter.total) * 100) : 0;
+              return (
+                <div key={chapter.id} className="rounded-xl bg-white/10 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black">{chapter.title}</p>
+                      <p className="truncate text-xs font-bold text-white/55">{chapter.subjectTitle}</p>
+                    </div>
+                    <span className="rounded-full bg-white px-2 py-1 text-xs font-black text-[#202226]">{chapterAccuracy}%</span>
+                  </div>
+                  <div className="mt-3 h-2 rounded-full bg-white/20">
+                    <span className="admin-progress-fill block h-full rounded-full bg-[#f07d88]" style={{ width: `${Math.max(6, rate)}%`, animationDelay: `${index * 80}ms` }} />
+                  </div>
+                  <p className="mt-2 text-xs font-bold text-white/60">
+                    {chapter.correct} đúng · {chapter.wrong} sai · {chapter.total} câu · {chapter.attempts} bài
+                  </p>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      <p className="mt-3 rounded-xl border-2 border-[#202226] bg-[#fffaf3] px-3 py-2 text-xs font-black text-[#72746f]">
+        Note cho user: recap tuần tính từ thứ Hai đến Chủ nhật. Tớ cũng ghi nhớ: thời gian chỉ cộng cho bài nộp từ bản 2.5.6 trở đi.
+      </p>
     </section>
   );
 }
@@ -5113,6 +5657,25 @@ export function SettingsDialog({
               >
                 {settings.motion === "off" ? "Bật lại chuyển động" : "Loại bỏ chuyển động"}
               </Button>
+              <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
+                <label className="flex cursor-pointer items-center justify-between gap-4">
+                  <span>
+                    <span className="block text-lg font-black">Animation ra/vào</span>
+                    <span className="block text-sm font-black text-muted-foreground">Tắt riêng hiệu ứng popup, card và dashboard khi mở/đóng.</span>
+                  </span>
+                  <input
+                    className="size-6 accent-black"
+                    type="checkbox"
+                    checked={settings.entryAnimation}
+                    onChange={(event) =>
+                      onChange((current) => ({
+                        ...current,
+                        entryAnimation: event.target.checked
+                      }))
+                    }
+                  />
+                </label>
+              </div>
             </section>
             )}
 
@@ -5180,7 +5743,15 @@ export function SettingsDialog({
                       tape: "Tape chaos",
                       notebook: "Notebook",
                       neon: "Neon board",
-                      waves: "Wave notes"
+                      waves: "Wave notes",
+                      cheese: "Cheese",
+                      autumn: "Lá vàng",
+                      lastday: "Buổi học cuối",
+                      chalk: "Bảng phấn",
+                      library: "Thư viện đêm",
+                      rain: "Sân trường mưa",
+                      orbit: "Quỹ đạo neon",
+                      spark: "Tia chớp pop"
                     }[settings.background]}
                   </Badge>
                 </div>
@@ -5195,7 +5766,15 @@ export function SettingsDialog({
                     { id: "tape" as const, label: "Tape chaos", icon: "~" },
                     { id: "notebook" as const, label: "Notebook", icon: "==" },
                     { id: "neon" as const, label: "Neon board", icon: "<>" },
-                    { id: "waves" as const, label: "Wave notes", icon: "~~~" }
+                    { id: "waves" as const, label: "Wave notes", icon: "~~~" },
+                    { id: "cheese" as const, label: "Cheese", icon: "CH" },
+                    { id: "autumn" as const, label: "Lá vàng", icon: "LA" },
+                    { id: "lastday" as const, label: "Buổi học cuối", icon: "12" },
+                    { id: "chalk" as const, label: "Bảng phấn", icon: "BP" },
+                    { id: "library" as const, label: "Thư viện đêm", icon: "TV" },
+                    { id: "rain" as const, label: "Sân trường mưa", icon: "MR" },
+                    { id: "orbit" as const, label: "Quỹ đạo neon", icon: "QĐ" },
+                    { id: "spark" as const, label: "Tia chớp pop", icon: "TZ" }
                   ].map((background) => (
                     <button
                       key={background.id}
@@ -5387,12 +5966,12 @@ export function SettingsDialog({
                       Thông tin bản phát hành hiện tại của Quiz ôn tập.
                     </p>
                   </div>
-                  <Badge variant="secondary">v2.2.2</Badge>
+                  <Badge variant="secondary">v2.5.6</Badge>
                 </div>
 
                 <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
                   <p className="text-sm font-black text-muted-foreground">Bản hiện tại</p>
-                  <p className="mt-2 text-4xl font-black">2.2.2</p>
+                  <p className="mt-2 text-4xl font-black">2.5.6</p>
                 </div>
               </section>
             )}
@@ -5415,7 +5994,800 @@ function Header({ title, action }: { title: string; action?: ReactNode }) {
   );
 }
 
+type AdminUserWithStats = AdminUserRecord & {
+  stats: {
+    answered: number;
+    correct: number;
+    wrong: number;
+    skipped: number;
+    submitted: number;
+    correctRate: number;
+    achievementsUnlocked: number;
+    achievementTitles: string[];
+  };
+};
+
+function getAdminUserStats(user: AdminUserRecord, subjects: QuizSubject[]): AdminUserWithStats {
+  let answered = 0;
+  let correct = 0;
+  let wrong = 0;
+  let skipped = 0;
+  let submitted = 0;
+
+  for (const item of Object.values(user.saved.items ?? {})) {
+    const subject = getSubject(subjects, item.subjectId);
+    const chapter = getChapter(subject, item.chapterId, item.questionOrder, item.optionOrders);
+    if (!chapter) continue;
+    const itemAnswered = chapter.questions.filter((question) => Boolean(item.answers[question.id])).length;
+    answered += itemAnswered;
+    if (item.submitted) submitted += 1;
+    for (const question of chapter.questions) {
+      const selectedId = item.answers[question.id];
+      const selected = question.options.find((option) => option.id === selectedId);
+      if (!selectedId) {
+        if (item.submitted) skipped += 1;
+      } else if (selected?.correct) {
+        correct += 1;
+      } else {
+        wrong += 1;
+      }
+    }
+  }
+
+  if (answered === 0 && (user.saved.results ?? []).length > 0) {
+    for (const result of user.saved.results ?? []) {
+      submitted += 1;
+      answered += result.total;
+      correct += result.score;
+      wrong += Math.max(0, result.total - result.score);
+    }
+  }
+
+  const achievementList = getAchievements(subjects[0], user.saved.results ?? [], user.profileProgress).filter((achievement) => achievement.unlocked);
+
+  return {
+    ...user,
+    stats: {
+      answered,
+      correct,
+      wrong,
+      skipped,
+      submitted,
+      correctRate: answered ? Math.round((correct / answered) * 100) : 0,
+      achievementsUnlocked: achievementList.length,
+      achievementTitles: achievementList.map((achievement) => achievement.title)
+    }
+  };
+}
+
+function getAdminChapterStats(users: AdminUserWithStats[], subjects: QuizSubject[]) {
+  const stats = new Map<string, {
+    id: string;
+    subjectTitle: string;
+    title: string;
+    answered: number;
+    correct: number;
+    lastActivity: number;
+    wrong: number;
+    skipped: number;
+    submitted: number;
+    users: Set<string>;
+  }>();
+
+  for (const user of users) {
+    for (const item of Object.values(user.saved.items ?? {})) {
+      const subject = getSubject(subjects, item.subjectId);
+      const chapter = getChapter(subject, item.chapterId, item.questionOrder, item.optionOrders);
+      if (!subject || !chapter) continue;
+      const current = stats.get(item.chapterId) ?? {
+        id: item.chapterId,
+        subjectTitle: subject.title,
+        title: chapter.title,
+        answered: 0,
+        correct: 0,
+        lastActivity: 0,
+        wrong: 0,
+        skipped: 0,
+        submitted: 0,
+        users: new Set<string>()
+      };
+
+      current.lastActivity = Math.max(current.lastActivity, item.updatedAt ?? 0);
+      current.users.add(user.id);
+      if (item.submitted) current.submitted += 1;
+      for (const question of chapter.questions) {
+        const selectedId = item.answers[question.id];
+        const selected = question.options.find((option) => option.id === selectedId);
+        if (!selectedId) {
+          if (item.submitted) current.skipped += 1;
+        } else {
+          current.answered += 1;
+          if (selected?.correct) current.correct += 1;
+          else current.wrong += 1;
+        }
+      }
+      stats.set(item.chapterId, current);
+    }
+  }
+
+  return [...stats.values()]
+    .map((stat) => ({ ...stat, users: stat.users.size }))
+    .sort((a, b) => b.answered + b.skipped - (a.answered + a.skipped));
+}
+
+function isRecentActivity(lastLoginAt: string | undefined, dataUpdatedAt: string | undefined, now: number, windowMs: number) {
+  const lastSeen = Math.max(
+    lastLoginAt ? new Date(lastLoginAt).getTime() : 0,
+    dataUpdatedAt ? new Date(dataUpdatedAt).getTime() : 0
+  );
+  return lastSeen > 0 && now - lastSeen <= windowMs;
+}
+
+function isDoingQuiz(user: AdminUserWithStats, now: number) {
+  const activeId = user.saved.activeSubjectId && user.saved.activeChapterId
+    ? progressId(user.saved.activeSubjectId, user.saved.activeChapterId)
+    : undefined;
+  const activeItem = activeId ? user.saved.items[activeId] : undefined;
+  return Boolean(activeItem && !activeItem.submitted && isRecentActivity(user.lastLoginAt, user.dataUpdatedAt, now, 10 * 60_000));
+}
+
+function formatAdminDate(value?: string) {
+  return value ? new Date(value).toLocaleString("vi-VN") : "Chưa có";
+}
+
+function getBrowserName(userAgent?: string) {
+  if (!userAgent) return "Chưa có";
+  if (/edg\//i.test(userAgent)) return "Microsoft Edge";
+  if (/opr\//i.test(userAgent) || /opera/i.test(userAgent)) return "Opera";
+  if (/firefox\//i.test(userAgent)) return "Firefox";
+  if (/samsungbrowser/i.test(userAgent)) return "Samsung Browser";
+  if (/chrome\//i.test(userAgent) && !/chromium/i.test(userAgent)) return "Chrome";
+  if (/safari\//i.test(userAgent) && !/chrome\//i.test(userAgent)) return "Safari";
+  if (/chromium/i.test(userAgent)) return "Chromium";
+  return "Browser khác";
+}
+
+function getPlatformName(userAgent?: string) {
+  if (!userAgent) return "Chưa rõ";
+  if (/windows/i.test(userAgent)) return "Windows";
+  if (/android/i.test(userAgent)) return "Android";
+  if (/iphone|ipad|ios/i.test(userAgent)) return "iOS";
+  if (/mac os|macintosh/i.test(userAgent)) return "macOS";
+  if (/linux/i.test(userAgent)) return "Linux";
+  return "Thiết bị khác";
+}
+
+function AdminSmallStat({ detail, label, value }: { detail: string; label: string; value: number }) {
+  return (
+    <div className="rounded-xl border-2 border-foreground bg-background p-3">
+      <p className="text-xs font-black uppercase text-muted-foreground">{label}</p>
+      <p className="mt-2 text-3xl font-black">{value}</p>
+      <p className="mt-1 text-xs font-black text-muted-foreground">{detail}</p>
+    </div>
+  );
+}
+
+function getAdminLastSeenMs(user: AdminUserWithStats) {
+  return Math.max(
+    user.lastLoginAt ? new Date(user.lastLoginAt).getTime() : 0,
+    user.dataUpdatedAt ? new Date(user.dataUpdatedAt).getTime() : 0
+  );
+}
+
+function countAdminResultsSince(user: AdminUserWithStats, since: number, until = Date.now()) {
+  return (user.saved.results ?? []).filter((result) => result.submittedAt >= since && result.submittedAt < until).length;
+}
+
+function getAdminUserPulse(user: AdminUserWithStats, now: number) {
+  const lastSeenMs = getAdminLastSeenMs(user);
+  const inactiveDays = lastSeenMs ? Math.floor((now - lastSeenMs) / 86_400_000) : 999;
+  const recentResults = countAdminResultsSince(user, now - 7 * 86_400_000, now);
+  const previousResults = countAdminResultsSince(user, now - 14 * 86_400_000, now - 7 * 86_400_000);
+  const trend = recentResults - previousResults;
+  const lowAccuracy = user.stats.answered >= 10 && user.stats.correctRate < 55;
+  const highDevices = user.deviceCount >= 4;
+  const stale = inactiveDays >= 7;
+  const noEvidence = user.stats.answered < 8;
+  const riskScore = Math.min(
+    100,
+    (user.banned ? 100 : 0) +
+      (stale ? 24 : 0) +
+      (lowAccuracy ? 28 : 0) +
+      (highDevices ? 18 : 0) +
+      (noEvidence ? 18 : 0) +
+      (trend < 0 ? 12 : 0)
+  );
+  const level = user.banned ? "Đã khóa" : riskScore >= 70 ? "Rủi ro cao" : riskScore >= 40 ? "Cần theo dõi" : "Ổn định";
+  const evaluation = noEvidence
+    ? "Thiếu dữ liệu"
+    : user.stats.correctRate >= 80
+      ? "Nắm chắc"
+      : user.stats.correctRate >= 60
+        ? "Đang ổn"
+        : "Cần ôn lại";
+  const forecastNextWeek = Math.max(0, recentResults + Math.max(-2, Math.min(4, trend)));
+  const prediction = forecastNextWeek === 0
+    ? "Có thể ngừng học"
+    : trend > 0
+      ? "Khả năng tăng nhịp"
+      : trend < 0
+        ? "Có dấu hiệu chậm lại"
+        : "Nhịp ổn định";
+  const flags = [
+    stale ? `${inactiveDays} ngày chưa hoạt động` : "",
+    lowAccuracy ? `Đúng ${user.stats.correctRate}%` : "",
+    highDevices ? `${user.deviceCount} thiết bị` : "",
+    noEvidence ? "Ít dữ liệu làm bài" : "",
+    trend < 0 ? "Lượt nộp giảm" : ""
+  ].filter(Boolean);
+
+  return {
+    evaluation,
+    flags,
+    forecastNextWeek,
+    inactiveDays,
+    level,
+    prediction,
+    recentResults,
+    riskScore,
+    trend
+  };
+}
+
 function AdminControlPanel({
+  adminUsers,
+  currentUser,
+  loading,
+  message,
+  subjects,
+  onRefresh,
+  onUpdateUser
+}: {
+  adminUsers: AdminUserRecord[];
+  currentUser?: AuthSession;
+  loading: boolean;
+  message: string;
+  saved: SavedProgress;
+  subjects: QuizSubject[];
+  onRefresh: () => void;
+  onUpdateUser: (userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote") => void;
+}) {
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [userSort, setUserSort] = useState<"recent" | "most" | "accuracy" | "risk">("recent");
+  const [userSortAsc, setUserSortAsc] = useState(false);
+  const [chapterSort, setChapterSort] = useState<"most" | "recent" | "wrong" | "accuracy">("most");
+  const [chapterSortAsc, setChapterSortAsc] = useState(false);
+  const [chapterChartMode, setChapterChartMode] = useState<"attempts" | "wrong" | "accuracy">("attempts");
+  const now = Date.now();
+  const totalQuestions = subjects.reduce((total, subject) => total + getAllQuestions(subject).length, 0);
+  const usersWithStats = adminUsers.map((user) => getAdminUserStats(user, subjects));
+  const userPulses = usersWithStats.map((user) => ({ pulse: getAdminUserPulse(user, now), user }));
+  const pulseByUserId = new Map(userPulses.map(({ pulse, user }) => [user.id, pulse]));
+  const sortedUsersWithStats = [...usersWithStats].sort((a, b) => {
+    const aPulse = pulseByUserId.get(a.id);
+    const bPulse = pulseByUserId.get(b.id);
+    const direction = userSortAsc ? 1 : -1;
+    const compare = {
+      recent: getAdminLastSeenMs(a) - getAdminLastSeenMs(b),
+      most: a.stats.answered - b.stats.answered,
+      accuracy: a.stats.correctRate - b.stats.correctRate,
+      risk: (aPulse?.riskScore ?? 0) - (bPulse?.riskScore ?? 0)
+    }[userSort];
+    return compare === 0 ? a.name.localeCompare(b.name, "vi") : compare * direction;
+  });
+  const selectedUser = sortedUsersWithStats.find((user) => user.id === selectedUserId) ?? sortedUsersWithStats[0];
+  const onlineUsers = usersWithStats.filter((user) => isRecentActivity(user.lastLoginAt, user.dataUpdatedAt, now, 10 * 60_000)).length;
+  const activeUsers = usersWithStats.filter((user) => isDoingQuiz(user, now)).length;
+  const answeredTotal = usersWithStats.reduce((total, user) => total + user.stats.answered, 0);
+  const correctTotal = usersWithStats.reduce((total, user) => total + user.stats.correct, 0);
+  const wrongTotal = usersWithStats.reduce((total, user) => total + user.stats.wrong + user.stats.skipped, 0);
+  const submittedTotal = usersWithStats.reduce((total, user) => total + user.stats.submitted, 0);
+  const delegatedTotal = usersWithStats.filter((user) => user.delegated || user.role === "admin").length;
+  const bannedTotal = usersWithStats.filter((user) => user.banned).length;
+  const chapterStats = getAdminChapterStats(usersWithStats, subjects);
+  const canWrite = currentUser?.role === "admin";
+  const totalChecks = correctTotal + wrongTotal;
+  const correctRate = totalChecks ? Math.round((correctTotal / totalChecks) * 100) : 0;
+  const wrongRate = totalChecks ? Math.round((wrongTotal / totalChecks) * 100) : 0;
+  const submittedRate = answeredTotal ? Math.round((submittedTotal / Math.max(1, answeredTotal)) * 100) : 0;
+  const activeRate = usersWithStats.length ? Math.round((activeUsers / usersWithStats.length) * 100) : 0;
+  const onlineRate = usersWithStats.length ? Math.round((onlineUsers / usersWithStats.length) * 100) : 0;
+  const delegatedRate = usersWithStats.length ? Math.round((delegatedTotal / usersWithStats.length) * 100) : 0;
+  const bannedRate = usersWithStats.length ? Math.round((bannedTotal / usersWithStats.length) * 100) : 0;
+  const animatedCorrectRate = useAnimatedNumber(correctRate);
+  const animatedCorrectTotal = useAnimatedNumber(correctTotal);
+  const animatedWrongTotal = useAnimatedNumber(wrongTotal);
+  const animatedAnsweredTotal = useAnimatedNumber(answeredTotal);
+  const overviewBars = [
+    { label: "Online", value: onlineUsers, rate: onlineRate, color: "bg-[#202226]" },
+    { label: "Đang làm", value: activeUsers, rate: activeRate, color: "bg-[#f07d88]" },
+    { label: "Ủy quyền", value: delegatedTotal, rate: delegatedRate, color: "bg-[#d9e5df]" },
+    { label: "Bị ban", value: bannedTotal, rate: bannedRate, color: "bg-[#f6aa8b]" }
+  ];
+  const sortedChapterStats = [...chapterStats].sort((a, b) => {
+    const direction = chapterSortAsc ? 1 : -1;
+    const aTotal = a.answered + a.skipped;
+    const bTotal = b.answered + b.skipped;
+    const aWrongRate = (a.wrong + a.skipped) / Math.max(1, aTotal);
+    const bWrongRate = (b.wrong + b.skipped) / Math.max(1, bTotal);
+    const aAccuracy = a.correct / Math.max(1, aTotal);
+    const bAccuracy = b.correct / Math.max(1, bTotal);
+    const compare = {
+      most: aTotal - bTotal,
+      recent: a.lastActivity - b.lastActivity,
+      wrong: aWrongRate - bWrongRate,
+      accuracy: aAccuracy - bAccuracy
+    }[chapterSort];
+    return compare === 0 ? a.title.localeCompare(b.title, "vi") : compare * direction;
+  });
+  const chapterChartStats = sortedChapterStats.slice(0, 8);
+  const selectedPulse = selectedUser ? getAdminUserPulse(selectedUser, now) : undefined;
+  const attentionUsers = userPulses.filter(({ pulse }) => pulse.riskScore >= 40);
+  const topAttention = [...attentionUsers].sort((a, b) => b.pulse.riskScore - a.pulse.riskScore)[0];
+  const forecastNextWeekTotal = userPulses.reduce((total, item) => total + item.pulse.forecastNextWeek, 0);
+  const activeTrendTotal = userPulses.reduce((total, item) => total + item.pulse.trend, 0);
+  const weakestChapter = [...chapterStats]
+    .filter((chapter) => chapter.answered + chapter.skipped >= 3)
+    .sort((a, b) => {
+      const aRate = (a.wrong + a.skipped) / Math.max(1, a.answered + a.skipped);
+      const bRate = (b.wrong + b.skipped) / Math.max(1, b.answered + b.skipped);
+      return bRate - aRate;
+    })[0];
+  const adminModeLabel = canWrite ? "Toàn quyền" : "Chỉ xem";
+
+  return (
+    <section className="admin-dashboard rounded-[2rem] border-4 border-[#202226] bg-[#eef0ef] p-3 text-[#202226] shadow-[12px_12px_0_0_#202226,0_24px_70px_rgba(24,31,36,0.16)] sm:p-5">
+      <div className="grid gap-3 lg:grid-cols-12">
+        <div className="admin-float-card rounded-[1.6rem] border-2 border-[#202226] bg-[#fffaf3] p-5 shadow-[7px_7px_0_0_#202226,inset_0_0_0_1px_rgba(32,34,38,0.05)] lg:col-span-4 lg:row-span-2">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-base font-black uppercase text-[#202226]">Kiểm soát admin</p>
+              <h2 className="mt-3 text-5xl font-black leading-none tracking-normal sm:text-6xl">{animatedCorrectRate}%</h2>
+              <p className="mt-3 text-sm font-black text-[#72746f]">Tỉ lệ đúng toàn hệ thống</p>
+            </div>
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#dfe8e1]">
+              <ShieldCheck className="size-5" aria-hidden />
+            </span>
+          </div>
+          <div className="mt-8 grid grid-cols-4 items-end gap-2">
+            {overviewBars.map((bar, index) => (
+              <span
+                key={bar.label}
+                className={cn("admin-meter-tile rounded-lg", bar.color)}
+                style={{ height: `${Math.max(2.75, 2.75 + bar.rate / 16)}rem`, animationDelay: `${index * 70}ms` }}
+                title={`${bar.label}: ${bar.value}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        <AdminMetric className="lg:col-span-2" tone="bg-[#dfe8e1]" icon={<Users className="size-5" aria-hidden />} label="User" value={usersWithStats.length} detail={`${onlineUsers} online`} />
+        <AdminMetric className="lg:col-span-2" tone="bg-[#f1e8f7]" icon={<BookOpenCheck className="size-5" aria-hidden />} label="Kho câu" value={totalQuestions} detail={`${subjects.length} môn`} />
+        <AdminMetric className="bg-[#202226] text-white lg:col-span-2" tone="bg-white/15" icon={<Lightbulb className="size-5" aria-hidden />} label="Đang làm" value={activeUsers} detail="theo sync gần đây" dark />
+        <AdminMetric className="lg:col-span-2" tone="bg-[#fffaf3]" icon={<ShieldCheck className="size-5" aria-hidden />} label={adminModeLabel} value={delegatedTotal} detail="ủy quyền chỉ xem" />
+
+        <div className="admin-float-card rounded-[1.6rem] bg-[#fffaf3] p-5 lg:col-span-2">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-bold text-[#72746f]">Đúng</p>
+            <span className="grid size-8 place-items-center rounded-full bg-[#dfe8e1]">
+              <CheckCircle2 className="size-4" aria-hidden />
+            </span>
+          </div>
+          <p className="mt-8 text-4xl font-semibold tracking-normal">{animatedCorrectTotal}</p>
+          <div className="mt-4 h-2 rounded-full bg-[#e7e1d7]">
+            <span className="admin-progress-fill block h-full rounded-full bg-[#f07d88]" style={{ width: `${correctRate}%` }} />
+          </div>
+        </div>
+
+        <div className="admin-float-card rounded-[1.6rem] bg-[#f4828d] p-5 text-white lg:col-span-2">
+          <p className="text-sm font-bold text-white/75">Sai/trống</p>
+          <p className="mt-8 text-4xl font-semibold tracking-normal">{animatedWrongTotal}</p>
+          <div className="mt-4 h-2 rounded-full bg-white/25">
+            <span className="admin-progress-fill block h-full rounded-full bg-[#202226]" style={{ width: `${wrongRate}%` }} />
+          </div>
+        </div>
+
+        <div className="admin-float-card rounded-[1.6rem] bg-[#dfe8e1] p-5 lg:col-span-2">
+          <p className="text-sm font-bold text-[#72746f]">Lượt làm</p>
+          <p className="mt-8 text-4xl font-semibold tracking-normal">{animatedAnsweredTotal}</p>
+          <div className="mt-4 h-2 rounded-full bg-white/75">
+            <span className="admin-progress-fill block h-full rounded-full bg-[#202226]" style={{ width: `${Math.min(100, submittedRate)}%` }} />
+          </div>
+        </div>
+
+        <div className="admin-float-card rounded-[1.6rem] bg-[#202226] p-5 text-white lg:col-span-2 lg:row-span-2">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-bold text-white/65">Phân bố</p>
+            <CircleHelp className="size-5 text-white/65" aria-hidden />
+          </div>
+          <div className="mt-8 grid place-items-center">
+            <AdminDonut percent={animatedCorrectRate} />
+          </div>
+          <div className="mt-7 grid grid-cols-3 gap-2 text-center text-xs font-bold text-white/70">
+            <span>Đúng</span>
+            <span>Sai</span>
+            <span>Trống</span>
+          </div>
+        </div>
+
+        <div className="admin-float-card rounded-[1.6rem] bg-[#fffaf3] p-5 lg:col-span-4 lg:row-span-2">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-[#72746f]">Tổng quan theo chương</p>
+              <h3 className="mt-1 text-xl font-semibold tracking-normal">Phần có nhiều lượt làm</h3>
+            </div>
+            <span className="grid size-9 place-items-center rounded-full bg-[#dfe8e1]">
+              <BarChart3 className="size-5" aria-hidden />
+            </span>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {[
+              { id: "attempts", label: "Lượt làm" },
+              { id: "wrong", label: "Sai/trống" },
+              { id: "accuracy", label: "Chính xác" }
+            ].map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                className={cn("rounded-full border-2 border-[#202226] px-3 py-1 text-xs font-black shadow-[2px_2px_0_0_#202226]", chapterChartMode === mode.id ? "bg-[#f07d88] text-white" : "bg-[#eef0ef]")}
+                onClick={() => setChapterChartMode(mode.id as typeof chapterChartMode)}
+              >
+                {mode.label}
+              </button>
+            ))}
+            {[
+              { id: "most", label: "Nhiều nhất" },
+              { id: "recent", label: "Gần đây" }
+            ].map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={cn("rounded-full border-2 border-[#202226] px-3 py-1 text-xs font-black shadow-[2px_2px_0_0_#202226]", chapterSort === option.id ? "bg-[#dfe8e1]" : "bg-[#eef0ef]")}
+                onClick={() => setChapterSort(option.id as typeof chapterSort)}
+              >
+                {option.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="rounded-full border-2 border-[#202226] bg-[#eef0ef] px-3 py-1 text-xs font-black shadow-[2px_2px_0_0_#202226]"
+              onClick={() => setChapterSortAsc((current) => !current)}
+            >
+              {chapterSortAsc ? "Đảo tăng" : "Đảo giảm"}
+            </button>
+          </div>
+          {chapterChartStats.length === 0 ? (
+            <div className="mt-8 rounded-2xl bg-[#eef0ef] p-6 text-center text-sm font-bold text-[#72746f]">Chưa có dữ liệu làm bài để vẽ biểu đồ.</div>
+          ) : (
+            <div className="mt-6 flex h-52 items-end gap-2">
+              {chapterChartStats.map((chapter, index) => {
+                const chapterTotal = chapter.answered + chapter.skipped;
+                const maxTotal = Math.max(1, ...chapterChartStats.map((item) => item.answered + item.skipped));
+                const wrongRateForChapter = Math.round(((chapter.wrong + chapter.skipped) / Math.max(1, chapterTotal)) * 100);
+                const accuracyForChapter = Math.round((chapter.correct / Math.max(1, chapterTotal)) * 100);
+                const barHeight = {
+                  attempts: Math.round((chapterTotal / maxTotal) * 100),
+                  wrong: wrongRateForChapter,
+                  accuracy: accuracyForChapter
+                }[chapterChartMode];
+                return (
+                  <div key={chapter.id} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+                    <div className="flex h-40 w-full items-end rounded-full bg-[#eef0ef] px-1.5 py-1.5">
+                      <span
+                        className={cn("admin-chart-bar block w-full rounded-full", index % 2 === 0 ? "bg-[#f07d88]" : "bg-[#202226]")}
+                        style={{ height: `${Math.max(10, barHeight)}%`, animationDelay: `${index * 80}ms` }}
+                        title={`${chapter.title}: ${chapterChartMode === "attempts" ? `${chapterTotal} lượt` : `${barHeight}%`}`}
+                      />
+                    </div>
+                    <span className="text-[0.65rem] font-bold text-[#8b8c87]">{index + 1}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="admin-float-card rounded-[1.6rem] bg-[#dfe8e1] p-5 lg:col-span-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-bold text-[#72746f]">Trạng thái user</p>
+            <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={loading}>
+              {loading ? "Đang tải..." : "Làm mới"}
+            </Button>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {overviewBars.map((bar) => (
+              <div key={bar.label} className="rounded-2xl bg-white/55 p-3">
+                <div className="flex items-center justify-between gap-3 text-sm font-semibold">
+                  <span>{bar.label}</span>
+                  <span>{bar.value}</span>
+                </div>
+                <div className="mt-3 h-2 rounded-full bg-white/80">
+                  <span className={cn("admin-progress-fill block h-full rounded-full", bar.color)} style={{ width: `${bar.rate}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          {message && <div className="mt-4 rounded-2xl bg-white/60 px-4 py-3 text-sm font-bold text-[#72746f]">{message}</div>}
+        </div>
+
+        <div className="admin-float-card rounded-[1.6rem] bg-[#fffaf3] p-5 lg:col-span-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-[#72746f]">Giám sát</p>
+              <h3 className="mt-1 text-xl font-semibold tracking-normal">Tài khoản cần chú ý</h3>
+            </div>
+            <Badge variant={attentionUsers.length ? "destructive" : "secondary"}>{attentionUsers.length}</Badge>
+          </div>
+          <div className="mt-5 space-y-3">
+            {attentionUsers.slice(0, 4).map(({ pulse, user }) => (
+              <button
+                key={user.id}
+                type="button"
+                className="w-full rounded-2xl bg-[#eef0ef] p-3 text-left transition-transform hover:-translate-y-0.5"
+                onClick={() => setSelectedUserId(user.id)}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="min-w-0 truncate text-sm font-semibold">{user.name}</p>
+                  <span className="rounded-full bg-[#202226] px-3 py-1 text-xs font-bold text-white">{pulse.riskScore}</span>
+                </div>
+                <p className="mt-1 truncate text-xs font-bold text-[#72746f]">{pulse.flags[0] ?? pulse.level}</p>
+              </button>
+            ))}
+            {attentionUsers.length === 0 && <div className="rounded-2xl bg-[#eef0ef] p-5 text-sm font-bold text-[#72746f]">Chưa có tài khoản nào cần cảnh báo.</div>}
+          </div>
+        </div>
+
+        <div className="admin-float-card rounded-[1.6rem] bg-[#202226] p-5 text-white lg:col-span-4">
+          <p className="text-sm font-bold text-white/65">Đánh giá hệ thống</p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-white/10 p-3">
+              <p className="text-xs font-bold text-white/55">Cần xem</p>
+              <p className="mt-2 text-3xl font-semibold tracking-normal">{topAttention?.user.name ?? "Ổn"}</p>
+            </div>
+            <div className="rounded-2xl bg-white/10 p-3">
+              <p className="text-xs font-bold text-white/55">Chương yếu</p>
+              <p className="mt-2 line-clamp-2 text-lg font-semibold tracking-normal">{weakestChapter?.title ?? "Chưa đủ dữ liệu"}</p>
+            </div>
+            <div className="rounded-2xl bg-white/10 p-3">
+              <p className="text-xs font-bold text-white/55">Đúng/Sai</p>
+              <p className="mt-2 text-3xl font-semibold tracking-normal">{correctRate}/{wrongRate}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="admin-float-card rounded-[1.6rem] bg-[#f4828d] p-5 text-white lg:col-span-4">
+          <p className="text-sm font-bold text-white/75">Dự đoán 7 ngày tới</p>
+          <p className="mt-6 text-5xl font-semibold tracking-normal">{forecastNextWeekTotal}</p>
+          <p className="mt-2 text-sm font-bold text-white/75">
+            {activeTrendTotal > 0 ? "Nhịp học đang tăng" : activeTrendTotal < 0 ? "Nhịp học đang giảm" : "Nhịp học khá ổn định"}
+          </p>
+          <div className="mt-5 h-2 rounded-full bg-white/25">
+            <span className="admin-progress-fill block h-full rounded-full bg-[#202226]" style={{ width: `${Math.min(100, Math.abs(activeTrendTotal) * 12 + 18)}%` }} />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.4fr)]">
+        <div className="rounded-[1.2rem] border-2 border-foreground bg-card p-3 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-sm font-black text-muted-foreground">Danh sách user</p>
+            <Badge variant="outline">{usersWithStats.length}</Badge>
+          </div>
+          <div className="mb-3 flex flex-wrap gap-2">
+            {[
+              { id: "recent", label: "Gần đây" },
+              { id: "most", label: "Làm nhiều" },
+              { id: "accuracy", label: "Đúng cao" },
+              { id: "risk", label: "Rủi ro" }
+            ].map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={cn("rounded-full border-2 border-foreground px-3 py-1 text-xs font-black shadow-[2px_2px_0_0_hsl(var(--foreground))]", userSort === option.id ? "bg-secondary" : "bg-background")}
+                onClick={() => setUserSort(option.id as typeof userSort)}
+              >
+                {option.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="rounded-full border-2 border-foreground bg-background px-3 py-1 text-xs font-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+              onClick={() => setUserSortAsc((current) => !current)}
+            >
+              {userSortAsc ? "Đảo: tăng" : "Đảo: giảm"}
+            </button>
+          </div>
+          <div className="grid max-h-[34rem] gap-2 overflow-auto pr-1">
+            {sortedUsersWithStats.map((user) => (
+              <button
+                key={user.id}
+                type="button"
+                className={cn("rounded-xl border-2 border-foreground bg-background p-3 text-left shadow-[3px_3px_0_0_hsl(var(--foreground))]", selectedUser?.id === user.id && "bg-secondary")}
+                onClick={() => setSelectedUserId(user.id)}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-sm font-black">{user.name}</p>
+                  <span className={cn("size-3 rounded-full", isRecentActivity(user.lastLoginAt, user.dataUpdatedAt, now, 10 * 60_000) ? "bg-primary" : "bg-muted-foreground")} />
+                </div>
+                <p className="mt-1 truncate text-xs font-black text-muted-foreground">{user.email}</p>
+                <p className="mt-1 truncate text-xs font-black text-muted-foreground">
+                  {getBrowserName(user.lastUserAgent)} · {formatAdminDate(user.lastLoginAt ?? user.dataUpdatedAt)}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  <Badge variant={user.role === "admin" ? "secondary" : "outline"}>{user.role === "admin" ? "Admin" : "Member"}</Badge>
+                  {user.delegated && <Badge variant="secondary">Ủy quyền</Badge>}
+                  {user.banned && <Badge variant="destructive">Ban</Badge>}
+                </div>
+              </button>
+            ))}
+            {usersWithStats.length === 0 && <div className="rounded-xl border-2 border-foreground bg-background p-4 text-center text-sm font-black text-muted-foreground">Chưa tải được user nào.</div>}
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          {selectedUser && (
+            <div className="rounded-[1.2rem] border-2 border-foreground bg-card p-4 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase text-muted-foreground">Chi tiết user</p>
+                  <h3 className="mt-1 text-2xl font-black">{selectedUser.name}</h3>
+                  <p className="mt-1 text-sm font-black text-muted-foreground">{selectedUser.email}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={selectedUser.banned ? "destructive" : "outline"}>{selectedUser.banned ? "Đang bị ban" : "Đang hoạt động"}</Badge>
+                  <Badge variant={selectedUser.delegated ? "secondary" : "outline"}>{selectedUser.delegated ? "Đã ủy quyền" : "Chưa ủy quyền"}</Badge>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <AdminSmallStat label="Đã làm" value={selectedUser.stats.answered} detail={`${selectedUser.stats.submitted} bài nộp`} />
+                <AdminSmallStat label="Đúng" value={selectedUser.stats.correct} detail={`${selectedUser.stats.correctRate}% chính xác`} />
+                <AdminSmallStat label="Sai/trống" value={selectedUser.stats.wrong + selectedUser.stats.skipped} detail={`${selectedUser.stats.skipped} bỏ trống`} />
+                <AdminSmallStat label="Thành tựu" value={selectedUser.stats.achievementsUnlocked} detail={`LV ${selectedUser.profileProgress.level}`} />
+              </div>
+
+              {selectedPulse && (
+                <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                  <div className="rounded-xl border-2 border-foreground bg-secondary p-3">
+                    <p className="text-xs font-black uppercase text-muted-foreground">Giám sát</p>
+                    <p className="mt-2 text-2xl font-black">{selectedPulse.level}</p>
+                    <p className="mt-1 text-xs font-black text-muted-foreground">Điểm rủi ro {selectedPulse.riskScore}/100</p>
+                  </div>
+                  <div className="rounded-xl border-2 border-foreground bg-background p-3">
+                    <p className="text-xs font-black uppercase text-muted-foreground">Đánh giá</p>
+                    <p className="mt-2 text-2xl font-black">{selectedPulse.evaluation}</p>
+                    <p className="mt-1 text-xs font-black text-muted-foreground">{selectedPulse.flags[0] ?? "Không có cảnh báo lớn"}</p>
+                  </div>
+                  <div className="rounded-xl border-2 border-foreground bg-accent/80 p-3">
+                    <p className="text-xs font-black uppercase text-muted-foreground">Dự đoán</p>
+                    <p className="mt-2 text-2xl font-black">{selectedPulse.forecastNextWeek} bài</p>
+                    <p className="mt-1 text-xs font-black text-muted-foreground">{selectedPulse.prediction}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <div className="rounded-xl border-2 border-foreground bg-background p-3">
+                  <p className="text-sm font-black">Thiết bị và đăng nhập</p>
+                  <div className="mt-3 grid gap-2 text-sm font-bold text-muted-foreground">
+                    <p>IP gần nhất: <span className="text-foreground">{selectedUser.lastLoginIp ?? "Chưa có"}</span></p>
+                    <p>Browser: <span className="text-foreground">{getBrowserName(selectedUser.lastUserAgent)}</span></p>
+                    <p>Nền tảng: <span className="text-foreground">{getPlatformName(selectedUser.lastUserAgent)}</span></p>
+                    <p>Số lần đăng nhập: <span className="text-foreground">{selectedUser.loginCount}</span></p>
+                    <p>Thiết bị ghi nhận: <span className="text-foreground">{selectedUser.deviceCount}</span></p>
+                    <p>Lần cuối: <span className="text-foreground">{formatAdminDate(selectedUser.lastLoginAt)}</span></p>
+                    <p className="break-words">User agent: <span className="text-foreground">{selectedUser.lastUserAgent ?? "Chưa có"}</span></p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border-2 border-foreground bg-background p-3">
+                  <p className="text-sm font-black">Thành tựu đã mở</p>
+                  <div className="mt-3 flex max-h-32 flex-wrap gap-2 overflow-auto">
+                    {selectedUser.stats.achievementTitles.length ? selectedUser.stats.achievementTitles.map((title) => <Badge key={title} variant="secondary">{title}</Badge>) : <span className="text-sm font-bold text-muted-foreground">Chưa có thành tựu.</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border-2 border-foreground bg-background p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-black">Hoạt động gần đây</p>
+                  <Badge variant="outline">Mới nhất trước</Badge>
+                </div>
+                <div className="mt-3 grid max-h-56 gap-2 overflow-auto pr-1">
+                  {[...selectedUser.loginEvents]
+                    .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
+                    .map((event, index) => (
+                      <div key={`${event.createdAt}-${index}`} className="rounded-xl border-2 border-foreground bg-card p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-black">{getBrowserName(event.userAgent)}</p>
+                          <span className="text-xs font-black text-muted-foreground">{formatAdminDate(event.createdAt)}</span>
+                        </div>
+                        <p className="mt-1 text-xs font-black text-muted-foreground">{getPlatformName(event.userAgent)} · IP {event.ip ?? "chưa có"}</p>
+                      </div>
+                    ))}
+                  {selectedUser.loginEvents.length === 0 && <p className="rounded-xl border-2 border-foreground bg-card p-3 text-sm font-black text-muted-foreground">Chưa có lịch sử đăng nhập.</p>}
+                </div>
+              </div>
+
+              {canWrite && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button size="sm" variant={selectedUser.banned ? "outline" : "destructive"} onClick={() => onUpdateUser(selectedUser.id, selectedUser.banned ? "unban" : "ban")}>
+                    {selectedUser.banned ? "Gỡ ban" : "Ban user"}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => onUpdateUser(selectedUser.id, selectedUser.delegated ? "revokeDelegate" : "delegate")}>
+                    {selectedUser.delegated ? "Gỡ ủy quyền" : "Ủy quyền"}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => onUpdateUser(selectedUser.id, selectedUser.role === "admin" ? "demote" : "promote")}>
+                    {selectedUser.role === "admin" ? "Hạ admin" : "Nâng admin"}
+                  </Button>
+                </div>
+              )}
+              {!canWrite && (
+                <p className="mt-4 rounded-xl border-2 border-foreground bg-muted px-3 py-2 text-sm font-black text-muted-foreground">
+                  Tài khoản được ủy quyền chỉ được xem kiểm soát, không thể ban, nâng quyền hoặc ủy quyền cho người khác.
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="rounded-[1.2rem] border-2 border-foreground bg-card p-4 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-black text-muted-foreground">Kiểm soát theo chương/phần</p>
+              <Badge variant="outline">{chapterStats.length} phần có dữ liệu</Badge>
+            </div>
+            <div className="mb-3 flex flex-wrap gap-2">
+              {[
+                { id: "most", label: "Làm nhiều" },
+                { id: "recent", label: "Gần đây" },
+                { id: "wrong", label: "Sai nhiều" },
+                { id: "accuracy", label: "Đúng cao" }
+              ].map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={cn("rounded-full border-2 border-foreground px-3 py-1 text-xs font-black shadow-[2px_2px_0_0_hsl(var(--foreground))]", chapterSort === option.id ? "bg-secondary" : "bg-background")}
+                  onClick={() => setChapterSort(option.id as typeof chapterSort)}
+                >
+                  {option.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="rounded-full border-2 border-foreground bg-background px-3 py-1 text-xs font-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+                onClick={() => setChapterSortAsc((current) => !current)}
+              >
+                {chapterSortAsc ? "Đảo: tăng" : "Đảo: giảm"}
+              </button>
+            </div>
+            <div className="grid max-h-[28rem] gap-2 overflow-auto pr-1">
+              {sortedChapterStats.map((chapter) => (
+                <div key={chapter.id} className="rounded-xl border-2 border-foreground bg-background p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black">{chapter.title}</p>
+                      <p className="text-xs font-black text-muted-foreground">{chapter.subjectTitle}</p>
+                    </div>
+                    <Badge variant="secondary">{chapter.users} user</Badge>
+                  </div>
+                  <div className="mt-3 grid gap-2 text-xs font-black text-muted-foreground sm:grid-cols-4">
+                    <span>Tổng làm: <b className="text-foreground">{chapter.answered + chapter.skipped}</b></span>
+                    <span>Đúng: <b className="text-foreground">{chapter.correct}</b></span>
+                    <span>Sai/trống: <b className="text-foreground">{chapter.wrong + chapter.skipped}</b></span>
+                    <span>Bài nộp: <b className="text-foreground">{chapter.submitted}</b></span>
+                    <span>Gần đây: <b className="text-foreground">{formatAdminDate(chapter.lastActivity ? new Date(chapter.lastActivity).toISOString() : undefined)}</b></span>
+                  </div>
+                </div>
+              ))}
+              {chapterStats.length === 0 && <div className="rounded-xl border-2 border-foreground bg-background p-4 text-center text-sm font-black text-muted-foreground">Chưa có dữ liệu làm bài theo chương.</div>}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LegacyAdminControlPanel({
   auth,
   saved,
   subjects,
@@ -5618,13 +6990,13 @@ function AdminMetric({
   return (
     <div className={cn("admin-float-card rounded-[1.6rem] bg-[#fffaf3] p-5", className)}>
       <div className="flex items-center justify-between gap-3">
-        <p className={cn("text-sm font-bold", dark ? "text-white/65" : "text-[#72746f]")}>{label}</p>
+        <p className={cn("text-sm font-black", dark ? "text-white/65" : "text-[#202226]")}>{label}</p>
         <span className={cn("grid size-9 place-items-center rounded-full", tone)}>
           {icon}
         </span>
       </div>
-      <p className="mt-8 text-4xl font-semibold tracking-normal">{animatedValue}</p>
-      <p className={cn("mt-2 text-xs font-bold", dark ? "text-white/55" : "text-[#8b8c87]")}>{detail}</p>
+      <p className="mt-8 text-4xl font-black tracking-normal">{animatedValue}</p>
+      <p className={cn("mt-2 text-xs font-black", dark ? "text-white/55" : "text-[#72746f]")}>{detail}</p>
     </div>
   );
 }
@@ -5658,7 +7030,7 @@ function AccountFrame({
   const [mediaMessage, setMediaMessage] = useState("");
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
-  const canSyncProfileMedia = user.role === "admin" || profile.level >= PROFILE_MEDIA_SYNC_LEVEL;
+  const canSyncProfileMedia = user.role === "admin" || user.delegated || profile.level >= PROFILE_MEDIA_SYNC_LEVEL;
 
   async function updateImage(kind: "avatar" | "cover", event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -5998,7 +7370,7 @@ function TopNav({
             >
               Liên hệ
             </Link>
-            {user?.role === "admin" && (
+            {(user?.role === "admin" || user?.delegated) && (
               <Button className="w-full sm:w-auto" type="button" size="sm" variant="secondary" onClick={onAdmin}>
                 <ShieldCheck className="mr-2 size-4" aria-hidden />
                 Kiểm soát

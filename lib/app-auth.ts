@@ -10,6 +10,7 @@ export type AppSession = {
   id: string;
   name: string;
   role: "admin" | "member";
+  delegated?: boolean;
   iat: number;
   exp: number;
 };

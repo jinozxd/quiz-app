@@ -5,18 +5,33 @@ import Link from "next/link";
 import { BookOpenCheck, Settings } from "lucide-react";
 import { FloatingEmojiBackground } from "@/components/floating-emoji-background";
 import { ContactCard } from "@/components/contact-card";
-import { SettingsDialog, restoreSettings } from "@/components/quiz-app";
+import { SettingsDialog, WeeklyRecapCard, restoreSettings, restoreWeeklyRecapSnapshot } from "@/components/quiz-app";
 import type { AppSettings } from "@/components/quiz-app";
 
 export function ContactPageShell() {
   const [settings, setSettings] = useState<AppSettings>(() => restoreSettings());
+  const [weeklyRecap, setWeeklyRecap] = useState(() => restoreWeeklyRecapSnapshot());
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.background = settings.background;
     document.documentElement.dataset.motion = settings.motion;
+    document.documentElement.dataset.entryMotion = settings.entryAnimation ? "on" : "off";
     document.documentElement.classList.toggle("dark", settings.theme === "dark");
   }, [settings]);
+
+  useEffect(() => {
+    setWeeklyRecap(restoreWeeklyRecapSnapshot());
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "quiz-on-tap-weekly-recap-v1") {
+        setWeeklyRecap(restoreWeeklyRecapSnapshot());
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   return (
     <main className="min-h-screen bg-background">
@@ -68,8 +83,9 @@ export function ContactPageShell() {
         <Settings className="size-6 stroke-[3]" aria-hidden />
       </button>
 
-      <div className="container relative z-10 max-w-6xl py-6">
+      <div className="container relative z-10 grid max-w-6xl gap-6 py-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
         <ContactCard />
+        <WeeklyRecapCard recap={weeklyRecap} />
       </div>
     </main>
   );

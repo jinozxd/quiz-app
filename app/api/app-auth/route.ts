@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { createHash } from "node:crypto";
 import { createSessionToken, getBearerToken, hashPassword, verifyPassword, verifySessionToken } from "@/lib/app-auth";
 import { writeAuditLog } from "@/lib/security/audit";
 import { getIp, rateLimit } from "@/lib/security/rate-limit";
@@ -33,16 +34,25 @@ const changePasswordSchema = z.object({
 
 const requestSchema = z.discriminatedUnion("action", [loginSchema, registerSchema, changePasswordSchema]);
 
-function cleanUser(user: { id: string; name: string; role: "admin" | "member" }) {
+function cleanUser(user: { id: string; name: string; role: "admin" | "member"; delegated_at?: string | null }) {
   return {
     id: user.id,
     name: user.name,
-    role: user.role
+    role: user.role,
+    delegated: Boolean(user.delegated_at)
   };
 }
 
 function normalizeName(name: string) {
   return name.trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function getUserAgent(request: Request) {
+  return request.headers.get("user-agent")?.slice(0, 500) ?? "";
+}
+
+function getDeviceKey(ip: string, userAgent: string) {
+  return createHash("sha256").update(`${ip}:${userAgent}`).digest("hex").slice(0, 32);
 }
 
 export async function POST(request: Request) {
@@ -87,7 +97,7 @@ export async function POST(request: Request) {
         password_salt: salt,
         role: "member"
       })
-      .select("id,name,role")
+      .select("id,name,role,delegated_at")
       .single();
 
     if (error || !data) {
@@ -110,7 +120,7 @@ export async function POST(request: Request) {
 
     const { data: user, error } = await service
       .from("app_users")
-      .select("id,name,role,password_hash,password_salt")
+      .select("id,name,role,delegated_at,is_banned,login_count,password_hash,password_salt")
       .eq("name", parsed.data.name)
       .maybeSingle();
 
@@ -121,6 +131,29 @@ export async function POST(request: Request) {
     if (!user || !(await verifyPassword(parsed.data.password, user.password_hash, user.password_salt))) {
       return NextResponse.json({ error: "Sai tên đăng nhập hoặc mật khẩu." }, { status: 401 });
     }
+
+    if (user.is_banned) {
+      return NextResponse.json({ error: "TÃ i khoáº£n nÃ y Ä‘ang bá»‹ khÃ³a bá»Ÿi quáº£n trá»‹." }, { status: 403 });
+    }
+
+    const userAgent = getUserAgent(request);
+    const deviceKey = getDeviceKey(ip, userAgent);
+    await service
+      .from("app_users")
+      .update({
+        last_login_at: new Date().toISOString(),
+        last_login_ip: ip,
+        last_user_agent: userAgent,
+        login_count: (user.login_count ?? 0) + 1,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", user.id);
+    await service.from("app_user_login_events").insert({
+      user_id: user.id,
+      ip,
+      user_agent: userAgent,
+      device_key: deviceKey
+    });
 
     await writeAuditLog({ actorId: null, action: "app_user.logged_in", targetType: "app_user", targetId: user.id });
     const clean = cleanUser(user);
@@ -138,12 +171,16 @@ export async function POST(request: Request) {
 
   const { data: user } = await service
     .from("app_users")
-    .select("id,name,role,password_hash,password_salt,password_changed_at")
+    .select("id,name,role,delegated_at,is_banned,password_hash,password_salt,password_changed_at")
     .eq("id", session.id)
     .single();
 
   if (!user || !(await verifyPassword(parsed.data.currentPassword, user.password_hash, user.password_salt))) {
     return NextResponse.json({ error: "Mật khẩu hiện tại không đúng." }, { status: 401 });
+  }
+
+  if (user.is_banned) {
+    return NextResponse.json({ error: "TÃ i khoáº£n nÃ y Ä‘ang bá»‹ khÃ³a bá»Ÿi quáº£n trá»‹." }, { status: 403 });
   }
 
   const lastChangedAt = user.password_changed_at ? new Date(user.password_changed_at).getTime() : 0;

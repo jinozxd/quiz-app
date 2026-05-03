@@ -37,11 +37,11 @@ async function requireLiveUser(session: AppSession) {
 
   const { data: user, error } = await service
     .from("app_users")
-    .select("id,password_changed_at")
+    .select("id,is_banned,password_changed_at")
     .eq("id", session.id)
     .maybeSingle();
 
-  if (error || !user) {
+  if (error || !user || user.is_banned) {
     return { error: "Phiên đăng nhập không còn hợp lệ.", status: 401 as const };
   }
 
@@ -117,7 +117,7 @@ async function ensureProfileMediaBucket(service: NonNullable<ReturnType<typeof c
 }
 
 async function getEligibility(service: NonNullable<ReturnType<typeof createServiceClient>>, session: AppSession) {
-  if (session.role === "admin") {
+  if (session.role === "admin" || session.delegated) {
     return { ok: true, level: 100 };
   }
 
