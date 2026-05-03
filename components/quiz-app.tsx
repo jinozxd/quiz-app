@@ -6091,7 +6091,7 @@ export function SettingsDialog({
 
                 <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
                   <p className="text-sm font-black text-muted-foreground">Bản hiện tại</p>
-                  <p className="mt-2 text-4xl font-black">2.6.1</p>
+                  <p className="mt-2 text-4xl font-black">4.1.6</p>
                 </div>
               </section>
             )}
@@ -7134,6 +7134,19 @@ function AdminDonut({ percent }: { percent: number }) {
   );
 }
 
+function getLevelStyle(level: number) {
+  if (level >= 90) return "bg-[linear-gradient(135deg,#fb7185,#d946ef,#6366f1)] text-white [&_img]:border-white/50";
+  if (level >= 80) return "bg-[linear-gradient(135deg,#fde047,#fb923c)] text-amber-950";
+  if (level >= 70) return "bg-[linear-gradient(135deg,#93c5fd,#818cf8)] text-indigo-950";
+  if (level >= 60) return "bg-red-200 text-red-950";
+  if (level >= 50) return "bg-orange-200 text-orange-950";
+  if (level >= 40) return "bg-pink-200 text-pink-950";
+  if (level >= 30) return "bg-purple-200 text-purple-950";
+  if (level >= 20) return "bg-green-200 text-green-950";
+  if (level >= 10) return "bg-cyan-200 text-cyan-950";
+  return "bg-secondary/95 text-foreground";
+}
+
 function AccountFrame({
   media,
   onMediaChange,
@@ -7176,7 +7189,10 @@ function AccountFrame({
     <section className="mb-4 flex w-full justify-center sm:mb-6 sm:justify-start xl:fixed xl:left-6 xl:top-12 xl:z-30 xl:mb-0 xl:w-auto">
       <button
         type="button"
-        className="flex w-full items-center gap-3 rounded-2xl border-2 border-foreground bg-secondary/95 p-3 text-left shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 sm:max-w-[15rem] sm:shadow-[7px_7px_0_0_hsl(var(--foreground))] xl:w-[13.5rem]"
+        className={cn(
+          "flex w-full items-center gap-3 rounded-2xl border-2 border-foreground p-3 text-left shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 sm:max-w-[15rem] sm:shadow-[7px_7px_0_0_hsl(var(--foreground))] xl:w-[13.5rem]",
+          getLevelStyle(profile.level)
+        )}
         onClick={() => setOpen(true)}
       >
         {media?.avatar && !avatarError ? (
@@ -7187,19 +7203,24 @@ function AccountFrame({
             onError={() => setAvatarError(true)}
           />
         ) : (
-          <div className="grid size-12 shrink-0 place-items-center rounded-xl border-2 border-foreground bg-card shadow-[3px_3px_0_0_hsl(var(--foreground))] xl:size-11">
+          <div className="grid size-12 shrink-0 place-items-center rounded-xl border-2 border-foreground bg-card text-foreground shadow-[3px_3px_0_0_hsl(var(--foreground))] xl:size-11">
             <User className="size-8 stroke-[3]" aria-hidden />
           </div>
         )}
         <div className="min-w-0">
-            <p className="text-xs font-black uppercase text-foreground/65">Tài khoản</p>
+          <p className="text-xs font-black uppercase opacity-65">Tài khoản</p>
           <p className="truncate text-lg font-black leading-tight">{user.name}</p>
-          <div className="mt-1 flex items-center gap-2">
-            <Badge variant="outline">LV {profile.level}</Badge>
-            <span className="text-xs font-black text-foreground/70">{profile.xp}%</span>
+          <div className="mt-1">
+            <div className="flex items-center gap-2">
+              <Badge className="bg-background text-foreground" variant="outline">LV {profile.level}</Badge>
+              <span className="text-xs font-black opacity-70">{profile.xp}%</span>
+            </div>
+            <div className="mt-1 h-1 w-20 overflow-hidden rounded-full border border-foreground bg-background/50">
+              <span className="block h-full bg-foreground transition-all duration-500" style={{ width: `${profile.level >= 100 ? 100 : profile.xp}%` }} />
+            </div>
           </div>
           {user.role === "admin" && (
-            <Badge className="mt-1" variant="outline">
+            <Badge className="mt-2 animate-pulse border-2 border-foreground bg-yellow-400 font-black uppercase text-black shadow-[2px_2px_0_0_hsl(var(--foreground))]" variant="secondary">
               Admin
             </Badge>
           )}
@@ -7260,9 +7281,15 @@ function AccountFrame({
               <div>
                 <p className="text-xs font-black uppercase text-muted-foreground">Tài khoản</p>
                 <h2 className="mt-1 truncate text-3xl font-black leading-tight">{user.name}</h2>
-                <Badge className="mt-3" variant={user.role === "admin" ? "secondary" : "outline"}>
-                  {user.role === "admin" ? "Admin" : "Thành viên"}
-                </Badge>
+                {user.role === "admin" ? (
+                  <Badge className="mt-3 animate-pulse border-2 border-foreground bg-yellow-400 font-black uppercase text-black shadow-[3px_3px_0_0_hsl(var(--foreground))]" variant="secondary">
+                    Admin
+                  </Badge>
+                ) : (
+                  <Badge className="mt-3" variant="outline">
+                    Thành viên
+                  </Badge>
+                )}
               </div>
 
               <div className="mt-5 rounded-2xl border-2 border-foreground bg-muted p-4">
