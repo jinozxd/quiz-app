@@ -298,6 +298,7 @@ export type AppSettings = {
   pomodoroBreakMinutes: number;
   pomodoroEnabled: boolean;
   pomodoroFocusMinutes: number;
+  pomodoroHideTime: boolean;
   entryAnimation: boolean;
   motion: MotionLevel;
   theme: ThemeMode;
@@ -670,6 +671,7 @@ function defaultSettings(): AppSettings {
     pomodoroBreakMinutes: 5,
     pomodoroEnabled: false,
     pomodoroFocusMinutes: 20,
+    pomodoroHideTime: false,
     entryAnimation: true,
     motion: "normal",
     theme: "light"
@@ -725,6 +727,7 @@ export function restoreSettings(): AppSettings {
       pomodoroBreakMinutes: breakMinutes,
       pomodoroEnabled: Boolean(parsed.pomodoroEnabled) && focusMinutes >= 10,
       pomodoroFocusMinutes: focusMinutes,
+      pomodoroHideTime: Boolean(parsed.pomodoroHideTime),
       entryAnimation: parsed.entryAnimation !== false,
       motion: parsed.motion === "low" || parsed.motion === "normal" || parsed.motion === "high" || parsed.motion === "off" ? parsed.motion : "normal",
       theme: parsed.theme === "dark" ? "dark" : "light"
@@ -5277,7 +5280,7 @@ function PomodoroStatus({
   return (
     <div className="fixed left-1/2 top-5 z-[55] -translate-x-1/2 rounded-full border-2 border-foreground bg-card/90 px-4 py-2 text-sm font-black shadow-[4px_4px_0_0_hsl(var(--foreground))] backdrop-blur">
       <span className="mr-2">⏱️</span>
-      Nghỉ sau {formatTimer(remaining)}
+      {settings.pomodoroHideTime ? "Đang tập trung" : `Nghỉ sau ${formatTimer(remaining)}`}
     </div>
   );
 }
@@ -5864,6 +5867,26 @@ export function SettingsDialog({
                         onChange((current) => ({
                           ...current,
                           pomodoroEnabled: event.target.checked && current.pomodoroFocusMinutes >= 10
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
+                  <label className="flex cursor-pointer items-center justify-between gap-4">
+                    <span>
+                      <span className="block text-lg font-black">Ẩn thời gian chạy</span>
+                      <span className="block text-sm font-black text-muted-foreground">Chỉ hiện thông báo "Đang tập trung" thay vì đếm ngược.</span>
+                    </span>
+                    <input
+                      className="size-6 accent-black"
+                      type="checkbox"
+                      checked={settings.pomodoroHideTime}
+                      onChange={(event) =>
+                        onChange((current) => ({
+                          ...current,
+                          pomodoroHideTime: event.target.checked
                         }))
                       }
                     />
