@@ -6489,6 +6489,8 @@ function AdminAccountsPanel({
   onEditProfile,
   onSelectUser,
   onUpdateUser,
+  onRefresh,
+  loading,
   selectedPulse,
   selectedUser,
   users
