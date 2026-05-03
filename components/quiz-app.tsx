@@ -745,6 +745,7 @@ export function saveSettings(settings: AppSettings) {
   if (typeof window !== "undefined") {
     try {
       window.localStorage.setItem("quiz-on-tap-settings-v1", JSON.stringify(settings));
+      window.localStorage.removeItem("campus-quiz-settings-v1");
     } catch {}
   }
 }
@@ -1752,7 +1753,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       setAuthOpen(!normalizedAuth.session);
       localDataHydratedRef.current = true;
       writeEncryptedLocalStorage(STORAGE_KEY, LEGACY_STORAGE_KEY, normalizedSaved);
-      writeEncryptedLocalStorage(SETTINGS_KEY, LEGACY_SETTINGS_KEY, localSettings);
+      saveSettings(localSettings);
       writeEncryptedLocalStorage(AUTH_STORAGE_KEY, LEGACY_AUTH_STORAGE_KEY, normalizedAuth);
       writeEncryptedLocalStorage(PROFILE_MEDIA_KEY, LEGACY_PROFILE_MEDIA_KEY, localMedia);
       writeEncryptedLocalStorage(PROFILE_PROGRESS_KEY, LEGACY_PROFILE_PROGRESS_KEY, normalizedProfile);
@@ -1892,7 +1893,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   useEffect(() => {
     settingsRef.current = settings;
     if (localDataHydratedRef.current) {
-      writeEncryptedLocalStorage(SETTINGS_KEY, LEGACY_SETTINGS_KEY, settings);
+      saveSettings(settings);
     }
     document.documentElement.dataset.background = settings.background;
     document.documentElement.classList.toggle("dark", settings.theme === "dark");
