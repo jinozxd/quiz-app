@@ -57,6 +57,7 @@ type AuthSession = {
   name: string;
   role: AuthUser["role"];
   delegated?: boolean;
+  nameChangedAt?: string;
 };
 
 type AuthState = {
@@ -796,6 +797,7 @@ type AppAuthResponse = {
     name: string;
     role: AuthUser["role"];
     delegated?: boolean;
+    nameChangedAt?: string;
   };
   token?: string;
   error?: string;
