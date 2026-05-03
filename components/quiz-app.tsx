@@ -5421,7 +5421,7 @@ function PasswordField({
       {label}
       <span className="relative block">
         <input
-          className="h-11 w-full rounded-lg border-2 border-foreground bg-background px-3 pr-12 outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+          className="h-11 w-full rounded-lg border-2 border-foreground bg-card px-3 pr-12 outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
           type={show ? "text" : "password"}
           value={value}
           disabled={disabled}
@@ -7649,10 +7649,10 @@ function AccountFrame({
           <p className="truncate text-lg font-black leading-tight">{user.name}</p>
           <div className="mt-1">
             <div className="flex items-center gap-2">
-              <Badge className="bg-background text-foreground" variant="outline">LV {profile.level}</Badge>
+              <Badge className="bg-foreground/10 text-foreground border-foreground/20" variant="outline">LV {profile.level}</Badge>
               <span className="text-xs font-black opacity-70">{profile.xp}%</span>
             </div>
-            <div className="mt-1 h-1 w-20 overflow-hidden rounded-full border border-foreground bg-background/50">
+            <div className="mt-1 h-1 w-20 overflow-hidden rounded-full border border-foreground bg-foreground/10">
               <span className="block h-full bg-foreground transition-all duration-500" style={{ width: `${profile.level >= 100 ? 100 : profile.xp}%` }} />
             </div>
           </div>
