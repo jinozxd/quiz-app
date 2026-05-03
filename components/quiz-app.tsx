@@ -21,6 +21,7 @@ import {
   LogOut,
   MoreVertical,
   Pin,
+  RefreshCw,
   RotateCcw,
   Settings,
   Shuffle,
@@ -6400,11 +6401,13 @@ function getAdminUserPulse(user: AdminUserWithStats, now: number) {
 function AdminProfileEditForm({
   user,
   allAchievements,
-  onSave
+  onSave,
+  onCancel
 }: {
   user: AdminUserRecord;
   allAchievements: Achievement[];
   onSave: (data: { name?: string; email?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
+  onCancel?: () => void;
 }) {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
@@ -6475,7 +6478,12 @@ function AdminProfileEditForm({
           ))}
         </div>
       </div>
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex justify-end gap-2">
+        {onCancel && (
+          <Button size="sm" variant="ghost" type="button" onClick={onCancel}>
+            Hủy bỏ
+          </Button>
+        )}
         <Button size="sm" type="submit" disabled={saving}>
           {saving ? "Đang lưu..." : "Lưu tinh chỉnh"}
         </Button>
