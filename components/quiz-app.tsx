@@ -2875,7 +2875,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     await loadAdminUsers();
   }
 
-  async function editAdminUserProfile(userId: string, data: { name?: string; email?: string; password?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) {
+  async function editAdminUserProfile(userId: string, data: { name?: string; email?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) {
     if (!auth.sessionToken || currentUser?.role !== "admin") {
       setAdminMessage("Chỉ admin gốc mới được tinh chỉnh tài khoản.");
       return;
@@ -6394,11 +6394,10 @@ function AdminProfileEditForm({
 }: {
   user: AdminUserRecord;
   allAchievements: Achievement[];
-  onSave: (data: { name?: string; email?: string; password?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
+  onSave: (data: { name?: string; email?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
 }) {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
-  const [password, setPassword] = useState("");
   const [level, setLevel] = useState(user.profileProgress.level);
   const [xp, setXp] = useState(user.profileProgress.xp);
   const [unlocked, setUnlocked] = useState<Set<string>>(new Set(user.profileProgress.unlockedAchievementIds));
@@ -6407,25 +6406,22 @@ function AdminProfileEditForm({
   useEffect(() => {
     setName(user.name);
     setEmail(user.email);
-    setPassword("");
     setLevel(user.profileProgress.level);
     setXp(user.profileProgress.xp);
     setUnlocked(new Set(user.profileProgress.unlockedAchievementIds));
   }, [user]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaving(true);
     await onSave({
       name: name !== user.name ? name : undefined,
       email: email !== user.email ? email : undefined,
-      password: password || undefined,
       level: level !== user.profileProgress.level ? level : undefined,
       xp: xp !== user.profileProgress.xp ? xp : undefined,
       unlockedAchievementIds: Array.from(unlocked)
     });
     setSaving(false);
-    setPassword("");
   }
 
   function toggleAchievement(id: string) {
@@ -6436,8 +6432,9 @@ function AdminProfileEditForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 rounded-xl border-2 border-foreground bg-secondary/30 p-3 shadow-inner">
-      <p className="text-sm font-black text-muted-foreground uppercase">Tinh chỉnh tài khoản</p>
+    <form onSubmit={handleSubmit} className="rounded-xl border-2 border-foreground bg-secondary/30 p-3 shadow-inner">
+      <p className="text-sm font-black uppercase text-muted-foreground">Tinh chỉnh tài khoản</p>
+      <p className="mt-1 text-xs font-black text-muted-foreground">Admin có thể sửa email, tên và tiến trình. Mật khẩu không được sửa tại đây.</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div className="grid gap-1">
           <label className="text-xs font-black">Tên hiển thị</label>
@@ -6446,10 +6443,6 @@ function AdminProfileEditForm({
         <div className="grid gap-1">
           <label className="text-xs font-black">Email</label>
           <input type="email" className="rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={email} onChange={e => setEmail(e.target.value)} required maxLength={120} />
-        </div>
-        <div className="grid gap-1">
-          <label className="text-xs font-black">Mật khẩu mới (để trống nếu không đổi)</label>
-          <input type="password" placeholder="Nhập mật khẩu mới..." className="rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={password} onChange={e => setPassword(e.target.value)} minLength={8} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1">
@@ -6481,6 +6474,168 @@ function AdminProfileEditForm({
   );
 }
 
+function AdminAccountsPanel({
+  allAchievements,
+  onEditProfile,
+  onSelectUser,
+  onUpdateUser,
+  selectedPulse,
+  selectedUser,
+  users
+}: {
+  allAchievements: Achievement[];
+  onEditProfile: (userId: string, data: { name?: string; email?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
+  onSelectUser: (userId: string) => void;
+  onUpdateUser: (userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote") => void;
+  selectedPulse?: ReturnType<typeof getAdminUserPulse>;
+  selectedUser?: AdminUserWithStats;
+  users: AdminUserWithStats[];
+}) {
+  return (
+    <div className="grid gap-4 xl:grid-cols-[minmax(18rem,0.85fr)_minmax(0,1.45fr)]">
+      <div className="rounded-[1.2rem] border-2 border-[#202226] bg-[#fffaf3] p-4 shadow-[6px_6px_0_0_#202226]">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase text-[#72746f]">Account đã tạo</p>
+            <h3 className="text-xl font-black">{users.length} tài khoản</h3>
+          </div>
+          <Users className="size-6" aria-hidden />
+        </div>
+        <div className="mt-4 grid max-h-[38rem] gap-2 overflow-auto pr-1">
+          {users.map((user) => (
+            <button
+              key={user.id}
+              type="button"
+              className={cn("rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3 text-left shadow-[3px_3px_0_0_#202226]", selectedUser?.id === user.id && "bg-[#dfe8e1]")}
+              onClick={() => onSelectUser(user.id)}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black">{user.name}</p>
+                  <p className="truncate text-xs font-bold text-[#72746f]">{user.email}</p>
+                </div>
+                <span className={cn("mt-1 size-3 rounded-full", user.banned ? "bg-[#f07d88]" : "bg-[#37b28d]")} />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1">
+                <RoleBadge role={user.role} delegated={user.delegated} />
+                <Badge variant="outline">LV {user.profileProgress.level}</Badge>
+              </div>
+            </button>
+          ))}
+          {users.length === 0 && <div className="rounded-xl bg-[#eef0ef] p-4 text-center text-sm font-black text-[#72746f]">Chưa có tài khoản user.</div>}
+        </div>
+      </div>
+
+      {selectedUser ? (
+        <div className="grid gap-4">
+          <div className="rounded-[1.2rem] border-2 border-[#202226] bg-[#fffaf3] p-4 shadow-[6px_6px_0_0_#202226]">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase text-[#72746f]">Thông tin account</p>
+                <h3 className="mt-1 truncate text-3xl font-black">{selectedUser.name}</h3>
+                <p className="mt-1 break-all text-sm font-black text-[#72746f]">{selectedUser.email}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant={selectedUser.banned ? "destructive" : "outline"}>{selectedUser.banned ? "Đang bị ban" : "Hoạt động"}</Badge>
+                <RoleBadge role={selectedUser.role} delegated={selectedUser.delegated} />
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <AdminSmallStat label="Đã làm" value={selectedUser.stats.answered} detail={`${selectedUser.stats.submitted} bài nộp`} />
+              <AdminSmallStat label="Đúng" value={selectedUser.stats.correct} detail={`${selectedUser.stats.correctRate}% chính xác`} />
+              <AdminSmallStat label="Sai/trống" value={selectedUser.stats.wrong + selectedUser.stats.skipped} detail={`${selectedUser.stats.skipped} bỏ trống`} />
+              <AdminSmallStat label="Đăng nhập" value={selectedUser.loginCount} detail={`${selectedUser.deviceCount} thiết bị`} />
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <div className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3">
+                <p className="text-sm font-black">Chi tiết hệ thống</p>
+                <div className="mt-3 grid gap-2 text-sm font-bold text-[#72746f]">
+                  <p>ID: <span className="break-all text-[#202226]">{selectedUser.id}</span></p>
+                  <p>Ngày tạo: <span className="text-[#202226]">{formatAdminDate(selectedUser.createdAt)}</span></p>
+                  <p>Cập nhật: <span className="text-[#202226]">{formatAdminDate(selectedUser.updatedAt)}</span></p>
+                  <p>Đổi pass gần nhất: <span className="text-[#202226]">{formatAdminDate(selectedUser.passwordChangedAt)}</span></p>
+                  <p>Dữ liệu học: <span className="text-[#202226]">{formatAdminDate(selectedUser.dataUpdatedAt)}</span></p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3">
+                <p className="text-sm font-black">Thiết bị gần nhất</p>
+                <div className="mt-3 grid gap-2 text-sm font-bold text-[#72746f]">
+                  <p>IP: <span className="text-[#202226]">{selectedUser.lastLoginIp ?? "Chưa có"}</span></p>
+                  <p>Browser: <span className="text-[#202226]">{getBrowserName(selectedUser.lastUserAgent)}</span></p>
+                  <p>Nền tảng: <span className="text-[#202226]">{getPlatformName(selectedUser.lastUserAgent)}</span></p>
+                  <p>Lần cuối: <span className="text-[#202226]">{formatAdminDate(selectedUser.lastLoginAt)}</span></p>
+                  <p className="break-words">User agent: <span className="text-[#202226]">{selectedUser.lastUserAgent ?? "Chưa có"}</span></p>
+                </div>
+              </div>
+            </div>
+
+            {selectedPulse && (
+              <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                <div className="rounded-xl border-2 border-[#202226] bg-[#dfe8e1] p-3">
+                  <p className="text-xs font-black uppercase text-[#72746f]">Giám sát</p>
+                  <p className="mt-2 text-2xl font-black">{selectedPulse.level}</p>
+                  <p className="mt-1 text-xs font-black text-[#72746f]">Rủi ro {selectedPulse.riskScore}/100</p>
+                </div>
+                <div className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3">
+                  <p className="text-xs font-black uppercase text-[#72746f]">Dự đoán</p>
+                  <p className="mt-2 text-2xl font-black">{selectedPulse.forecastNextWeek} bài</p>
+                  <p className="mt-1 text-xs font-black text-[#72746f]">{selectedPulse.prediction}</p>
+                </div>
+                <div className="rounded-xl border-2 border-[#202226] bg-[#f4828d] p-3 text-white">
+                  <p className="text-xs font-black uppercase text-white/70">Cảnh báo</p>
+                  <p className="mt-2 text-lg font-black">{selectedPulse.flags[0] ?? "Không có cảnh báo lớn"}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button size="sm" variant={selectedUser.banned ? "outline" : "destructive"} onClick={() => onUpdateUser(selectedUser.id, selectedUser.banned ? "unban" : "ban")}>
+                {selectedUser.banned ? "Gỡ ban" : "Ban user"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => onUpdateUser(selectedUser.id, selectedUser.delegated ? "revokeDelegate" : "delegate")}>
+                {selectedUser.delegated ? "Gỡ ủy quyền" : "Ủy quyền"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => onUpdateUser(selectedUser.id, selectedUser.role === "admin" ? "demote" : "promote")}>
+                {selectedUser.role === "admin" ? "Hạ admin" : "Nâng admin"}
+              </Button>
+            </div>
+          </div>
+
+          <AdminProfileEditForm user={selectedUser} allAchievements={allAchievements} onSave={(data) => onEditProfile(selectedUser.id, data)} />
+
+          <div className="rounded-[1.2rem] border-2 border-[#202226] bg-card p-4 shadow-[6px_6px_0_0_#202226]">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-black">Lịch sử đăng nhập</p>
+              <Badge variant="outline">{selectedUser.loginEvents.length}</Badge>
+            </div>
+            <div className="mt-3 grid max-h-72 gap-2 overflow-auto pr-1">
+              {[...selectedUser.loginEvents]
+                .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
+                .map((event, index) => (
+                  <div key={`${event.createdAt}-${index}`} className="rounded-xl border-2 border-foreground bg-background p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-black">{getBrowserName(event.userAgent)}</p>
+                      <span className="text-xs font-black text-muted-foreground">{formatAdminDate(event.createdAt)}</span>
+                    </div>
+                    <p className="mt-1 text-xs font-black text-muted-foreground">{getPlatformName(event.userAgent)} · IP {event.ip ?? "chưa có"} · device {event.deviceKey ?? "chưa có"}</p>
+                  </div>
+                ))}
+              {selectedUser.loginEvents.length === 0 && <p className="rounded-xl border-2 border-foreground bg-background p-3 text-sm font-black text-muted-foreground">Chưa có lịch sử đăng nhập.</p>}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-[1.2rem] border-2 border-[#202226] bg-[#fffaf3] p-5 text-sm font-black text-[#72746f] shadow-[6px_6px_0_0_#202226]">
+          Chọn một tài khoản để xem chi tiết.
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AdminControlPanel({
   adminUsers,
   currentUser,
@@ -6499,8 +6654,9 @@ function AdminControlPanel({
   subjects: QuizSubject[];
   onRefresh: () => void;
   onUpdateUser: (userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote") => void;
-  onEditProfile: (userId: string, data: { name?: string; email?: string; password?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
+  onEditProfile: (userId: string, data: { name?: string; email?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
 }) {
+  const [adminView, setAdminView] = useState<"overview" | "accounts">("overview");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [userSort, setUserSort] = useState<"recent" | "most" | "accuracy" | "risk">("recent");
   const [userSortAsc, setUserSortAsc] = useState(false);
@@ -6590,6 +6746,47 @@ function AdminControlPanel({
 
   return (
     <section className="admin-dashboard rounded-[2rem] border-4 border-[#202226] bg-[#eef0ef] p-3 text-[#202226] shadow-[12px_12px_0_0_#202226,0_24px_70px_rgba(24,31,36,0.16)] sm:p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[1.2rem] border-2 border-[#202226] bg-[#fffaf3] p-3 shadow-[5px_5px_0_0_#202226]">
+        <div>
+          <p className="text-xs font-black uppercase text-[#72746f]">Khu kiểm soát</p>
+          <h2 className="text-xl font-black tracking-normal">{adminView === "accounts" ? "Tài khoản user" : "Tổng quan hệ thống"}</h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={cn("rounded-full border-2 border-[#202226] px-4 py-2 text-xs font-black shadow-[2px_2px_0_0_#202226]", adminView === "overview" ? "bg-[#dfe8e1]" : "bg-[#eef0ef]")}
+            onClick={() => setAdminView("overview")}
+          >
+            Tổng quan
+          </button>
+          <button
+            type="button"
+            className={cn("rounded-full border-2 border-[#202226] px-4 py-2 text-xs font-black shadow-[2px_2px_0_0_#202226]", adminView === "accounts" ? "bg-[#f07d88] text-white" : "bg-[#eef0ef]", !canWrite && "opacity-55")}
+            onClick={() => setAdminView("accounts")}
+          >
+            Tài khoản
+          </button>
+        </div>
+      </div>
+
+      {adminView === "accounts" ? (
+        canWrite ? (
+          <AdminAccountsPanel
+            users={sortedUsersWithStats}
+            selectedUser={selectedUser}
+            selectedPulse={selectedPulse}
+            allAchievements={allAchievements}
+            onSelectUser={setSelectedUserId}
+            onEditProfile={onEditProfile}
+            onUpdateUser={onUpdateUser}
+          />
+        ) : (
+          <div className="rounded-[1.2rem] border-2 border-[#202226] bg-[#fffaf3] p-5 text-sm font-black text-[#72746f] shadow-[6px_6px_0_0_#202226]">
+            Chỉ admin gốc mới xem được toàn bộ thông tin chi tiết account và chỉnh sửa email/thông tin user.
+          </div>
+        )
+      ) : (
+      <>
       <div className="grid gap-3 lg:grid-cols-12">
         <div className="admin-float-card rounded-[1.6rem] border-2 border-[#202226] bg-[#fffaf3] p-5 shadow-[7px_7px_0_0_#202226,inset_0_0_0_1px_rgba(32,34,38,0.05)] lg:col-span-4 lg:row-span-2">
           <div className="flex items-start justify-between gap-4">
@@ -6862,9 +7059,9 @@ function AdminControlPanel({
                   <p className="truncate text-sm font-black">{user.name}</p>
                   <span className={cn("size-3 rounded-full", isRecentActivity(user.lastLoginAt, user.dataUpdatedAt, now, 10 * 60_000) ? "bg-primary" : "bg-muted-foreground")} />
                 </div>
-                <p className="mt-1 truncate text-xs font-black text-muted-foreground">{user.email}</p>
+                <p className="mt-1 truncate text-xs font-black text-muted-foreground">{canWrite ? user.email : "Ẩn email ở chế độ chỉ xem"}</p>
                 <p className="mt-1 truncate text-xs font-black text-muted-foreground">
-                  {getBrowserName(user.lastUserAgent)} · {formatAdminDate(user.lastLoginAt ?? user.dataUpdatedAt)}
+                  {canWrite ? `${getBrowserName(user.lastUserAgent)} · ${formatAdminDate(user.lastLoginAt ?? user.dataUpdatedAt)}` : formatAdminDate(user.dataUpdatedAt)}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   <RoleBadge role={user.role} delegated={user.delegated} />
@@ -6882,7 +7079,7 @@ function AdminControlPanel({
                 <div>
                   <p className="text-xs font-black uppercase text-muted-foreground">Chi tiết user</p>
                   <h3 className="mt-1 text-2xl font-black">{selectedUser.name}</h3>
-                  <p className="mt-1 text-sm font-black text-muted-foreground">{selectedUser.email}</p>
+                  <p className="mt-1 text-sm font-black text-muted-foreground">{canWrite ? selectedUser.email : "Email chỉ admin gốc được xem"}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Badge variant={selectedUser.banned ? "destructive" : "outline"}>{selectedUser.banned ? "Đang bị ban" : "Đang hoạt động"}</Badge>
@@ -6918,18 +7115,24 @@ function AdminControlPanel({
               )}
 
               <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                <div className="rounded-xl border-2 border-foreground bg-background p-3">
-                  <p className="text-sm font-black">Thiết bị và đăng nhập</p>
-                  <div className="mt-3 grid gap-2 text-sm font-bold text-muted-foreground">
-                    <p>IP gần nhất: <span className="text-foreground">{selectedUser.lastLoginIp ?? "Chưa có"}</span></p>
-                    <p>Browser: <span className="text-foreground">{getBrowserName(selectedUser.lastUserAgent)}</span></p>
-                    <p>Nền tảng: <span className="text-foreground">{getPlatformName(selectedUser.lastUserAgent)}</span></p>
-                    <p>Số lần đăng nhập: <span className="text-foreground">{selectedUser.loginCount}</span></p>
-                    <p>Thiết bị ghi nhận: <span className="text-foreground">{selectedUser.deviceCount}</span></p>
-                    <p>Lần cuối: <span className="text-foreground">{formatAdminDate(selectedUser.lastLoginAt)}</span></p>
-                    <p className="break-words">User agent: <span className="text-foreground">{selectedUser.lastUserAgent ?? "Chưa có"}</span></p>
+                {canWrite ? (
+                  <div className="rounded-xl border-2 border-foreground bg-background p-3">
+                    <p className="text-sm font-black">Thiết bị và đăng nhập</p>
+                    <div className="mt-3 grid gap-2 text-sm font-bold text-muted-foreground">
+                      <p>IP gần nhất: <span className="text-foreground">{selectedUser.lastLoginIp ?? "Chưa có"}</span></p>
+                      <p>Browser: <span className="text-foreground">{getBrowserName(selectedUser.lastUserAgent)}</span></p>
+                      <p>Nền tảng: <span className="text-foreground">{getPlatformName(selectedUser.lastUserAgent)}</span></p>
+                      <p>Số lần đăng nhập: <span className="text-foreground">{selectedUser.loginCount}</span></p>
+                      <p>Thiết bị ghi nhận: <span className="text-foreground">{selectedUser.deviceCount}</span></p>
+                      <p>Lần cuối: <span className="text-foreground">{formatAdminDate(selectedUser.lastLoginAt)}</span></p>
+                      <p className="break-words">User agent: <span className="text-foreground">{selectedUser.lastUserAgent ?? "Chưa có"}</span></p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="rounded-xl border-2 border-foreground bg-background p-3 text-sm font-black text-muted-foreground">
+                    Chi tiết thiết bị, IP, email và user-agent chỉ admin gốc được xem.
+                  </div>
+                )}
 
                 <div className="rounded-xl border-2 border-foreground bg-background p-3">
                   <p className="text-sm font-black">Thành tựu đã mở</p>
@@ -6939,7 +7142,7 @@ function AdminControlPanel({
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl border-2 border-foreground bg-background p-3">
+              {canWrite && <div className="mt-4 rounded-xl border-2 border-foreground bg-background p-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-black">Hoạt động gần đây</p>
                   <Badge variant="outline">Mới nhất trước</Badge>
@@ -6958,7 +7161,7 @@ function AdminControlPanel({
                     ))}
                   {selectedUser.loginEvents.length === 0 && <p className="rounded-xl border-2 border-foreground bg-card p-3 text-sm font-black text-muted-foreground">Chưa có lịch sử đăng nhập.</p>}
                 </div>
-              </div>
+              </div>}
 
               {canWrite && (
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -7037,6 +7240,8 @@ function AdminControlPanel({
           </div>
         </div>
       </div>
+      </>
+      )}
     </section>
   );
 }

@@ -4,6 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 const FLOATING_EMOJI_COUNT_EVENT = "quiz-on-tap-floating-emoji-count-change";
 const MAX_FLOATERS = 9;
+const BASE_FRAME_MS = 16.67;
+const COLLISION_RESTITUTION = 0.92;
+const WALL_RESTITUTION = 0.98;
 
 const EMOJIS = [
   "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "🥲", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍",
@@ -19,10 +22,12 @@ type Floater = {
   emoji: string;
   x: number;
   y: number;
-  dx: number;
-  dy: number;
+  vx: number;
+  vy: number;
   size: number;
+  mass: number;
   rotate: number;
+  angularVelocity: number;
 };
 
 function randomEmoji() {
@@ -37,19 +42,100 @@ function readStoredCount() {
   return 3;
 }
 
+function randomVelocity(speed: number) {
+  const angle = Math.random() * Math.PI * 2;
+  return {
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed
+  };
+}
+
+function reflectVelocity(vx: number, vy: number, nx: number, ny: number, restitution = 1) {
+  const dot = vx * nx + vy * ny;
+  return {
+    vx: (vx - 2 * dot * nx) * restitution,
+    vy: (vy - 2 * dot * ny) * restitution
+  };
+}
+
 function createFloater(id: number, width: number, height: number): Floater {
   const size = 42 + Math.random() * 30;
-  const speed = 0.7 + Math.random() * 0.9;
+  const speed = 0.65 + Math.random() * 0.85;
+  const velocity = randomVelocity(speed);
   return {
     id,
     emoji: randomEmoji(),
     x: Math.random() * Math.max(1, width - size),
     y: Math.random() * Math.max(1, height - size),
-    dx: (Math.random() > 0.5 ? 1 : -1) * speed,
-    dy: (Math.random() > 0.5 ? 1 : -1) * speed,
+    vx: velocity.vx,
+    vy: velocity.vy,
     size,
-    rotate: -12 + Math.random() * 24
+    mass: size * size,
+    rotate: -12 + Math.random() * 24,
+    angularVelocity: (Math.random() > 0.5 ? 1 : -1) * (0.18 + Math.random() * 0.34)
   };
+}
+
+function resolveFloaterCollisions(items: Floater[]) {
+  const next = items.map((item) => ({ ...item }));
+
+  for (let firstIndex = 0; firstIndex < next.length; firstIndex += 1) {
+    for (let secondIndex = firstIndex + 1; secondIndex < next.length; secondIndex += 1) {
+      const first = next[firstIndex];
+      const second = next[secondIndex];
+      const firstRadius = first.size / 2;
+      const secondRadius = second.size / 2;
+      const firstCenterX = first.x + firstRadius;
+      const firstCenterY = first.y + firstRadius;
+      const secondCenterX = second.x + secondRadius;
+      const secondCenterY = second.y + secondRadius;
+      const deltaX = secondCenterX - firstCenterX;
+      const deltaY = secondCenterY - firstCenterY;
+      const distance = Math.hypot(deltaX, deltaY) || 0.001;
+      const minDistance = firstRadius + secondRadius;
+
+      if (distance >= minDistance) {
+        continue;
+      }
+
+      const normalX = deltaX / distance;
+      const normalY = deltaY / distance;
+      const overlap = minDistance - distance;
+      const totalMass = first.mass + second.mass;
+      const firstMove = (overlap * second.mass) / totalMass;
+      const secondMove = (overlap * first.mass) / totalMass;
+
+      first.x -= normalX * firstMove;
+      first.y -= normalY * firstMove;
+      second.x += normalX * secondMove;
+      second.y += normalY * secondMove;
+
+      const relativeVelocityX = second.vx - first.vx;
+      const relativeVelocityY = second.vy - first.vy;
+      const velocityAlongNormal = relativeVelocityX * normalX + relativeVelocityY * normalY;
+
+      if (velocityAlongNormal > 0) {
+        continue;
+      }
+
+      const impulse = (-(1 + COLLISION_RESTITUTION) * velocityAlongNormal) / (1 / first.mass + 1 / second.mass);
+      const impulseX = impulse * normalX;
+      const impulseY = impulse * normalY;
+
+      first.vx -= impulseX / first.mass;
+      first.vy -= impulseY / first.mass;
+      second.vx += impulseX / second.mass;
+      second.vy += impulseY / second.mass;
+
+      const tangentKick = (relativeVelocityX * -normalY + relativeVelocityY * normalX) * 0.02;
+      first.angularVelocity = Math.max(-0.9, Math.min(0.9, first.angularVelocity - tangentKick));
+      second.angularVelocity = Math.max(-0.9, Math.min(0.9, second.angularVelocity + tangentKick));
+      first.emoji = randomEmoji();
+      second.emoji = randomEmoji();
+    }
+  }
+
+  return next;
 }
 
 export function FloatingEmojiBackground() {
@@ -57,6 +143,7 @@ export function FloatingEmojiBackground() {
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const floatersRef = useRef<Floater[]>([]);
   const frameRef = useRef<number | null>(null);
+  const lastFrameAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     setCount(readStoredCount());
@@ -89,31 +176,58 @@ export function FloatingEmojiBackground() {
   }, [count]);
 
   useEffect(() => {
-    const tick = () => {
+    const tick = (timestamp: number) => {
       const width = window.innerWidth;
       const height = window.innerHeight;
+      const previousTimestamp = lastFrameAtRef.current ?? timestamp;
+      const step = Math.min(2.2, Math.max(0.35, (timestamp - previousTimestamp) / BASE_FRAME_MS || 1));
+      lastFrameAtRef.current = timestamp;
 
-      floatersRef.current = floatersRef.current.map((item) => {
-        let x = item.x + item.dx;
-        let y = item.y + item.dy;
-        let dx = item.dx;
-        let dy = item.dy;
+      const moved = floatersRef.current.map((item) => {
+        let x = item.x + item.vx * step;
+        let y = item.y + item.vy * step;
+        let vx = item.vx;
+        let vy = item.vy;
         let emoji = item.emoji;
+        let angularVelocity = item.angularVelocity;
 
         if (x <= 0 || x + item.size >= width) {
-          dx *= -1;
+          const normalX = x <= 0 ? 1 : -1;
+          const reflected = reflectVelocity(vx, vy, normalX, 0, WALL_RESTITUTION);
+          vx = reflected.vx;
+          vy = reflected.vy;
           x = Math.min(Math.max(0, x), Math.max(0, width - item.size));
+          angularVelocity += normalX * vy * 0.08;
           emoji = randomEmoji();
         }
 
         if (y <= 0 || y + item.size >= height) {
-          dy *= -1;
+          const normalY = y <= 0 ? 1 : -1;
+          const reflected = reflectVelocity(vx, vy, 0, normalY, WALL_RESTITUTION);
+          vx = reflected.vx;
+          vy = reflected.vy;
           y = Math.min(Math.max(0, y), Math.max(0, height - item.size));
+          angularVelocity -= normalY * vx * 0.08;
           emoji = randomEmoji();
         }
 
-        return { ...item, x, y, dx, dy, emoji };
+        return {
+          ...item,
+          x,
+          y,
+          vx,
+          vy,
+          emoji,
+          rotate: item.rotate + angularVelocity * step,
+          angularVelocity: Math.max(-1.1, Math.min(1.1, angularVelocity))
+        };
       });
+
+      floatersRef.current = resolveFloaterCollisions(moved).map((item) => ({
+        ...item,
+        x: Math.min(Math.max(0, item.x), Math.max(0, width - item.size)),
+        y: Math.min(Math.max(0, item.y), Math.max(0, height - item.size))
+      }));
 
       setFloaters([...floatersRef.current]);
       frameRef.current = window.requestAnimationFrame(tick);

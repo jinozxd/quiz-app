@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { AppSession } from "@/lib/app-auth";
-import { getBearerToken, hashPassword, verifySessionToken } from "@/lib/app-auth";
+import { getBearerToken, verifySessionToken } from "@/lib/app-auth";
 import { decryptJsonForUser, encryptJsonForUser } from "@/lib/security/app-data-crypto";
 import { getIp, rateLimit } from "@/lib/security/rate-limit";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -21,7 +21,6 @@ const updateSchema = z.discriminatedUnion("action", [
     action: z.literal("editProfile"),
     name: z.string().trim().min(2).max(40).regex(/^[\p{L}\p{N}_ .-]+$/u).optional(),
     email: z.string().trim().email().max(120).optional(),
-    password: z.string().min(8).max(128).optional(),
     level: z.number().int().min(1).max(9999).optional(),
     xp: z.number().int().min(0).max(100).optional(),
     unlockedAchievementIds: z.array(z.string()).optional()
@@ -98,6 +97,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Không đọc được dữ liệu quản trị." }, { status: 500 });
   }
 
+  const canSeeAccountDetails = admin.user.role === "admin";
   const dataByUser = new Map((userData ?? []).map((item) => [item.user_id, item]));
   const eventsByUser = new Map<string, NonNullable<typeof loginEvents>>();
   for (const event of loginEvents ?? []) {
@@ -114,25 +114,25 @@ export async function GET(request: Request) {
 
       return {
         id: user.id,
-        email: user.email,
+        email: canSeeAccountDetails ? user.email : "",
         name: user.name,
         role: user.role,
         banned: Boolean(user.is_banned),
         delegated: Boolean(user.delegated_at),
-        createdAt: user.created_at,
-        updatedAt: user.updated_at,
-        passwordChangedAt: user.password_changed_at,
-        lastLoginAt: user.last_login_at,
-        lastLoginIp: user.last_login_ip,
-        lastUserAgent: user.last_user_agent,
+        createdAt: canSeeAccountDetails ? user.created_at : undefined,
+        updatedAt: canSeeAccountDetails ? user.updated_at : data?.updated_at,
+        passwordChangedAt: canSeeAccountDetails ? user.password_changed_at : undefined,
+        lastLoginAt: canSeeAccountDetails ? user.last_login_at : undefined,
+        lastLoginIp: canSeeAccountDetails ? user.last_login_ip : undefined,
+        lastUserAgent: canSeeAccountDetails ? user.last_user_agent : undefined,
         loginCount: user.login_count ?? events.length,
-        deviceCount,
-        loginEvents: events.slice(0, 12).map((event) => ({
+        deviceCount: canSeeAccountDetails ? deviceCount : 0,
+        loginEvents: canSeeAccountDetails ? events.slice(0, 12).map((event) => ({
           ip: event.ip,
           userAgent: event.user_agent,
           deviceKey: event.device_key,
           createdAt: event.created_at
-        })),
+        })) : [],
         dataUpdatedAt: data?.updated_at,
         saved: decryptJsonForUser(data?.saved, user.id, "saved", EMPTY_SAVED),
         profileProgress: decryptJsonForUser(data?.profile_progress, user.id, "profile_progress", EMPTY_PROFILE_PROGRESS)
@@ -162,17 +162,11 @@ export async function PATCH(request: Request) {
   }
 
   if (parsed.data.action === "editProfile") {
-    const { userId, name, email, password, level, xp, unlockedAchievementIds } = parsed.data;
+    const { userId, name, email, level, xp, unlockedAchievementIds } = parsed.data;
     
     const userPatch: Record<string, any> = {};
     if (name) userPatch.name = name;
     if (email) userPatch.email = email.toLowerCase();
-    if (password) {
-      const { hash, salt } = await hashPassword(password);
-      userPatch.password_hash = hash;
-      userPatch.password_salt = salt;
-      userPatch.password_changed_at = new Date().toISOString();
-    }
     
     if (Object.keys(userPatch).length > 0) {
       const { error: userError } = await admin.service
