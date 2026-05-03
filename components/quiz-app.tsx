@@ -4526,14 +4526,24 @@ function RecentResults({
                 const celebration = getResultCelebration(percent);
                 const percentEffect = getResultPercentEffect(percent);
                 const isLatest = index === 0;
+                const isTop3 = index < 3;
                 const canReview = index < 3 && Boolean(result.review?.length);
+                const rankEmoji = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
+                const durationLabel = result.durationMs
+                  ? result.durationMs >= 60_000
+                    ? `${Math.floor(result.durationMs / 60_000)}p${Math.floor((result.durationMs % 60_000) / 1000)}s`
+                    : `${Math.round(result.durationMs / 1000)}s`
+                  : null;
 
                 return (
                   <div
                     key={`${result.id}-${animationRun}`}
                     className={cn(
                       "result-card motion-safe-card rounded-[22px] border-2 border-foreground bg-secondary shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-colors duration-200 hover:bg-secondary/90",
-                      isLatest && "result-card-latest"
+                      isLatest && "result-card-latest",
+                      isTop3 && "result-card-top3",
+                      index === 1 && "result-card-top3-silver",
+                      index === 2 && "result-card-top3-bronze"
                     )}
                     onPointerDown={() => startLongPress(result.id)}
                     onPointerUp={stopLongPress}
@@ -4541,19 +4551,32 @@ function RecentResults({
                     onPointerCancel={stopLongPress}
                   >
                     <div className="result-card-pattern" aria-hidden>
-                      {Array.from({ length: isLatest ? 24 : 18 }).map((_, emojiIndex) => (
+                      {Array.from({ length: isLatest ? 24 : isTop3 ? 21 : 18 }).map((_, emojiIndex) => (
                         <span key={emojiIndex}>{mood.emoji}</span>
                       ))}
                     </div>
+                    {isTop3 && (
+                      <div className="result-rank-badge" aria-hidden>
+                        <span className="result-rank-emoji">{rankEmoji}</span>
+                        <span className="result-rank-number">#{index + 1}</span>
+                      </div>
+                    )}
                     <div className={cn("result-mini-stamp", isLatest && "result-mini-stamp-latest")} aria-hidden>
                       {mood.emoji}
                     </div>
                     <div className="result-card-header relative z-10 flex items-center justify-between gap-2">
                       <p className="text-sm font-black text-muted-foreground">{subject?.title ?? "Quiz"}</p>
-                      {result.pinnedAt && <Badge variant="outline">Ghim</Badge>}
+                      <div className="flex items-center gap-2">
+                        {result.pinnedAt && <Badge variant="outline">Ghim</Badge>}
+                        {isTop3 && durationLabel && (
+                          <Badge variant="secondary" className="result-duration-badge">
+                            ⏱️ {durationLabel}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <h3 className={cn("result-card-title relative z-10 line-clamp-2 font-black", isLatest ? "text-xl" : "text-lg")}>{result.chapterTitle}</h3>
-                    <p className={cn("result-percent-effect result-card-percent relative z-10 font-black", percentEffect, isLatest ? "text-6xl" : "text-5xl")}>{percent}%</p>
+                    <h3 className={cn("result-card-title relative z-10 line-clamp-2 font-black", isLatest ? "text-xl" : isTop3 ? "text-lg" : "text-lg")}>{result.chapterTitle}</h3>
+                    <p className={cn("result-percent-effect result-card-percent relative z-10 font-black", percentEffect, isLatest ? "text-6xl" : isTop3 ? "text-5xl" : "text-5xl")}>{percent}%</p>
                     <div className="result-card-badges relative z-10 flex flex-wrap gap-2">
                       <p className="rounded-full border-2 border-foreground bg-card px-3 py-1 text-sm font-black">
                         {result.score}/{result.total} câu đúng
