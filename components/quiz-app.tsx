@@ -2836,8 +2836,9 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
 
     setAdminLoading(true);
     setAdminMessage("");
-    const response = await fetch("/api/admin/users", {
-      headers: { Authorization: `Bearer ${auth.sessionToken}` }
+    const response = await fetch(`/api/admin/users?t=${Date.now()}`, {
+      headers: { Authorization: `Bearer ${auth.sessionToken}` },
+      cache: "no-store"
     });
     const data = (await response.json().catch(() => ({}))) as { users?: AdminUserRecord[]; error?: string };
     setAdminLoading(false);
@@ -6487,6 +6488,8 @@ function AdminAccountsPanel({
   onEditProfile: (userId: string, data: { name?: string; email?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
   onSelectUser: (userId: string) => void;
   onUpdateUser: (userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote") => void;
+  onRefresh: () => void;
+  loading: boolean;
   selectedPulse?: ReturnType<typeof getAdminUserPulse>;
   selectedUser?: AdminUserWithStats;
   users: AdminUserWithStats[];
@@ -6499,7 +6502,20 @@ function AdminAccountsPanel({
             <p className="text-xs font-black uppercase text-[#72746f]">Account đã tạo</p>
             <h3 className="text-xl font-black">{users.length} tài khoản</h3>
           </div>
-          <Users className="size-6" aria-hidden />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="size-8 rounded-full"
+              onClick={onRefresh}
+              disabled={loading}
+              title="Làm mới danh sách"
+            >
+              <RefreshCw className={cn("size-4", loading && "animate-spin")} />
+            </Button>
+            <Users className="size-6" aria-hidden />
+          </div>
         </div>
         <div className="mt-4 grid max-h-[38rem] gap-2 overflow-auto pr-1">
           {users.map((user) => (
@@ -6779,6 +6795,8 @@ function AdminControlPanel({
             onSelectUser={setSelectedUserId}
             onEditProfile={onEditProfile}
             onUpdateUser={onUpdateUser}
+            onRefresh={onRefresh}
+            loading={loading}
           />
         ) : (
           <div className="rounded-[1.2rem] border-2 border-[#202226] bg-[#fffaf3] p-5 text-sm font-black text-[#72746f] shadow-[6px_6px_0_0_#202226]">
