@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { AppSession } from "@/lib/app-auth";
-import { getBearerToken, verifySessionToken } from "@/lib/app-auth";
+import { createSessionToken, getBearerToken, verifySessionToken } from "@/lib/app-auth";
 import { decryptJsonForUser, encryptJsonForUser } from "@/lib/security/app-data-crypto";
 import { getIp, rateLimit } from "@/lib/security/rate-limit";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -27,8 +27,32 @@ const updateSchema = z.discriminatedUnion("action", [
   })
 ]);
 
+type SessionUser = {
+  id: string;
+  name: string;
+  role: "admin" | "member";
+  delegated_at?: string | null;
+};
+
 function getSession(request: Request) {
   return verifySessionToken(getBearerToken(request));
+}
+
+function cleanSessionUser(user: SessionUser) {
+  return {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    delegated: Boolean(user.delegated_at)
+  };
+}
+
+function getDatabaseUpdateMessage(error: { code?: string } | null | undefined) {
+  if (error?.code === "23505") {
+    return { error: "Email hoặc tên này đã có người dùng khác.", status: 409 as const };
+  }
+
+  return { error: "Không cập nhật được thông tin tài khoản.", status: 500 as const };
 }
 
 async function requireAdminAccess(session: AppSession, write = false) {
@@ -127,12 +151,14 @@ export async function GET(request: Request) {
         lastUserAgent: canSeeAccountDetails ? user.last_user_agent : undefined,
         loginCount: user.login_count ?? events.length,
         deviceCount: canSeeAccountDetails ? deviceCount : 0,
-        loginEvents: canSeeAccountDetails ? events.slice(0, 12).map((event) => ({
-          ip: event.ip,
-          userAgent: event.user_agent,
-          deviceKey: event.device_key,
-          createdAt: event.created_at
-        })) : [],
+        loginEvents: canSeeAccountDetails
+          ? events.slice(0, 12).map((event) => ({
+              ip: event.ip,
+              userAgent: event.user_agent,
+              deviceKey: event.device_key,
+              createdAt: event.created_at
+            }))
+          : [],
         dataUpdatedAt: data?.updated_at,
         saved: decryptJsonForUser(data?.saved, user.id, "saved", EMPTY_SAVED),
         profileProgress: decryptJsonForUser(data?.profile_progress, user.id, "profile_progress", EMPTY_PROFILE_PROGRESS)
@@ -163,17 +189,26 @@ export async function PATCH(request: Request) {
 
   if (parsed.data.action === "editProfile") {
     const { userId, name, email, level, xp, unlockedAchievementIds } = parsed.data;
-    
-    const userPatch: Record<string, any> = {};
-    if (name) userPatch.name = name;
-    if (email) userPatch.email = email.toLowerCase();
-    
-    if (Object.keys(userPatch).length > 0) {
-      const { error: userError } = await admin.service
+    let updatedSessionUser: SessionUser | null = null;
+
+    const accountPatch: Record<string, string> = {};
+    if (name) accountPatch.name = name;
+    if (email) accountPatch.email = email.toLowerCase();
+
+    if (Object.keys(accountPatch).length > 0) {
+      const { data: updatedUser, error: userError } = await admin.service
         .from("app_users")
-        .update({ ...userPatch, updated_at: new Date().toISOString() })
-        .eq("id", userId);
-      if (userError) return NextResponse.json({ error: "Không cập nhật được thông tin tài khoản." }, { status: 500 });
+        .update({ ...accountPatch, updated_at: new Date().toISOString() })
+        .eq("id", userId)
+        .select("id,name,role,delegated_at")
+        .single();
+
+      if (userError || !updatedUser) {
+        const message = getDatabaseUpdateMessage(userError);
+        return NextResponse.json({ error: message.error }, { status: message.status });
+      }
+
+      updatedSessionUser = updatedUser as SessionUser;
     }
 
     if (level !== undefined || xp !== undefined || unlockedAchievementIds !== undefined) {
@@ -182,8 +217,10 @@ export async function PATCH(request: Request) {
         .select("profile_progress")
         .eq("user_id", userId)
         .maybeSingle();
-      
-      if (dataError) return NextResponse.json({ error: "Không đọc được dữ liệu tiến trình." }, { status: 500 });
+
+      if (dataError) {
+        return NextResponse.json({ error: "Không đọc được dữ liệu tiến trình." }, { status: 500 });
+      }
 
       const currentProgress = decryptJsonForUser(userData?.profile_progress, userId, "profile_progress", EMPTY_PROFILE_PROGRESS);
       const newProgress = { ...currentProgress };
@@ -193,13 +230,31 @@ export async function PATCH(request: Request) {
 
       const { error: saveError } = await admin.service
         .from("app_user_data")
-        .update({
+        .upsert({
+          user_id: userId,
           profile_progress: encryptJsonForUser(newProgress, userId, "profile_progress"),
           updated_at: new Date().toISOString()
-        })
-        .eq("user_id", userId);
-      
-      if (saveError) return NextResponse.json({ error: "Không lưu được tiến trình." }, { status: 500 });
+        }, { onConflict: "user_id" });
+
+      if (saveError) {
+        return NextResponse.json({ error: "Không lưu được tiến trình." }, { status: 500 });
+      }
+    }
+
+    if (userId === session.id) {
+      if (!updatedSessionUser) {
+        const { data: current } = await admin.service
+          .from("app_users")
+          .select("id,name,role,delegated_at")
+          .eq("id", userId)
+          .single();
+        updatedSessionUser = current as SessionUser | null;
+      }
+
+      if (updatedSessionUser) {
+        const user = cleanSessionUser(updatedSessionUser);
+        return NextResponse.json({ ok: true, user, token: createSessionToken(user) });
+      }
     }
 
     return NextResponse.json({ ok: true });

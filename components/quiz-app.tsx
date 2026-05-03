@@ -3053,11 +3053,27 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       },
       body: JSON.stringify({ userId, action: "editProfile", ...data })
     });
-    const resData = (await response.json().catch(() => ({}))) as { error?: string };
+    const resData = (await response.json().catch(() => ({}))) as AppAuthResponse & { ok?: boolean };
 
     if (!response.ok) {
       setAdminMessage(resData.error ?? "Không tinh chỉnh được tài khoản.");
       return;
+    }
+
+    if (userId === currentUser.id && resData.user && resData.token) {
+      const previousName = currentUser.name;
+      const nextAuth = authStateForSession(resData.user, resData.token, Boolean(auth.rememberPassword));
+      setAuth(nextAuth);
+      if (resData.user.name !== previousName) {
+        setProfileMedia((current) => {
+          const existing = current[previousName];
+          if (!existing || current[resData.user!.name]) {
+            return current;
+          }
+          const { [previousName]: _removed, ...rest } = current;
+          return { ...rest, [resData.user!.name]: existing };
+        });
+      }
     }
 
     await loadAdminUsers();
