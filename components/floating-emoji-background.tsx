@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 const FLOATING_EMOJI_COUNT_EVENT = "quiz-on-tap-floating-emoji-count-change";
 const MAX_FLOATERS = 9;
