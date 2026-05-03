@@ -5859,6 +5859,12 @@ export function SettingsDialog({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [newName, setNewName] = useState(user?.name ?? "");
+  const [namePassword, setNamePassword] = useState("");
+  const [showNamePassword, setShowNamePassword] = useState(false);
+  const [nameMessage, setNameMessage] = useState("");
+  const [nameSuccess, setNameSuccess] = useState("");
+  const [nameLoading, setNameLoading] = useState(false);
 
   if (!open) {
     return null;
@@ -5866,6 +5872,11 @@ export function SettingsDialog({
 
   const passwordLocked = false;
   const passwordLockText = "";
+
+  const nameCooldownMs = 90 * 24 * 60 * 60 * 1000;
+  const lastNameChange = user?.nameChangedAt ? new Date(user.nameChangedAt).getTime() : 0;
+  const nameCooldownActive = !user?.role || (user.role !== "admin" && !user.delegated) ? (Date.now() - lastNameChange < nameCooldownMs) : false;
+  const remainingNameDays = Math.ceil((nameCooldownMs - (Date.now() - lastNameChange)) / (24 * 60 * 60 * 1000));
 
   const motionOrder: MotionLevel[] = ["low", "normal", "high"];
   const motionIndex = settings.motion === "off" ? 1 : motionOrder.indexOf(settings.motion);
@@ -5897,6 +5908,61 @@ export function SettingsDialog({
       setCurrentPassword("");
       setNextPassword("");
       setConfirmPassword("");
+    }
+  }
+
+  async function submitNameChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!auth?.sessionToken || !user) return;
+    
+    setNameSuccess("");
+    setNameMessage("");
+    
+    const cleanedName = newName.trim();
+    if (cleanedName === user.name) {
+      setNameMessage("Tên mới phải khác tên hiện tại.");
+      return;
+    }
+    
+    if (cleanedName.length < 2) {
+      setNameMessage("Tên quá ngắn.");
+      return;
+    }
+    
+    if (!namePassword) {
+      setNameMessage("Vui lòng nhập mật khẩu xác nhận.");
+      return;
+    }
+    
+    setNameLoading(true);
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${auth.sessionToken}`
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          action: "editProfile",
+          name: cleanedName,
+          password: namePassword
+        })
+      });
+      
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setNameMessage(data.error ?? "Không đổi được tên tài khoản.");
+      } else {
+        setNameSuccess("Đã đổi tên thành công!");
+        setNamePassword("");
+        // Trigger a page reload to refresh all auth states and profile info
+        window.location.reload(); 
+      }
+    } catch (err) {
+      setNameMessage("Lỗi kết nối server.");
+    } finally {
+      setNameLoading(false);
     }
   }
 
@@ -6004,6 +6070,64 @@ export function SettingsDialog({
                       <RoleBadge role={user.role} delegated={user.delegated} />
                     )}
                   </div>
+                </div>
+
+                <form className="mt-5 grid gap-4 rounded-xl border-2 border-foreground bg-card/85 p-4" onSubmit={submitNameChange}>
+                  <div>
+                    <h4 className="text-lg font-black">Đổi tên tài khoản</h4>
+                    <p className="mt-1 text-sm font-black text-muted-foreground">
+                      Admin và người được ủy quyền có thể đổi liên tục. User thường đổi sau mỗi 3 tháng.
+                    </p>
+                  </div>
+
+                  {nameCooldownActive && (
+                    <p className="rounded-lg border-2 border-foreground bg-muted p-3 text-sm font-black">
+                      Bạn vừa đổi tên gần đây. Có thể đổi tiếp sau {remainingNameDays} ngày nữa.
+                    </p>
+                  )}
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-black uppercase tracking-wider text-muted-foreground">Tên hiển thị mới</label>
+                      <input
+                        className="w-full rounded-lg border-2 border-foreground bg-background px-3 py-2 font-black shadow-[4px_4px_0_0_hsl(var(--foreground))] focus:outline-none disabled:opacity-50"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        placeholder="Nhập tên mới..."
+                        disabled={!user || nameCooldownActive || nameLoading}
+                      />
+                    </div>
+                    <PasswordField
+                      label="Mật khẩu xác nhận"
+                      value={namePassword}
+                      disabled={!user || nameCooldownActive || nameLoading}
+                      show={showNamePassword}
+                      onToggle={() => setShowNamePassword((current) => !current)}
+                      onChange={setNamePassword}
+                      autoComplete="current-password"
+                    />
+                  </div>
+
+                  {nameMessage && (
+                    <p className="rounded-lg border-2 border-destructive bg-destructive/15 px-3 py-2 text-sm font-black">
+                      {nameMessage}
+                    </p>
+                  )}
+                  {nameSuccess && (
+                    <p className="rounded-lg border-2 border-foreground bg-secondary/80 px-3 py-2 text-sm font-black">
+                      {nameSuccess}
+                    </p>
+                  )}
+
+                  <Button className="w-fit" type="submit" disabled={!user || nameCooldownActive || nameLoading}>
+                    {nameLoading ? "Đang lưu..." : "Đổi tên hiển thị"}
+                  </Button>
+                </form>
+
+                <div className="my-8 border-t-2 border-dashed border-foreground/30" />
+
+                <div>
+                  <h4 className="text-lg font-black">Bảo mật mật khẩu</h4>
                 </div>
 
                 <form className="mt-5 grid gap-4 rounded-xl border-2 border-foreground bg-card/85 p-4" onSubmit={submitPasswordChange}>

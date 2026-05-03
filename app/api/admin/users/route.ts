@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { AppSession } from "@/lib/app-auth";
-import { createSessionToken, getBearerToken, verifySessionToken } from "@/lib/app-auth";
+import { createSessionToken, getBearerToken, verifyPassword, verifySessionToken } from "@/lib/app-auth";
 import { decryptJsonForUser, encryptJsonForUser } from "@/lib/security/app-data-crypto";
 import { getIp, rateLimit } from "@/lib/security/rate-limit";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 
 const EMPTY_SAVED = { items: {}, order: [], starredQuestionIds: [], wrongPracticeSeen: {}, results: [] };
 const EMPTY_PROFILE_PROGRESS = { level: 1, xp: 0, awardedResultIds: [] as string[], unlockedAchievementIds: [] as string[] };
+const NAME_CHANGE_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000;
 
 const updateSchema = z.discriminatedUnion("action", [
   z.object({
@@ -21,6 +22,7 @@ const updateSchema = z.discriminatedUnion("action", [
     action: z.literal("editProfile"),
     name: z.string().trim().min(2).max(40).regex(/^[\p{L}\p{N}_ .-]+$/u).optional(),
     email: z.string().trim().email().max(120).optional(),
+    password: z.string().min(6).max(128).optional(),
     level: z.number().int().min(1).max(9999).optional(),
     xp: z.number().int().min(0).max(100).optional(),
     unlockedAchievementIds: z.array(z.string()).optional()
@@ -32,6 +34,7 @@ type SessionUser = {
   name: string;
   role: "admin" | "member";
   delegated_at?: string | null;
+  name_changed_at?: string | null;
 };
 
 function getSession(request: Request) {
@@ -43,7 +46,8 @@ function cleanSessionUser(user: SessionUser) {
     id: user.id,
     name: user.name,
     role: user.role,
-    delegated: Boolean(user.delegated_at)
+    delegated: Boolean(user.delegated_at),
+    nameChangedAt: user.name_changed_at
   };
 }
 
@@ -63,7 +67,7 @@ async function requireAdminAccess(session: AppSession, write = false) {
 
   const { data: user, error } = await service
     .from("app_users")
-    .select("id,role,delegated_at,is_banned,password_changed_at")
+    .select("id,role,delegated_at,is_banned,password_changed_at,name_changed_at,password_hash,password_salt")
     .eq("id", session.id)
     .maybeSingle();
 
@@ -76,7 +80,7 @@ async function requireAdminAccess(session: AppSession, write = false) {
     return { error: "Phiên đăng nhập đã cũ, vui lòng đăng nhập lại.", status: 401 as const };
   }
 
-  const canRead = user.role === "admin" || Boolean(user.delegated_at);
+  const canRead = user.role === "admin" || Boolean(user.delegated_at) || session.id === user.id;
   const canWrite = user.role === "admin";
   if ((write && !canWrite) || (!write && !canRead)) {
     return { error: "Bạn không có quyền dùng khu vực kiểm soát.", status: 403 as const };
@@ -105,7 +109,7 @@ export async function GET(request: Request) {
   const [{ data: users, error: usersError }, { data: userData, error: dataError }, { data: loginEvents }] = await Promise.all([
     admin.service
       .from("app_users")
-      .select("id,email,name,role,is_banned,delegated_at,created_at,updated_at,password_changed_at,last_login_at,last_login_ip,last_user_agent,login_count")
+      .select("id,email,name,role,is_banned,delegated_at,created_at,updated_at,password_changed_at,name_changed_at,last_login_at,last_login_ip,last_user_agent,login_count")
       .order("created_at", { ascending: false }),
     admin.service
       .from("app_user_data")
@@ -160,6 +164,7 @@ export async function GET(request: Request) {
             }))
           : [],
         dataUpdatedAt: data?.updated_at,
+        nameChangedAt: user.name_changed_at,
         saved: decryptJsonForUser(data?.saved, user.id, "saved", EMPTY_SAVED),
         profileProgress: decryptJsonForUser(data?.profile_progress, user.id, "profile_progress", EMPTY_PROFILE_PROGRESS)
       };
@@ -173,14 +178,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Phiên đăng nhập không hợp lệ." }, { status: 401 });
   }
 
-  const admin = await requireAdminAccess(session, true);
-  if ("error" in admin) {
-    return NextResponse.json({ error: admin.error }, { status: admin.status });
-  }
-
-  const parsed = updateSchema.safeParse(await request.json().catch(() => null));
+  const payload = await request.json().catch(() => null);
+  const parsed = updateSchema.safeParse(payload);
   if (!parsed.success) {
     return NextResponse.json({ error: "Lệnh quản trị không hợp lệ." }, { status: 400 });
+  }
+
+  const isSelf = parsed.data.userId === session.id;
+  const admin = await requireAdminAccess(session, !isSelf);
+  if ("error" in admin) {
+    return NextResponse.json({ error: admin.error }, { status: admin.status });
   }
 
   if (parsed.data.userId === session.id && ["ban", "demote"].includes(parsed.data.action)) {
@@ -188,11 +195,38 @@ export async function PATCH(request: Request) {
   }
 
   if (parsed.data.action === "editProfile") {
-    const { userId, name, email, level, xp, unlockedAchievementIds } = parsed.data;
+    const { userId, name, email, password, level, xp, unlockedAchievementIds } = parsed.data;
     let updatedSessionUser: SessionUser | null = null;
 
-    const accountPatch: Record<string, string> = {};
-    if (name) accountPatch.name = name;
+    const accountPatch: Record<string, any> = {};
+    if (name) {
+      if (!password) {
+        return NextResponse.json({ error: "Cần nhập mật khẩu để đổi tên tài khoản." }, { status: 400 });
+      }
+
+      const { data: targetUser } = await admin.service
+        .from("app_users")
+        .select("password_hash,password_salt,role,delegated_at,name_changed_at")
+        .eq("id", userId)
+        .single();
+
+      if (!targetUser || !(await verifyPassword(password, targetUser.password_hash, targetUser.password_salt))) {
+        return NextResponse.json({ error: "Mật khẩu xác nhận không đúng." }, { status: 401 });
+      }
+
+      const isPrivileged = targetUser.role === "admin" || Boolean(targetUser.delegated_at);
+      if (!isPrivileged && targetUser.name_changed_at) {
+        const lastChanged = new Date(targetUser.name_changed_at).getTime();
+        const elapsed = Date.now() - lastChanged;
+        if (elapsed < NAME_CHANGE_COOLDOWN_MS) {
+          const remainingDays = Math.ceil((NAME_CHANGE_COOLDOWN_MS - elapsed) / (24 * 60 * 60 * 1000));
+          return NextResponse.json({ error: `Bạn chỉ có thể đổi tên sau mỗi 3 tháng. Vui lòng đợi thêm ${remainingDays} ngày.` }, { status: 429 });
+        }
+      }
+
+      accountPatch.name = name;
+      accountPatch.name_changed_at = new Date().toISOString();
+    }
     if (email) accountPatch.email = email.toLowerCase();
 
     if (Object.keys(accountPatch).length > 0) {
@@ -200,7 +234,7 @@ export async function PATCH(request: Request) {
         .from("app_users")
         .update({ ...accountPatch, updated_at: new Date().toISOString() })
         .eq("id", userId)
-        .select("id,name,role,delegated_at")
+        .select("id,name,role,delegated_at,name_changed_at")
         .single();
 
       if (userError || !updatedUser) {
@@ -245,7 +279,7 @@ export async function PATCH(request: Request) {
       if (!updatedSessionUser) {
         const { data: current } = await admin.service
           .from("app_users")
-          .select("id,name,role,delegated_at")
+          .select("id,name,role,delegated_at,name_changed_at")
           .eq("id", userId)
           .single();
         updatedSessionUser = current as SessionUser | null;
