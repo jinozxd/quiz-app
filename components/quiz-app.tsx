@@ -202,6 +202,9 @@ const EMOJI_SWEEP_POOL = [
   "🪐"
 ];
 
+const STARS_SWEEP_POOL = ["✨", "🌟", "⭐", "💫", "✦", "✧", "⋆", "✶", "✷", "✸", "✹", "✺"];
+const HEARTS_SWEEP_POOL = ["💖", "💗", "💓", "💞", "💕", "💟", "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍"];
+
 const WELCOME_QUOTE_PERCENT_BUCKETS = [12, 36, 50, 68, 88, 100];
 
 type ProgressItem = {
@@ -286,6 +289,7 @@ type MatchingCount = 25 | 40 | "full";
 
 type MotionLevel = "low" | "normal" | "high" | "off";
 type ThemeMode = "light" | "dark";
+type SweepAnimationType = "emoji" | "stars" | "hearts" | "off";
 type BackgroundMode = "grid" | "blast" | "stickers" | "checker" | "poster" | "tape" | "notebook" | "neon" | "waves" | "cheese" | "autumn" | "lastday" | "chalk" | "library" | "rain" | "orbit" | "spark" | "stars";
 type BackgroundRandomMinutes = 2 | 3 | 5;
 
@@ -301,6 +305,7 @@ export type AppSettings = {
   pomodoroHideTime: boolean;
   quizHideTime: boolean;
   entryAnimation: boolean;
+  sweepAnimation: SweepAnimationType;
   motion: MotionLevel;
   theme: ThemeMode;
 };
@@ -675,6 +680,7 @@ function defaultSettings(): AppSettings {
     pomodoroHideTime: false,
     quizHideTime: false,
     entryAnimation: true,
+    sweepAnimation: "emoji",
     motion: "normal",
     theme: "light"
   };
@@ -733,6 +739,7 @@ export function restoreSettings(): AppSettings {
       pomodoroHideTime: Boolean(parsed.pomodoroHideTime),
       quizHideTime: Boolean(parsed.quizHideTime),
       entryAnimation: parsed.entryAnimation !== false,
+      sweepAnimation: parsed.sweepAnimation === "stars" || parsed.sweepAnimation === "hearts" || parsed.sweepAnimation === "off" ? parsed.sweepAnimation : "emoji",
       motion: parsed.motion === "low" || parsed.motion === "normal" || parsed.motion === "high" || parsed.motion === "off" ? parsed.motion : "normal",
       theme: parsed.theme === "dark" ? "dark" : "light"
     };
@@ -1355,14 +1362,16 @@ function useAnimatedNumber(value: number, duration = 900) {
   return displayValue;
 }
 
-function makeEmojiSweepItems(motion: MotionLevel) {
+function makeEmojiSweepItems(motion: MotionLevel, style: SweepAnimationType) {
+  if (motion === "off" || style === "off") return [];
   const config = getMotionConfig(motion);
+  const pool = style === "stars" ? STARS_SWEEP_POOL : style === "hearts" ? HEARTS_SWEEP_POOL : EMOJI_SWEEP_POOL;
   return Array.from({ length: config.count }, (_, index): EmojiSweepItem => ({
     id: `${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
     delay: Math.random() * config.delayRange,
     direction: Math.random() > 0.5 ? "right" : "left",
     duration: config.durationBase + Math.random() * config.durationRange,
-    emoji: EMOJI_SWEEP_POOL[Math.floor(Math.random() * EMOJI_SWEEP_POOL.length)],
+    emoji: pool[Math.floor(Math.random() * pool.length)],
     size: config.sizeBase + Math.random() * config.sizeRange,
     top: 4 + Math.random() * 88
   }));
@@ -2035,7 +2044,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       return;
     }
 
-    setEmojiSweepItems(makeEmojiSweepItems(currentSettings.motion));
+    setEmojiSweepItems(makeEmojiSweepItems(currentSettings.motion, currentSettings.sweepAnimation));
     const timer = window.setTimeout(() => setEmojiSweepItems([]), 1800);
     return () => window.clearTimeout(timer);
   }, [state.subject?.id, state.chapter?.id, state.submitted]);
@@ -5692,6 +5701,60 @@ export function SettingsDialog({
                     }
                   />
                 </label>
+              </div>
+
+              <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
+                <div className="mb-3">
+                  <span className="block text-lg font-black">Hiệu ứng quét màn hình</span>
+                  <span className="block text-sm font-black text-muted-foreground">Chọn animation xuất hiện khi chuyển chương/phần thi.</span>
+                </div>
+                
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-colors",
+                      settings.sweepAnimation === "emoji" ? "border-foreground bg-accent" : "border-transparent bg-background/50 hover:bg-background/80"
+                    )}
+                    onClick={() => onChange((current) => ({ ...current, sweepAnimation: "emoji" }))}
+                  >
+                    <span className="text-2xl">🤪</span>
+                    <span className="font-black">Emoji gốc</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-colors",
+                      settings.sweepAnimation === "stars" ? "border-foreground bg-accent" : "border-transparent bg-background/50 hover:bg-background/80"
+                    )}
+                    onClick={() => onChange((current) => ({ ...current, sweepAnimation: "stars" }))}
+                  >
+                    <span className="text-2xl">✨</span>
+                    <span className="font-black">Sao lấp lánh</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-colors",
+                      settings.sweepAnimation === "hearts" ? "border-foreground bg-accent" : "border-transparent bg-background/50 hover:bg-background/80"
+                    )}
+                    onClick={() => onChange((current) => ({ ...current, sweepAnimation: "hearts" }))}
+                  >
+                    <span className="text-2xl">💖</span>
+                    <span className="font-black">Tim bay lượn</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-colors",
+                      settings.sweepAnimation === "off" ? "border-foreground bg-accent" : "border-transparent bg-background/50 hover:bg-background/80"
+                    )}
+                    onClick={() => onChange((current) => ({ ...current, sweepAnimation: "off" }))}
+                  >
+                    <span className="text-2xl">🚫</span>
+                    <span className="font-black">Tắt</span>
+                  </button>
+                </div>
               </div>
             </section>
             )}
