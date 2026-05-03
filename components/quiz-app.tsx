@@ -2958,7 +2958,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             />
           ) : (
             <>
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.8fr)]">
+          <div className="">
             <div className="min-w-0">
               <WelcomeBanner user={currentUser} hasProgress={progressItems.length > 0} />
               <ProgressPanel
@@ -2972,7 +2972,6 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                 onDeleteAll={() => setDeleteAllOpen(true)}
               />
             </div>
-            <WeeklyRecapCard compact recap={weeklyRecap} />
           </div>
           <RecentResults
             results={saved.results ?? []}
@@ -4082,7 +4081,7 @@ export function WeeklyRecapCard({ compact = false, recap }: { compact?: boolean;
       </div>
 
       <p className="mt-3 rounded-xl border-2 border-[#202226] bg-[#fffaf3] px-3 py-2 text-xs font-black text-[#72746f]">
-        Note cho user: recap tuần tính từ thứ Hai đến Chủ nhật. Tớ cũng ghi nhớ: thời gian chỉ cộng cho bài nộp từ bản 2.5.6 trở đi.
+        Recap tuần tính từ thứ Hai đến Chủ nhật. Tớ cũng ghi nhớ: thời gian chỉ cộng cho bài nộp từ bản 2.5.6 trở đi.
       </p>
     </section>
   );
@@ -7028,6 +7027,8 @@ function AccountFrame({
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mediaMessage, setMediaMessage] = useState("");
+  const [avatarError, setAvatarError] = useState(false);
+  const [coverError, setCoverError] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const canSyncProfileMedia = user.role === "admin" || user.delegated || profile.level >= PROFILE_MEDIA_SYNC_LEVEL;
@@ -7057,11 +7058,12 @@ function AccountFrame({
         className="flex w-full items-center gap-3 rounded-2xl border-2 border-foreground bg-secondary/95 p-3 text-left shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 sm:max-w-[15rem] sm:shadow-[7px_7px_0_0_hsl(var(--foreground))] xl:w-[13.5rem]"
         onClick={() => setOpen(true)}
       >
-        {media?.avatar ? (
+        {media?.avatar && !avatarError ? (
           <img
             className="size-12 shrink-0 rounded-xl border-2 border-foreground object-cover shadow-[3px_3px_0_0_hsl(var(--foreground))] xl:size-11"
             src={media.avatar}
             alt=""
+            onError={() => setAvatarError(true)}
           />
         ) : (
           <div className="grid size-12 shrink-0 place-items-center rounded-xl border-2 border-foreground bg-card shadow-[3px_3px_0_0_hsl(var(--foreground))] xl:size-11">
@@ -7090,8 +7092,8 @@ function AccountFrame({
             onClick={(event) => event.stopPropagation()}
           >
             <div className="relative h-36 bg-secondary">
-              {media?.cover ? (
-                <img className="h-full w-full object-cover" src={media.cover} alt="" />
+              {media?.cover && !coverError ? (
+                <img className="h-full w-full object-cover" src={media.cover} alt="" onError={() => setCoverError(true)} />
               ) : (
                 <div className="h-full w-full bg-[linear-gradient(135deg,hsl(var(--secondary)),hsl(var(--accent))_52%,hsl(var(--primary)))]" />
               )}
@@ -7125,8 +7127,8 @@ function AccountFrame({
 
             <div className="relative px-5 pb-5 pt-16">
               <div className="absolute -top-12 left-5 z-10">
-                {media?.avatar ? (
-                  <img className="size-24 rounded-2xl border-4 border-card bg-card object-cover shadow-[5px_5px_0_0_hsl(var(--foreground))]" src={media.avatar} alt="" />
+                {media?.avatar && !avatarError ? (
+                  <img className="size-24 rounded-2xl border-4 border-card bg-card object-cover shadow-[5px_5px_0_0_hsl(var(--foreground))]" src={media.avatar} alt="" onError={() => setAvatarError(true)} />
                 ) : (
                   <div className="grid size-24 place-items-center rounded-2xl border-4 border-card bg-card text-foreground shadow-[5px_5px_0_0_hsl(var(--foreground))]">
                     <User className="size-12 stroke-[3]" aria-hidden />
@@ -7369,6 +7371,12 @@ function TopNav({
               href="/contact"
             >
               Liên hệ
+            </Link>
+            <Link
+              className="rounded-full border-2 border-foreground bg-background px-3 py-2 text-center shadow-[3px_3px_0_0_hsl(var(--foreground))] hover:underline hover:decoration-4 hover:underline-offset-4 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none"
+              href="/recap"
+            >
+              Tóm tắt
             </Link>
             {(user?.role === "admin" || user?.delegated) && (
               <Button className="w-full sm:w-auto" type="button" size="sm" variant="secondary" onClick={onAdmin}>

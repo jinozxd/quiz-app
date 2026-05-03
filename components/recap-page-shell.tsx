@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpenCheck, Settings } from "lucide-react";
+import { BookOpenCheck, BarChart3, Settings } from "lucide-react";
 import { FloatingEmojiBackground } from "@/components/floating-emoji-background";
-import { ContactCard } from "@/components/contact-card";
-import { SettingsDialog, restoreSettings } from "@/components/quiz-app";
+import { SettingsDialog, WeeklyRecapCard, restoreSettings, restoreWeeklyRecapSnapshot } from "@/components/quiz-app";
 import type { AppSettings } from "@/components/quiz-app";
 
-export function ContactPageShell() {
+export function RecapPageShell() {
   const [settings, setSettings] = useState<AppSettings>(() => restoreSettings());
+  const [weeklyRecap, setWeeklyRecap] = useState(() => restoreWeeklyRecapSnapshot());
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
@@ -18,6 +18,19 @@ export function ContactPageShell() {
     document.documentElement.dataset.entryMotion = settings.entryAnimation ? "on" : "off";
     document.documentElement.classList.toggle("dark", settings.theme === "dark");
   }, [settings]);
+
+  useEffect(() => {
+    setWeeklyRecap(restoreWeeklyRecapSnapshot());
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "quiz-on-tap-weekly-recap-v1") {
+        setWeeklyRecap(restoreWeeklyRecapSnapshot());
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   return (
     <main className="min-h-screen bg-background">
@@ -53,16 +66,17 @@ export function ContactPageShell() {
               <Link className="hover:underline hover:decoration-4 hover:underline-offset-4" href="/">
                 Trang chủ
               </Link>
-              <Link className="underline decoration-4 underline-offset-8 hover:decoration-accent" href="/contact">
+              <Link className="hover:underline hover:decoration-4 hover:underline-offset-4" href="/contact">
                 Liên hệ
               </Link>
-              <Link className="hover:underline hover:decoration-4 hover:underline-offset-4" href="/recap">
+              <Link className="underline decoration-4 underline-offset-8 hover:decoration-accent" href="/recap">
                 Tóm tắt
               </Link>
             </nav>
           </div>
         </div>
       </header>
+
       <button
         type="button"
         className="fixed right-5 top-5 z-50 grid size-12 place-items-center rounded-full border-2 border-foreground bg-secondary shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-colors hover:bg-accent"
@@ -72,8 +86,24 @@ export function ContactPageShell() {
         <Settings className="size-6 stroke-[3]" aria-hidden />
       </button>
 
-      <div className="container relative z-10 max-w-6xl px-4 py-6">
-        <ContactCard />
+      <div className="container relative z-10 max-w-3xl px-4 py-8">
+        {/* Section header */}
+        <div className="mb-6 flex items-center gap-3">
+          <div className="grid size-12 place-items-center rounded-2xl border-2 border-foreground bg-secondary shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+            <BarChart3 className="size-6 stroke-[3]" aria-hidden />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase text-muted-foreground">Thống kê cá nhân</p>
+            <h1 className="text-2xl font-black leading-tight">Tóm tắt tuần</h1>
+          </div>
+        </div>
+
+        {/* Full recap card */}
+        <WeeklyRecapCard recap={weeklyRecap} />
+
+        <p className="mt-6 text-center text-xs font-black text-muted-foreground">
+          Recap tuần tính từ thứ Hai đến Chủ nhật theo giờ Việt Nam.
+        </p>
       </div>
     </main>
   );
