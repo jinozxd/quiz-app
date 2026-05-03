@@ -55,6 +55,11 @@ function getDeviceKey(ip: string, userAgent: string) {
   return createHash("sha256").update(`${ip}:${userAgent}`).digest("hex").slice(0, 32);
 }
 
+function isMissingColumnError(error: { code?: string; message?: string } | null | undefined) {
+  const message = error?.message?.toLowerCase() ?? "";
+  return error?.code === "PGRST204" || message.includes("could not find") || message.includes("column");
+}
+
 export async function POST(request: Request) {
   const ip = getIp(request);
   const limited = rateLimit({ key: `app-auth:${ip}`, limit: 15, windowMs: 60_000 });
@@ -97,7 +102,7 @@ export async function POST(request: Request) {
         password_salt: salt,
         role: "member"
       })
-      .select("id,name,role,delegated_at")
+      .select("id,name,role")
       .single();
 
     if (error || !data) {
@@ -118,11 +123,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Tài khoản này đăng nhập sai quá nhiều lần. Thử lại sau ít phút." }, { status: 429 });
     }
 
-    const { data: user, error } = await service
+    let { data: user, error } = await service
       .from("app_users")
       .select("id,name,role,delegated_at,is_banned,login_count,password_hash,password_salt")
       .eq("name", parsed.data.name)
       .maybeSingle();
+
+    if (error && isMissingColumnError(error)) {
+      const fallback = await service
+        .from("app_users")
+        .select("id,name,role,password_hash,password_salt")
+        .eq("name", parsed.data.name)
+        .maybeSingle();
+      user = fallback.data ? { ...fallback.data, delegated_at: null, is_banned: false, login_count: 0 } : null;
+      error = fallback.error;
+    }
 
     if (error) {
       return NextResponse.json({ error: "Không kết nối được database tài khoản. Kiểm tra Supabase URL/key và redeploy." }, { status: 500 });
@@ -169,11 +184,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Mật khẩu xác nhận không khớp." }, { status: 400 });
   }
 
-  const { data: user } = await service
+  let { data: user, error: userError } = await service
     .from("app_users")
     .select("id,name,role,delegated_at,is_banned,password_hash,password_salt,password_changed_at")
     .eq("id", session.id)
     .single();
+
+  if (userError && isMissingColumnError(userError)) {
+    const fallback = await service
+      .from("app_users")
+      .select("id,name,role,password_hash,password_salt,password_changed_at")
+      .eq("id", session.id)
+      .single();
+    user = fallback.data ? { ...fallback.data, delegated_at: null, is_banned: false } : null;
+  }
 
   if (!user || !(await verifyPassword(parsed.data.currentPassword, user.password_hash, user.password_salt))) {
     return NextResponse.json({ error: "Mật khẩu hiện tại không đúng." }, { status: 401 });

@@ -24,11 +24,25 @@ async function requireLiveUser(session: AppSession) {
     return { error: "Thiếu cấu hình database server.", status: 500 as const };
   }
 
-  const { data: user, error } = await service
+  let { data: user, error } = await service
     .from("app_users")
     .select("id,is_banned,password_changed_at")
     .eq("id", session.id)
     .maybeSingle();
+
+  if (error) {
+    const message = error.message?.toLowerCase() ?? "";
+    const missingAdminColumn = error.code === "PGRST204" || message.includes("could not find") || message.includes("is_banned");
+    if (missingAdminColumn) {
+      const fallback = await service
+        .from("app_users")
+        .select("id,password_changed_at")
+        .eq("id", session.id)
+        .maybeSingle();
+      user = fallback.data ? { ...fallback.data, is_banned: false } : null;
+      error = fallback.error;
+    }
+  }
 
   if (error || !user || user.is_banned) {
     return { error: "Phiên đăng nhập không còn hợp lệ.", status: 401 as const };
