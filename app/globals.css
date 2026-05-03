@@ -262,7 +262,6 @@
     background-size: 240px 240px, 280px 280px, 260px 260px, 260px 260px, 34px 34px;
     background-position: 0 0, 70px 20px, 20px 60px, 0 0, 0 0;
     background-color: hsl(220 34% 13%);
-    animation: background-orbit-pan 18s linear infinite;
   }
 
   html[data-background="spark"] body,
@@ -277,7 +276,6 @@
     background-size: 180px 140px, 220px 170px, 190px 190px, 240px 240px, 18px 18px, 18px 18px;
     background-position: 0 0, 40px 20px, 0 0, 60px 40px, 0 0, 0 0;
     background-color: hsl(34 78% 92%);
-    animation: background-spark-shift 12s steps(6) infinite;
   }
 
   ::selection {

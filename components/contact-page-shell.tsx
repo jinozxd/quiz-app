@@ -31,10 +31,7 @@ export function ContactPageShell() {
 
       <header className="px-4 pt-8">
         <div className="container relative max-w-6xl rounded-[34px] border-2 border-foreground bg-card px-5 py-5 shadow-[10px_10px_0_0_hsl(var(--foreground))] motion-safe-card">
-          <div className="absolute -top-8 left-1/2 hidden size-20 -translate-x-1/2 rotate-[-12deg] rounded-2xl border-2 border-foreground bg-accent shadow-[6px_6px_0_0_hsl(var(--foreground))] lg:grid lg:place-items-center">
-            <BookOpenCheck className="size-10 stroke-[3]" aria-hidden />
-          </div>
-          <div className="absolute -right-5 top-1/2 hidden -translate-y-1/2 rounded-full border-2 border-foreground bg-accent px-6 py-3 text-2xl font-black shadow-[6px_6px_0_0_hsl(var(--foreground))] xl:block">
+        <div className="absolute -right-5 top-1/2 hidden -translate-y-1/2 rounded-full border-2 border-foreground bg-accent px-6 py-3 text-2xl font-black shadow-[6px_6px_0_0_hsl(var(--foreground))] xl:block">
             HUIT
           </div>
 

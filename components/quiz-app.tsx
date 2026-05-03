@@ -5965,12 +5965,12 @@ export function SettingsDialog({
                       Thông tin bản phát hành hiện tại của Quiz ôn tập.
                     </p>
                   </div>
-                  <Badge variant="secondary">v2.5.6</Badge>
+                  <Badge variant="secondary">v2.6.1</Badge>
                 </div>
 
                 <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
                   <p className="text-sm font-black text-muted-foreground">Bản hiện tại</p>
-                  <p className="mt-2 text-4xl font-black">2.5.6</p>
+                  <p className="mt-2 text-4xl font-black">2.6.1</p>
                 </div>
               </section>
             )}
@@ -7340,9 +7340,6 @@ function TopNav({
   return (
     <header className="px-3 pt-3 sm:px-4 sm:pt-8">
       <div className="container relative max-w-6xl rounded-[24px] border-2 border-foreground bg-card px-3 py-3 shadow-[7px_7px_0_0_hsl(var(--foreground))] motion-safe-card sm:rounded-[34px] sm:px-5 sm:py-5 sm:shadow-[10px_10px_0_0_hsl(var(--foreground))]">
-        <div className="absolute -top-8 left-1/2 hidden size-20 -translate-x-1/2 rotate-[-12deg] rounded-2xl border-2 border-foreground bg-accent shadow-[6px_6px_0_0_hsl(var(--foreground))] lg:grid lg:place-items-center">
-          <BookOpenCheck className="size-10 stroke-[3]" aria-hidden />
-        </div>
         <div className="absolute -right-5 top-1/2 hidden -translate-y-1/2 rounded-full border-2 border-foreground bg-accent px-6 py-3 text-2xl font-black shadow-[6px_6px_0_0_hsl(var(--foreground))] xl:block">
           HUIT
         </div>
@@ -7358,22 +7355,22 @@ function TopNav({
             </span>
           </button>
 
-          <nav className="grid grid-cols-2 items-center gap-2 text-sm font-black sm:flex sm:flex-wrap sm:gap-3">
+          <nav className="flex flex-wrap items-center gap-3 text-sm font-black sm:gap-4">
             <button
               type="button"
-              className="rounded-full border-2 border-foreground bg-background px-3 py-2 text-center shadow-[3px_3px_0_0_hsl(var(--foreground))] underline decoration-4 underline-offset-4 hover:decoration-accent sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:underline-offset-8"
+              className="underline decoration-4 underline-offset-4 hover:decoration-accent sm:underline-offset-8"
               onClick={onHome}
             >
               Trang chủ
             </button>
             <Link
-              className="rounded-full border-2 border-foreground bg-background px-3 py-2 text-center shadow-[3px_3px_0_0_hsl(var(--foreground))] hover:underline hover:decoration-4 hover:underline-offset-4 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none"
+              className="hover:underline hover:decoration-4 hover:underline-offset-4"
               href="/contact"
             >
               Liên hệ
             </Link>
             <Link
-              className="rounded-full border-2 border-foreground bg-background px-3 py-2 text-center shadow-[3px_3px_0_0_hsl(var(--foreground))] hover:underline hover:decoration-4 hover:underline-offset-4 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none"
+              className="hover:underline hover:decoration-4 hover:underline-offset-4"
               href="/recap"
             >
               Tóm tắt
