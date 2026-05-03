@@ -144,6 +144,9 @@ export function FloatingEmojiBackground() {
   const floatersRef = useRef<Floater[]>([]);
   const frameRef = useRef<number | null>(null);
   const lastFrameAtRef = useRef<number | null>(null);
+  const draggedIdRef = useRef<number | null>(null);
+  const mousePosRef = useRef({ x: 0, y: 0 });
+  const lastMousePosRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     setCount(readStoredCount());
@@ -176,6 +179,30 @@ export function FloatingEmojiBackground() {
   }, [count]);
 
   useEffect(() => {
+    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+      mousePosRef.current = { x: clientX, y: clientY };
+    };
+
+    const handleMouseUp = () => {
+      draggedIdRef.current = null;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchmove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchend", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchend", handleMouseUp);
+    };
+  }, []);
+
+  useEffect(() => {
     const tick = (timestamp: number) => {
       const width = window.innerWidth;
       const height = window.innerHeight;
@@ -183,7 +210,32 @@ export function FloatingEmojiBackground() {
       const step = Math.min(2.2, Math.max(0.35, (timestamp - previousTimestamp) / BASE_FRAME_MS || 1));
       lastFrameAtRef.current = timestamp;
 
+      const mouseDeltaX = mousePosRef.current.x - lastMousePosRef.current.x;
+      const mouseDeltaY = mousePosRef.current.y - lastMousePosRef.current.y;
+      lastMousePosRef.current = { ...mousePosRef.current };
+
       const moved = floatersRef.current.map((item) => {
+        if (draggedIdRef.current === item.id) {
+          // Dragging mode
+          const x = mousePosRef.current.x - item.size / 2;
+          const y = mousePosRef.current.y - item.size / 2;
+          
+          // Calculate throw velocity based on mouse delta
+          const vx = mouseDeltaX * 0.8;
+          const vy = mouseDeltaY * 0.8;
+          const angularVelocity = mouseDeltaX * 0.05;
+
+          return {
+            ...item,
+            x,
+            y,
+            vx,
+            vy,
+            angularVelocity,
+            rotate: item.rotate + angularVelocity * step
+          };
+        }
+
         let x = item.x + item.vx * step;
         let y = item.y + item.vy * step;
         let vx = item.vx;
@@ -242,17 +294,23 @@ export function FloatingEmojiBackground() {
   }, []);
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
+    <div className="fixed inset-0 z-0 overflow-hidden" aria-hidden>
       {floaters.map((item) => (
         <div
           key={item.id}
-          className="absolute grid place-items-center rounded-[18px] border-2 border-foreground bg-card shadow-[5px_5px_0_0_hsl(var(--foreground))]"
+          className={cn(
+            "absolute grid cursor-grab place-items-center rounded-[18px] border-2 border-foreground bg-card shadow-[5px_5px_0_0_hsl(var(--foreground))] transition-transform active:cursor-grabbing",
+            draggedIdRef.current === item.id && "z-10 scale-110 shadow-[8px_8px_0_0_hsl(var(--foreground))]"
+          )}
           style={{
             width: item.size,
             height: item.size,
             transform: `translate3d(${item.x}px, ${item.y}px, 0) rotate(${item.rotate}deg)`,
-            fontSize: item.size * 0.52
+            fontSize: item.size * 0.52,
+            touchAction: "none"
           }}
+          onMouseDown={() => { draggedIdRef.current = item.id; }}
+          onTouchStart={() => { draggedIdRef.current = item.id; }}
         >
           {item.emoji}
         </div>

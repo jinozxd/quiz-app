@@ -6672,7 +6672,7 @@ function AdminControlPanel({
   onUpdateUser: (userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote") => void;
   onEditProfile: (userId: string, data: { name?: string; email?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
 }) {
-  const [adminView, setAdminView] = useState<"overview" | "accounts">("overview");
+  const [adminView, setAdminView] = useState<"overview" | "accounts" | "profile">("overview");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [userSort, setUserSort] = useState<"recent" | "most" | "accuracy" | "risk">("recent");
   const [userSortAsc, setUserSortAsc] = useState(false);
@@ -6782,8 +6782,47 @@ function AdminControlPanel({
           >
             Tài khoản
           </button>
+          <button
+            type="button"
+            className={cn("rounded-full border-2 border-[#202226] px-4 py-2 text-xs font-black shadow-[2px_2px_0_0_#202226]", adminView === "profile" ? "bg-[#c5e1f0]" : "bg-[#eef0ef]")}
+            onClick={() => setAdminView("profile")}
+          >
+            Của tớ
+          </button>
         </div>
       </div>
+
+      {adminView === "profile" && (
+        <div className="mx-auto max-w-2xl rounded-[1.6rem] border-2 border-[#202226] bg-[#fffaf3] p-6 shadow-[8px_8px_0_0_#202226]">
+          <div className="mb-6 flex items-center gap-4">
+            <div className="grid size-12 place-items-center rounded-2xl bg-[#c5e1f0] border-2 border-[#202226]">
+              <Settings className="size-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-black">Hồ sơ của tớ</h3>
+              <p className="text-sm font-bold text-[#72746f]">Cập nhật thông tin tài khoản admin hiện tại</p>
+            </div>
+          </div>
+          
+          {(() => {
+            const myUser = adminUsers.find(u => u.id === currentUser?.id);
+            if (!myUser) return <p className="p-4 text-center font-black text-[#72746f]">Không tìm thấy dữ liệu hồ sơ.</p>;
+            const myWithStats = getAdminUserStats(myUser, subjects);
+            
+            return (
+              <AdminProfileEditForm
+                user={myWithStats}
+                allAchievements={allAchievements}
+                onSave={async (data) => {
+                  await onEditProfile(myUser.id, data);
+                  setAdminView("overview");
+                }}
+                onCancel={() => setAdminView("overview")}
+              />
+            );
+          })()}
+        </div>
+      )}
 
       {adminView === "accounts" ? (
         canWrite ? (
