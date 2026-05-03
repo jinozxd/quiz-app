@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpenCheck, BarChart3, Settings } from "lucide-react";
 import { FloatingEmojiBackground } from "@/components/floating-emoji-background";
-import { SettingsDialog, WeeklyRecapCard, restoreSettings, restoreWeeklyRecapSnapshot } from "@/components/quiz-app";
+import { SettingsDialog, WeeklyRecapCard, restoreSettings, restoreWeeklyRecapSnapshot, saveSettings } from "@/components/quiz-app";
 import type { AppSettings } from "@/components/quiz-app";
 
 export function RecapPageShell() {
@@ -26,11 +26,22 @@ export function RecapPageShell() {
       if (event.key === "quiz-on-tap-weekly-recap-v1") {
         setWeeklyRecap(restoreWeeklyRecapSnapshot());
       }
+      if (event.key === "quiz-on-tap-settings-v1" || event.key === "campus-quiz-settings-v1") {
+        setSettings(restoreSettings());
+      }
     };
 
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
+
+  const handleSettingsChange = (update: AppSettings | ((current: AppSettings) => AppSettings)) => {
+    setSettings((current) => {
+      const next = typeof update === "function" ? update(current) : update;
+      saveSettings(next);
+      return next;
+    });
+  };
 
   return (
     <main className="min-h-screen bg-background">
@@ -39,7 +50,7 @@ export function RecapPageShell() {
         open={settingsOpen}
         settings={settings}
         onClose={() => setSettingsOpen(false)}
-        onChange={setSettings}
+        onChange={handleSettingsChange}
       />
 
       <header className="px-4 pt-8">

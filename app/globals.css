@@ -278,6 +278,18 @@
     background-color: hsl(34 78% 92%);
   }
 
+  html[data-background="stars"] body,
+  html[data-background="stars"] .bg-background {
+    background-image:
+      radial-gradient(circle at 15% 25%, hsl(var(--foreground) / 0.2) 0 2px, transparent 2px),
+      radial-gradient(circle at 75% 65%, hsl(var(--foreground) / 0.3) 0 3px, transparent 3px),
+      radial-gradient(circle at 45% 85%, hsl(var(--foreground) / 0.15) 0 1px, transparent 1px),
+      radial-gradient(circle at 85% 15%, hsl(var(--foreground) / 0.25) 0 2px, transparent 2px),
+      linear-gradient(135deg, hsl(var(--foreground) / 0.05) 25%, transparent 25%, transparent 50%, hsl(var(--foreground) / 0.05) 50%, hsl(var(--foreground) / 0.05) 75%, transparent 75%, transparent);
+    background-size: 100px 100px, 150px 150px, 80px 80px, 120px 120px, 20px 20px;
+    background-color: hsl(var(--background));
+  }
+
   ::selection {
     background: hsl(var(--accent));
     color: hsl(var(--accent-foreground));

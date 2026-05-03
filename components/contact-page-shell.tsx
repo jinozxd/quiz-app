@@ -5,7 +5,7 @@ import Link from "next/link";
 import { BookOpenCheck, Settings } from "lucide-react";
 import { FloatingEmojiBackground } from "@/components/floating-emoji-background";
 import { ContactCard } from "@/components/contact-card";
-import { SettingsDialog, restoreSettings } from "@/components/quiz-app";
+import { SettingsDialog, restoreSettings, saveSettings } from "@/components/quiz-app";
 import type { AppSettings } from "@/components/quiz-app";
 
 export function ContactPageShell() {
@@ -19,6 +19,24 @@ export function ContactPageShell() {
     document.documentElement.classList.toggle("dark", settings.theme === "dark");
   }, [settings]);
 
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "quiz-on-tap-settings-v1" || event.key === "campus-quiz-settings-v1") {
+        setSettings(restoreSettings());
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const handleSettingsChange = (update: AppSettings | ((current: AppSettings) => AppSettings)) => {
+    setSettings((current) => {
+      const next = typeof update === "function" ? update(current) : update;
+      saveSettings(next);
+      return next;
+    });
+  };
+
   return (
     <main className="min-h-screen bg-background">
       <FloatingEmojiBackground />
@@ -26,7 +44,7 @@ export function ContactPageShell() {
         open={settingsOpen}
         settings={settings}
         onClose={() => setSettingsOpen(false)}
-        onChange={setSettings}
+        onChange={handleSettingsChange}
       />
 
       <header className="px-4 pt-8">

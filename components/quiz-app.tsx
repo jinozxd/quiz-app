@@ -286,7 +286,7 @@ type MatchingCount = 25 | 40 | "full";
 
 type MotionLevel = "low" | "normal" | "high" | "off";
 type ThemeMode = "light" | "dark";
-type BackgroundMode = "grid" | "blast" | "stickers" | "checker" | "poster" | "tape" | "notebook" | "neon" | "waves" | "cheese" | "autumn" | "lastday" | "chalk" | "library" | "rain" | "orbit" | "spark";
+type BackgroundMode = "grid" | "blast" | "stickers" | "checker" | "poster" | "tape" | "notebook" | "neon" | "waves" | "cheese" | "autumn" | "lastday" | "chalk" | "library" | "rain" | "orbit" | "spark" | "stars";
 type BackgroundRandomMinutes = 2 | 3 | 5;
 
 export type AppSettings = {
@@ -299,6 +299,7 @@ export type AppSettings = {
   pomodoroEnabled: boolean;
   pomodoroFocusMinutes: number;
   pomodoroHideTime: boolean;
+  quizHideTime: boolean;
   entryAnimation: boolean;
   motion: MotionLevel;
   theme: ThemeMode;
@@ -672,6 +673,7 @@ function defaultSettings(): AppSettings {
     pomodoroEnabled: false,
     pomodoroFocusMinutes: 20,
     pomodoroHideTime: false,
+    quizHideTime: false,
     entryAnimation: true,
     motion: "normal",
     theme: "light"
@@ -696,7 +698,8 @@ function isBackgroundMode(value: unknown): value is BackgroundMode {
     value === "library" ||
     value === "rain" ||
     value === "orbit" ||
-    value === "spark"
+    value === "spark" ||
+    value === "stars"
   );
 }
 
@@ -728,12 +731,21 @@ export function restoreSettings(): AppSettings {
       pomodoroEnabled: Boolean(parsed.pomodoroEnabled) && focusMinutes >= 10,
       pomodoroFocusMinutes: focusMinutes,
       pomodoroHideTime: Boolean(parsed.pomodoroHideTime),
+      quizHideTime: Boolean(parsed.quizHideTime),
       entryAnimation: parsed.entryAnimation !== false,
       motion: parsed.motion === "low" || parsed.motion === "normal" || parsed.motion === "high" || parsed.motion === "off" ? parsed.motion : "normal",
       theme: parsed.theme === "dark" ? "dark" : "light"
     };
   } catch {
     return defaultSettings();
+  }
+}
+
+export function saveSettings(settings: AppSettings) {
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem("quiz-on-tap-settings-v1", JSON.stringify(settings));
+    } catch {}
   }
 }
 
@@ -3365,7 +3377,9 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                 Đã làm {answeredCount}/{state.chapter.questions.length} câu
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                <Badge variant="outline">{isExamMode ? "Thời gian thi" : "Thời gian làm bài"} {formatTimer(quizElapsedMs)}</Badge>
+                {!settings.quizHideTime && (
+                  <Badge variant="outline">{isExamMode ? "Thời gian thi" : "Thời gian làm bài"} {formatTimer(quizElapsedMs)}</Badge>
+                )}
                 {!pageActive && (
                   <Badge variant="destructive">Đang tạm dừng</Badge>
                 )}
@@ -5402,7 +5416,7 @@ export function SettingsDialog({
   onChangePassword?: (currentPassword: string, nextPassword: string, confirmPassword: string) => Promise<string | undefined>;
 }) {
   const [activeSection, setActiveSection] = useState<
-    "account" | "motion" | "emoji" | "theme" | "background" | "pomodoro" | "version"
+    "account" | "motion" | "emoji" | "theme" | "background" | "time" | "version"
   >("motion");
   const [currentPassword, setCurrentPassword] = useState("");
   const [nextPassword, setNextPassword] = useState("");
@@ -5515,11 +5529,11 @@ export function SettingsDialog({
               </button>
               <button
                 type="button"
-                className={cn("settings-tab", activeSection === "pomodoro" && "settings-tab-active")}
-                onClick={() => setActiveSection("pomodoro")}
+                className={cn("settings-tab", activeSection === "time" && "settings-tab-active")}
+                onClick={() => setActiveSection("time")}
               >
                 <span>⏱️</span>
-                <span>Pomodoro</span>
+                <span>Thời gian</span>
               </button>
               <button
                 type="button"
@@ -5753,7 +5767,8 @@ export function SettingsDialog({
                       library: "Thư viện đêm",
                       rain: "Sân trường mưa",
                       orbit: "Quỹ đạo neon",
-                      spark: "Tia chớp pop"
+                      spark: "Tia chớp pop",
+                      stars: "Ngôi sao đêm"
                     }[settings.background]}
                   </Badge>
                 </div>
@@ -5776,7 +5791,8 @@ export function SettingsDialog({
                     { id: "library" as const, label: "Thư viện đêm", icon: "TV" },
                     { id: "rain" as const, label: "Sân trường mưa", icon: "MR" },
                     { id: "orbit" as const, label: "Quỹ đạo neon", icon: "QĐ" },
-                    { id: "spark" as const, label: "Tia chớp pop", icon: "TZ" }
+                    { id: "spark" as const, label: "Tia chớp pop", icon: "TZ" },
+                    { id: "stars" as const, label: "Ngôi sao đêm", icon: "☆☆" }
                   ].map((background) => (
                     <button
                       key={background.id}
@@ -5838,21 +5854,39 @@ export function SettingsDialog({
               </section>
             )}
 
-            {activeSection === "pomodoro" && (
+            {activeSection === "time" && (
               <section className="rounded-xl border-2 border-foreground bg-background/70 p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-xl font-black">Học ngắt quãng Pomodoro</h3>
+                    <h3 className="text-xl font-black">Cài đặt thời gian</h3>
                     <p className="mt-1 text-sm font-black text-muted-foreground">
-                      Nhắc nghỉ sau một phiên học. Mặc định nghỉ sau 20 phút.
+                      Tuỳ chỉnh ẩn/hiện thời gian làm bài và học ngắt quãng Pomodoro.
                     </p>
                   </div>
-                  <Badge variant={settings.pomodoroEnabled ? "secondary" : "outline"}>
-                    {settings.pomodoroEnabled ? "Đang bật" : "Đang tắt"}
-                  </Badge>
                 </div>
 
                 <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
+                  <label className="flex cursor-pointer items-center justify-between gap-4">
+                    <span>
+                      <span className="block text-lg font-black">Ẩn thời gian làm bài</span>
+                      <span className="block text-sm font-black text-muted-foreground">Không hiển thị đồng hồ bấm giờ khi đang làm bài quiz/thi thử.</span>
+                    </span>
+                    <input
+                      className="size-6 accent-black"
+                      type="checkbox"
+                      checked={settings.quizHideTime}
+                      onChange={(event) =>
+                        onChange((current) => ({
+                          ...current,
+                          quizHideTime: event.target.checked
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+
+                <h4 className="mt-6 text-lg font-black">Học ngắt quãng Pomodoro</h4>
+                <div className="mt-3 rounded-xl border-2 border-foreground bg-card/85 p-4">
                   <label className="flex cursor-pointer items-center justify-between gap-4">
                     <span>
                       <span className="block text-lg font-black">Bật chế độ Pomodoro</span>
@@ -5988,7 +6022,7 @@ export function SettingsDialog({
                       Thông tin bản phát hành hiện tại của Quiz ôn tập.
                     </p>
                   </div>
-                  <Badge variant="secondary">v2.6.1</Badge>
+                  <Badge variant="secondary">v4.1.6</Badge>
                 </div>
 
                 <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
