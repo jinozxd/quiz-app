@@ -133,7 +133,7 @@ export async function POST(request: Request) {
     }
 
     if (user.is_banned) {
-      return NextResponse.json({ error: "TÃ i khoáº£n nÃ y Ä‘ang bá»‹ khÃ³a bá»Ÿi quáº£n trá»‹." }, { status: 403 });
+      return NextResponse.json({ error: "Tài khoản này đang bị khóa bởi quản trị." }, { status: 403 });
     }
 
     const userAgent = getUserAgent(request);
@@ -180,7 +180,7 @@ export async function POST(request: Request) {
   }
 
   if (user.is_banned) {
-    return NextResponse.json({ error: "TÃ i khoáº£n nÃ y Ä‘ang bá»‹ khÃ³a bá»Ÿi quáº£n trá»‹." }, { status: 403 });
+    return NextResponse.json({ error: "Tài khoản này đang bị khóa bởi quản trị." }, { status: 403 });
   }
 
   const lastChangedAt = user.password_changed_at ? new Date(user.password_changed_at).getTime() : 0;

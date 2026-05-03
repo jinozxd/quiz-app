@@ -23,7 +23,7 @@ function getSession(request: Request) {
 async function requireAdminAccess(session: AppSession, write = false) {
   const service = createServiceClient();
   if (!service) {
-    return { error: "Thiáº¿u cáº¥u hÃ¬nh database server.", status: 500 as const };
+    return { error: "Thiếu cấu hình database server.", status: 500 as const };
   }
 
   const { data: user, error } = await service
@@ -33,18 +33,18 @@ async function requireAdminAccess(session: AppSession, write = false) {
     .maybeSingle();
 
   if (error || !user || user.is_banned) {
-    return { error: "PhiÃªn quáº£n trá»‹ khÃ´ng cÃ²n há»£p lá»‡.", status: 401 as const };
+    return { error: "Phiên quản trị không còn hợp lệ.", status: 401 as const };
   }
 
   const passwordChangedAt = user.password_changed_at ? new Date(user.password_changed_at).getTime() : 0;
   if (passwordChangedAt && passwordChangedAt > session.iat) {
-    return { error: "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ cÅ©, vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.", status: 401 as const };
+    return { error: "Phiên đăng nhập đã cũ, vui lòng đăng nhập lại.", status: 401 as const };
   }
 
   const canRead = user.role === "admin" || Boolean(user.delegated_at);
   const canWrite = user.role === "admin";
   if ((write && !canWrite) || (!write && !canRead)) {
-    return { error: "Báº¡n khÃ´ng cÃ³ quyá»n dÃ¹ng khu vá»±c kiá»ƒm soÃ¡t.", status: 403 as const };
+    return { error: "Bạn không có quyền dùng khu vực kiểm soát.", status: 403 as const };
   }
 
   return { service, user };
@@ -54,12 +54,12 @@ export async function GET(request: Request) {
   const ip = getIp(request);
   const limited = rateLimit({ key: `admin-users:${ip}`, limit: 60, windowMs: 60_000 });
   if (!limited.ok) {
-    return NextResponse.json({ error: "Báº¡n táº£i khu vá»±c kiá»ƒm soÃ¡t quÃ¡ nhanh." }, { status: 429 });
+    return NextResponse.json({ error: "Bạn tải khu vực kiểm soát quá nhanh." }, { status: 429 });
   }
 
   const session = getSession(request);
   if (!session) {
-    return NextResponse.json({ error: "PhiÃªn Ä‘Äƒng nháº­p khÃ´ng há»£p lá»‡." }, { status: 401 });
+    return NextResponse.json({ error: "Phiên đăng nhập không hợp lệ." }, { status: 401 });
   }
 
   const admin = await requireAdminAccess(session);
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
   ]);
 
   if (usersError || dataError) {
-    return NextResponse.json({ error: "KhÃ´ng Ä‘á»c Ä‘Æ°á»£c dá»¯ liá»‡u quáº£n trá»‹." }, { status: 500 });
+    return NextResponse.json({ error: "Không đọc được dữ liệu quản trị." }, { status: 500 });
   }
 
   const dataByUser = new Map((userData ?? []).map((item) => [item.user_id, item]));
@@ -132,7 +132,7 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   const session = getSession(request);
   if (!session) {
-    return NextResponse.json({ error: "PhiÃªn Ä‘Äƒng nháº­p khÃ´ng há»£p lá»‡." }, { status: 401 });
+    return NextResponse.json({ error: "Phiên đăng nhập không hợp lệ." }, { status: 401 });
   }
 
   const admin = await requireAdminAccess(session, true);
@@ -142,11 +142,11 @@ export async function PATCH(request: Request) {
 
   const parsed = updateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: "Lá»‡nh quáº£n trá»‹ khÃ´ng há»£p lá»‡." }, { status: 400 });
+    return NextResponse.json({ error: "Lệnh quản trị không hợp lệ." }, { status: 400 });
   }
 
   if (parsed.data.userId === session.id && ["ban", "demote"].includes(parsed.data.action)) {
-    return NextResponse.json({ error: "KhÃ´ng thá»ƒ tá»± khÃ³a hoáº·c háº¡ quyá»n chÃ­nh mÃ¬nh." }, { status: 400 });
+    return NextResponse.json({ error: "Không thể tự khóa hoặc hạ quyền chính mình." }, { status: 400 });
   }
 
   const patch = {
@@ -164,7 +164,7 @@ export async function PATCH(request: Request) {
     .eq("id", parsed.data.userId);
 
   if (error) {
-    return NextResponse.json({ error: "KhÃ´ng cáº­p nháº­t Ä‘Æ°á»£c tÃ i khoáº£n." }, { status: 500 });
+    return NextResponse.json({ error: "Không cập nhật được tài khoản." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
