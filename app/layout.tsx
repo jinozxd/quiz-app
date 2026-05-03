@@ -6,6 +6,7 @@ const visualSettingsScript = `
 (() => {
   document.documentElement.dataset.background = "grid";
   document.documentElement.dataset.motion = "normal";
+  document.documentElement.dataset.optimizedMotion = "on";
 })();
 `;
 

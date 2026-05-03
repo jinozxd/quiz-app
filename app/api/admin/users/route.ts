@@ -8,7 +8,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
 
-const EMPTY_SAVED = { items: {}, order: [], starredQuestionIds: [], results: [] };
+const EMPTY_SAVED = { items: {}, order: [], starredQuestionIds: [], wrongPracticeSeen: {}, results: [] };
 const EMPTY_PROFILE_PROGRESS = { level: 1, xp: 0, awardedResultIds: [] as string[], unlockedAchievementIds: [] as string[] };
 
 const updateSchema = z.discriminatedUnion("action", [

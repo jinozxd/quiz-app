@@ -232,6 +232,22 @@ type ResultItem = {
   submittedAt: number;
   durationMs?: number;
   pinnedAt?: number;
+  review?: ResultReviewQuestion[];
+};
+
+type ResultReviewOption = {
+  id: string;
+  label: string;
+  text: string;
+  correct: boolean;
+};
+
+type ResultReviewQuestion = {
+  id: string;
+  prompt: string;
+  selectedOptionId?: string;
+  correctOptionId?: string;
+  options: ResultReviewOption[];
 };
 
 type SavedProgress = {
@@ -240,6 +256,7 @@ type SavedProgress = {
   items: Record<string, ProgressItem>;
   order: string[];
   starredQuestionIds?: string[];
+  wrongPracticeSeen?: Record<string, number>;
   results?: ResultItem[];
 };
 
@@ -287,11 +304,12 @@ type SurvivalConfig = {
 };
 
 type MatchingCount = 25 | 40 | "full";
+type WrongPracticeCount = 10 | 25;
 
 type MotionLevel = "low" | "normal" | "high" | "off";
 type ThemeMode = "light" | "dark";
 type SweepAnimationType = "emoji" | "stars" | "hearts" | "off";
-type BackgroundMode = "grid" | "blast" | "stickers" | "checker" | "poster" | "tape" | "notebook" | "neon" | "waves" | "cheese" | "autumn" | "lastday" | "chalk" | "library" | "rain" | "orbit" | "spark" | "stars" | "aurora" | "sunset" | "galaxy" | "forest" | "ocean" | "meadow";
+type BackgroundMode = "grid" | "blast" | "stickers" | "checker" | "poster" | "tape" | "notebook" | "neon" | "waves" | "cheese" | "autumn" | "lastday" | "chalk" | "library" | "rain" | "orbit" | "spark" | "stars" | "aurora" | "sunset" | "galaxy" | "forest" | "ocean" | "meadow" | "coral" | "mountain" | "city";
 type BackgroundRandomMinutes = 2 | 3 | 5;
 
 export type AppSettings = {
@@ -306,6 +324,7 @@ export type AppSettings = {
   pomodoroHideTime: boolean;
   quizHideTime: boolean;
   entryAnimation: boolean;
+  optimizeMotion: boolean;
   sweepAnimation: SweepAnimationType;
   motion: MotionLevel;
   theme: ThemeMode;
@@ -368,13 +387,14 @@ function shouldPersistOrder(chapterId: string) {
     chapterId.startsWith("mode-exam-40") ||
     chapterId.startsWith("mode-all-random") ||
     chapterId.startsWith("mode-practice-starred") ||
+    chapterId.startsWith("mode-practice-wrong") ||
     chapterId.startsWith("mode-survival") ||
     chapterId.startsWith("mode-match")
   );
 }
 
 function emptySaved(): SavedProgress {
-  return { items: {}, order: [], starredQuestionIds: [], results: [] };
+  return { items: {}, order: [], starredQuestionIds: [], wrongPracticeSeen: {}, results: [] };
 }
 
 function readLocalStorageWithFallback(key: string, legacyKey: string) {
@@ -543,6 +563,7 @@ function restoreSaved(): SavedProgress {
       activeSubjectId: parsed.activeSubjectId,
       activeChapterId: parsed.activeChapterId,
       starredQuestionIds: parsed.starredQuestionIds ?? [],
+      wrongPracticeSeen: parsed.wrongPracticeSeen ?? {},
       results: parsed.results ?? []
     };
   } catch {
@@ -681,6 +702,7 @@ function defaultSettings(): AppSettings {
     pomodoroHideTime: false,
     quizHideTime: false,
     entryAnimation: true,
+    optimizeMotion: true,
     sweepAnimation: "emoji",
     motion: "normal",
     theme: "light"
@@ -712,7 +734,10 @@ function isBackgroundMode(value: unknown): value is BackgroundMode {
     value === "galaxy" ||
     value === "forest" ||
     value === "ocean" ||
-    value === "meadow"
+    value === "meadow" ||
+    value === "coral" ||
+    value === "mountain" ||
+    value === "city"
   );
 }
 
@@ -746,6 +771,7 @@ export function restoreSettings(): AppSettings {
       pomodoroHideTime: Boolean(parsed.pomodoroHideTime),
       quizHideTime: Boolean(parsed.quizHideTime),
       entryAnimation: parsed.entryAnimation !== false,
+      optimizeMotion: parsed.optimizeMotion !== false,
       sweepAnimation: parsed.sweepAnimation === "stars" || parsed.sweepAnimation === "hearts" || parsed.sweepAnimation === "off" ? parsed.sweepAnimation : "emoji",
       motion: parsed.motion === "low" || parsed.motion === "normal" || parsed.motion === "high" || parsed.motion === "off" ? parsed.motion : "normal",
       theme: parsed.theme === "dark" ? "dark" : "light"
@@ -804,7 +830,7 @@ function authStateForSession(user: NonNullable<AppAuthResponse["user"]>, token: 
 }
 
 function hasSavedContent(saved: SavedProgress | undefined) {
-  return Boolean(saved && (saved.order.length > 0 || Object.keys(saved.items).length > 0 || (saved.results?.length ?? 0) > 0 || (saved.starredQuestionIds?.length ?? 0) > 0));
+  return Boolean(saved && (saved.order.length > 0 || Object.keys(saved.items).length > 0 || (saved.results?.length ?? 0) > 0 || (saved.starredQuestionIds?.length ?? 0) > 0 || Object.keys(saved.wrongPracticeSeen ?? {}).length > 0));
 }
 
 function getSubject(subjects: QuizSubject[], subjectId?: string) {
@@ -868,6 +894,47 @@ function getStarredQuestions(subject: QuizSubject, starredQuestionIds: string[])
   return getAllQuestions(subject).filter((question) => starredSet.has(question.id));
 }
 
+function getWrongPracticeQuestions(subject: QuizSubject, saved: SavedProgress) {
+  const questionById = new Map(getAllQuestions(subject).map((question) => [question.id, question]));
+  const wrongQuestionIds = new Set<string>();
+
+  for (const item of Object.values(saved.items)) {
+    if (item.subjectId !== subject.id || !item.submitted) {
+      continue;
+    }
+
+    const chapter = getChapter(subject, item.chapterId, item.questionOrder, item.optionOrders);
+    if (!chapter) {
+      continue;
+    }
+
+    for (const question of chapter.questions) {
+      const selectedId = item.answers[question.id];
+      const selected = question.options.find((option) => option.id === selectedId);
+      if (!selected?.correct) {
+        wrongQuestionIds.add(question.id);
+      }
+    }
+  }
+
+  for (const result of saved.results ?? []) {
+    if (result.subjectId !== subject.id) {
+      continue;
+    }
+
+    for (const question of result.review ?? []) {
+      if (question.selectedOptionId !== question.correctOptionId) {
+        wrongQuestionIds.add(question.id);
+      }
+    }
+  }
+
+  return Array.from(wrongQuestionIds)
+    .filter((questionId) => (saved.wrongPracticeSeen?.[questionId] ?? 0) < 6)
+    .map((questionId) => questionById.get(questionId))
+    .filter((question): question is QuizChapter["questions"][number] => Boolean(question));
+}
+
 function makeAllQuestionsChapter(subject: QuizSubject): QuizChapter {
   return {
     id: `mode-all-random-${Date.now()}`,
@@ -884,6 +951,18 @@ function makePracticeChapter(subject: QuizSubject, starredQuestionIds: string[])
     id: `mode-practice-starred-${Date.now()}`,
     title: "Luyện tập câu đã đánh dấu",
     questions: shuffleArray(getStarredQuestions(subject, starredQuestionIds)).map((question) => ({
+      ...question,
+      options: shuffleArray(question.options)
+    }))
+  };
+}
+
+function makeWrongPracticeChapter(subject: QuizSubject, saved: SavedProgress, count: WrongPracticeCount): QuizChapter {
+  const questions = shuffleArray(getWrongPracticeQuestions(subject, saved)).slice(0, count);
+  return {
+    id: `mode-practice-wrong-${count}-${Date.now()}`,
+    title: `Luyện câu sai - ${questions.length} câu`,
+    questions: questions.map((question) => ({
       ...question,
       options: shuffleArray(question.options)
     }))
@@ -1039,6 +1118,18 @@ function getChapter(subject: QuizSubject | undefined, chapterId?: string, questi
     );
   }
 
+  if (chapterId.startsWith("mode-practice-wrong")) {
+    return reorderChapter(
+      {
+        id: chapterId,
+        title: "Luyện câu sai",
+        questions: getAllQuestions(subject)
+      },
+      questionOrder,
+      optionOrders
+    );
+  }
+
   if (chapterId.startsWith("mode-survival")) {
     return reorderChapter(
       {
@@ -1075,6 +1166,27 @@ function getInitialState(subjects: QuizSubject[], saved: SavedProgress): QuizSta
 
 function getResultPercentValue(result: ResultItem) {
   return result.total ? Math.round((result.score / result.total) * 100) : 0;
+}
+
+function makeResultReview(chapter: QuizChapter, answers: Record<string, string>): ResultReviewQuestion[] {
+  return chapter.questions.map((question) => ({
+    id: question.id,
+    prompt: question.prompt,
+    selectedOptionId: answers[question.id],
+    correctOptionId: question.options.find((option) => option.correct)?.id,
+    options: question.options.map((option) => ({
+      id: option.id,
+      label: option.label,
+      text: option.text,
+      correct: option.correct
+    }))
+  }));
+}
+
+function addRecentResult(results: ResultItem[] | undefined, result: ResultItem) {
+  return [result, ...(results ?? [])]
+    .slice(0, 30)
+    .map((item, index) => index < 3 ? item : { ...item, review: undefined });
 }
 
 function getWeekRange(now = Date.now()) {
@@ -1327,14 +1439,27 @@ function getAchievements(subject: QuizSubject | undefined, results: ResultItem[]
   ];
 }
 
-function getMotionConfig(motion: MotionLevel) {
+function getMotionConfig(motion: MotionLevel, optimized = false) {
+  if (optimized) {
+    switch (motion) {
+      case "low":
+        return { count: 12, durationBase: 900, durationRange: 260, delayRange: 120, sizeBase: 1.15, sizeRange: 1.35 };
+      case "high":
+        return { count: 34, durationBase: 760, durationRange: 300, delayRange: 180, sizeBase: 1.55, sizeRange: 2.05 };
+      case "normal":
+        return { count: 22, durationBase: 820, durationRange: 280, delayRange: 160, sizeBase: 1.35, sizeRange: 1.65 };
+      case "off":
+        return { count: 0, durationBase: 0, durationRange: 0, delayRange: 0, sizeBase: 0, sizeRange: 0 };
+    }
+  }
+
   switch (motion) {
     case "low":
-      return { count: 28, durationBase: 980, durationRange: 420, delayRange: 180, sizeBase: 1.3, sizeRange: 1.8 };
+      return { count: 20, durationBase: 980, durationRange: 360, delayRange: 160, sizeBase: 1.25, sizeRange: 1.55 };
     case "high":
-      return { count: 72, durationBase: 680, durationRange: 420, delayRange: 260, sizeBase: 1.8, sizeRange: 2.9 };
+      return { count: 52, durationBase: 700, durationRange: 360, delayRange: 220, sizeBase: 1.7, sizeRange: 2.4 };
     case "normal":
-      return { count: 56, durationBase: 780, durationRange: 520, delayRange: 240, sizeBase: 1.65, sizeRange: 2.35 };
+      return { count: 38, durationBase: 800, durationRange: 400, delayRange: 200, sizeBase: 1.55, sizeRange: 2.0 };
     case "off":
       return { count: 0, durationBase: 0, durationRange: 0, delayRange: 0, sizeBase: 0, sizeRange: 0 };
   }
@@ -1369,9 +1494,9 @@ function useAnimatedNumber(value: number, duration = 900) {
   return displayValue;
 }
 
-function makeEmojiSweepItems(motion: MotionLevel, style: SweepAnimationType) {
+function makeEmojiSweepItems(motion: MotionLevel, style: SweepAnimationType, optimized = false) {
   if (motion === "off" || style === "off") return [];
-  const config = getMotionConfig(motion);
+  const config = getMotionConfig(motion, optimized);
   const pool = style === "stars" ? STARS_SWEEP_POOL : style === "hearts" ? HEARTS_SWEEP_POOL : EMOJI_SWEEP_POOL;
   return Array.from({ length: config.count }, (_, index): EmojiSweepItem => ({
     id: `${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
@@ -1385,7 +1510,7 @@ function makeEmojiSweepItems(motion: MotionLevel, style: SweepAnimationType) {
 }
 
 function getNextBackground(current: BackgroundMode) {
-  const backgrounds: BackgroundMode[] = ["grid", "blast", "stickers", "checker", "poster", "tape", "notebook", "neon", "waves", "cheese", "autumn", "lastday", "chalk", "library", "rain", "orbit", "spark", "stars", "aurora", "sunset", "galaxy", "forest", "ocean", "meadow"];
+  const backgrounds: BackgroundMode[] = ["grid", "blast", "stickers", "checker", "poster", "tape", "notebook", "neon", "waves", "cheese", "autumn", "lastday", "chalk", "library", "rain", "orbit", "spark", "stars", "aurora", "sunset", "galaxy", "forest", "ocean", "meadow", "coral", "mountain", "city"];
   const candidates = backgrounds.filter((background) => background !== current);
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
@@ -1676,6 +1801,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const [adminControlOpen, setAdminControlOpen] = useState(false);
   const [survivalConfigOpen, setSurvivalConfigOpen] = useState(false);
   const [matchingConfigOpen, setMatchingConfigOpen] = useState(false);
+  const [wrongPracticeConfigOpen, setWrongPracticeConfigOpen] = useState(false);
   const [modeConfigSubject, setModeConfigSubject] = useState<QuizSubject | null>(null);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1751,6 +1877,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
         items: localSaved.items ?? {},
         order: localSaved.order ?? Object.keys(localSaved.items ?? {}),
         starredQuestionIds: localSaved.starredQuestionIds ?? [],
+        wrongPracticeSeen: localSaved.wrongPracticeSeen ?? {},
         results: localSaved.results ?? []
       };
       const normalizedAuth = normalizeAuthState(localAuth);
@@ -1862,6 +1989,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             items: data.saved.items ?? {},
             order: data.saved.order ?? Object.keys(data.saved.items ?? {}),
             starredQuestionIds: data.saved.starredQuestionIds ?? [],
+            wrongPracticeSeen: data.saved.wrongPracticeSeen ?? {},
             results: data.saved.results ?? []
           });
         }
@@ -1915,6 +2043,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     document.documentElement.classList.toggle("dark", settings.theme === "dark");
     document.documentElement.dataset.motion = settings.motion;
     document.documentElement.dataset.entryMotion = settings.entryAnimation ? "on" : "off";
+    document.documentElement.dataset.optimizedMotion = settings.optimizeMotion ? "on" : "off";
   }, [settings]);
 
   useEffect(() => {
@@ -2051,7 +2180,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       return;
     }
 
-    setEmojiSweepItems(makeEmojiSweepItems(currentSettings.motion, currentSettings.sweepAnimation));
+    setEmojiSweepItems(makeEmojiSweepItems(currentSettings.motion, currentSettings.sweepAnimation, currentSettings.optimizeMotion));
     const timer = window.setTimeout(() => setEmojiSweepItems([]), 1800);
     return () => window.clearTimeout(timer);
   }, [state.subject?.id, state.chapter?.id, state.submitted]);
@@ -2220,13 +2349,14 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       score: finalScore,
       total: state.chapter.questions.length,
       submittedAt: Date.now(),
-      durationMs: quizElapsedMs
+      durationMs: quizElapsedMs,
+      review: makeResultReview(state.chapter, state.answers)
     };
 
     survivalResultSavedRef.current = currentProgressId;
     setSaved((current) => ({
       ...current,
-      results: [result, ...(current.results ?? [])].slice(0, 30)
+      results: addRecentResult(current.results, result)
     }));
     setLatestSubmitId(result.id);
     setSubmitPopupResult(result);
@@ -2324,6 +2454,32 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     });
   }
 
+  function startWrongPracticeMode(subject: QuizSubject, count: WrongPracticeCount) {
+    if (requireLogin()) {
+      return;
+    }
+
+    const chapter = makeWrongPracticeChapter(subject, savedRef.current, count);
+    if (chapter.questions.length === 0) {
+      return;
+    }
+
+    setWrongPracticeConfigOpen(false);
+    setSaved((current) => {
+      const seen = { ...(current.wrongPracticeSeen ?? {}) };
+      chapter.questions.forEach((question) => {
+        seen[question.id] = Math.min(6, (seen[question.id] ?? 0) + 1);
+      });
+      return { ...current, wrongPracticeSeen: seen };
+    });
+    setState({
+      subject,
+      chapter,
+      answers: {},
+      submitted: false
+    });
+  }
+
   function startSurvivalMode(subject: QuizSubject, config: SurvivalConfig) {
     if (requireLogin()) {
       return;
@@ -2413,7 +2569,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
 
     setSaved((current) => ({
       ...current,
-      results: [result, ...(current.results ?? [])].slice(0, 30)
+      results: addRecentResult(current.results, result)
     }));
     setLatestSubmitId(result.id);
     setSubmitPopupResult(result);
@@ -2539,12 +2695,13 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       score,
       total: state.chapter.questions.length,
       submittedAt: Date.now(),
-      durationMs: quizElapsedMs
+      durationMs: quizElapsedMs,
+      review: makeResultReview(state.chapter, state.answers)
     };
 
     setSaved((current) => ({
       ...current,
-      results: [result, ...(current.results ?? [])].slice(0, 30)
+      results: addRecentResult(current.results, result)
     }));
     setLatestSubmitId(result.id);
     setSubmitPopupResult(result);
@@ -2632,7 +2789,8 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       activeSubjectId: undefined,
       activeChapterId: undefined,
       items: {},
-      order: []
+      order: [],
+      wrongPracticeSeen: {}
     }));
     setState({ answers: {}, submitted: false });
     setDeleteAllOpen(false);
@@ -2986,6 +3144,15 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             onStart={(count) => startMatchingMode(modeConfigSubject, count)}
           />
         )}
+        {modeConfigSubject && (
+          <WrongPracticeConfigDialog
+            open={wrongPracticeConfigOpen}
+            subject={modeConfigSubject}
+            saved={saved}
+            onClose={() => setWrongPracticeConfigOpen(false)}
+            onStart={(count) => startWrongPracticeMode(modeConfigSubject, count)}
+          />
+        )}
         <AchievementsButton
           completed={completedAchievementCount}
           total={achievements.length}
@@ -3040,6 +3207,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           />
           {subjects.map((subject) => {
             const subjectStarredCount = getStarredQuestions(subject, saved.starredQuestionIds ?? []).length;
+            const subjectWrongCount = getWrongPracticeQuestions(subject, saved).length;
             const subjectQuestionCount = getAllQuestions(subject).length;
 
             return (
@@ -3087,6 +3255,19 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                       disabled={subjectStarredCount === 0}
                       icon="⭐"
                       onClick={() => startPracticeMode(subject)}
+                    />
+                    <ModeCard
+                      title="Luyện câu sai"
+                      badge={`${subjectWrongCount} câu`}
+                      disabled={subjectWrongCount === 0}
+                      icon="!"
+                      onClick={() => {
+                        if (requireLogin()) {
+                          return;
+                        }
+                        setModeConfigSubject(subject);
+                        setWrongPracticeConfigOpen(true);
+                      }}
                     />
                     <ModeCard
                       title="Sinh tồn"
@@ -4268,6 +4449,7 @@ function RecentResults({
   onLongPress: (id: string) => void;
 }) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [reviewResult, setReviewResult] = useState<ResultItem | null>(null);
   const sortedResults = [...results].sort((a, b) => {
     if (a.pinnedAt && b.pinnedAt) {
       return b.pinnedAt - a.pinnedAt;
@@ -4298,6 +4480,7 @@ function RecentResults({
   }
 
   return (
+    <>
     <Card className="mt-6 max-w-full motion-safe-card">
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center justify-between gap-3 pr-2">
@@ -4325,6 +4508,7 @@ function RecentResults({
                 const celebration = getResultCelebration(percent);
                 const percentEffect = getResultPercentEffect(percent);
                 const isLatest = index === 0;
+                const canReview = index < 3 && Boolean(result.review?.length);
 
                 return (
                   <div
@@ -4371,6 +4555,20 @@ function RecentResults({
                     <p className="result-card-time relative z-10 text-xs font-black text-muted-foreground">
                       {new Date(result.submittedAt).toLocaleString("vi-VN")}
                     </p>
+                    {canReview && (
+                      <Button
+                        className="relative z-10 mt-3 w-full"
+                        size="sm"
+                        variant="outline"
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setReviewResult(result);
+                        }}
+                      >
+                        Xem chi tiết
+                      </Button>
+                    )}
                   </div>
                 );
               })}
@@ -4379,6 +4577,102 @@ function RecentResults({
         )}
       </CardContent>
     </Card>
+    <ResultReviewDialog result={reviewResult} onClose={() => setReviewResult(null)} />
+    </>
+  );
+}
+
+function ResultReviewDialog({ result, onClose }: { result: ResultItem | null; onClose: () => void }) {
+  if (!result?.review?.length) {
+    return null;
+  }
+
+  const percent = getResultPercentValue(result);
+  const correctCount = result.review.filter((question) => question.selectedOptionId && question.selectedOptionId === question.correctOptionId).length;
+  const skippedCount = result.review.filter((question) => !question.selectedOptionId).length;
+  const wrongCount = Math.max(0, result.review.length - correctCount - skippedCount);
+
+  return (
+    <div className="fixed inset-0 z-[85] grid place-items-center bg-black/50 p-3 motion-pop sm:p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border-2 border-foreground bg-card text-card-foreground shadow-[10px_10px_0_0_hsl(var(--foreground))]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b-2 border-foreground bg-secondary px-4 py-4">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase text-muted-foreground">Xem lại kết quả chi tiết</p>
+            <h2 className="mt-1 line-clamp-2 text-2xl font-black">{result.chapterTitle}</h2>
+            <p className="mt-1 text-sm font-black text-muted-foreground">
+              {result.userName ?? "Ẩn danh"} · {new Date(result.submittedAt).toLocaleString("vi-VN")}
+            </p>
+          </div>
+          <Button size="icon" variant="outline" onClick={onClose} aria-label="Đóng chi tiết kết quả">
+            <XCircle className="size-5" aria-hidden />
+          </Button>
+        </div>
+
+        <div className="grid gap-3 border-b-2 border-foreground bg-background/70 p-4 sm:grid-cols-4">
+          <div className="rounded-xl border-2 border-foreground bg-card p-3">
+            <p className="text-xs font-black uppercase text-muted-foreground">Điểm</p>
+            <p className="mt-1 text-2xl font-black">{result.score}/{result.total}</p>
+          </div>
+          <div className="rounded-xl border-2 border-foreground bg-card p-3">
+            <p className="text-xs font-black uppercase text-muted-foreground">Tỷ lệ</p>
+            <p className="mt-1 text-2xl font-black">{percent}%</p>
+          </div>
+          <div className="rounded-xl border-2 border-foreground bg-card p-3">
+            <p className="text-xs font-black uppercase text-muted-foreground">Thời gian làm</p>
+            <p className="mt-1 text-2xl font-black">{typeof result.durationMs === "number" ? formatTimer(result.durationMs) : "Chưa có"}</p>
+          </div>
+          <div className="rounded-xl border-2 border-foreground bg-card p-3">
+            <p className="text-xs font-black uppercase text-muted-foreground">Tổng quan</p>
+            <p className="mt-1 text-sm font-black">{correctCount} đúng · {wrongCount} sai · {skippedCount} trống</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 overflow-y-auto p-4">
+          {result.review.map((question, index) => {
+            const selected = question.options.find((option) => option.id === question.selectedOptionId);
+            const correct = question.options.find((option) => option.id === question.correctOptionId);
+            const isCorrect = Boolean(selected && selected.id === correct?.id);
+            const statusLabel = !selected ? "Bỏ trống" : isCorrect ? "Đúng" : "Sai";
+
+            return (
+              <section key={question.id} className="rounded-xl border-2 border-foreground bg-background/70 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <h3 className="min-w-0 flex-1 text-base font-black leading-7">
+                    Câu {index + 1}: {question.prompt}
+                  </h3>
+                  <Badge variant={!selected ? "outline" : isCorrect ? "secondary" : "destructive"}>{statusLabel}</Badge>
+                </div>
+
+                <div className="mt-3 grid gap-2">
+                  {question.options.map((option) => {
+                    const optionSelected = option.id === selected?.id;
+                    const optionCorrect = option.id === correct?.id;
+                    return (
+                      <div
+                        key={option.id}
+                        className={cn(
+                          "rounded-lg border-2 border-foreground bg-card px-3 py-2 text-sm font-bold leading-6",
+                          optionCorrect && "bg-secondary",
+                          optionSelected && !optionCorrect && "bg-destructive/75"
+                        )}
+                      >
+                        <span className="font-black">{option.label}. </span>
+                        <span>{option.text}</span>
+                        {optionSelected && <span className="ml-2 font-black">(đã chọn)</span>}
+                        {optionCorrect && <span className="ml-2 font-black">(đáp án đúng)</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -4654,6 +4948,85 @@ function MatchingConfigDialog({
         <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap sm:justify-end">
           <Button variant="outline" onClick={onClose}>Hủy</Button>
           <Button onClick={() => onStart(count)}>
+            Bắt đầu {finalCount} câu
+            <ChevronRight className="ml-2 size-4" aria-hidden />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WrongPracticeConfigDialog({
+  onClose,
+  onStart,
+  open,
+  saved,
+  subject
+}: {
+  onClose: () => void;
+  onStart: (count: WrongPracticeCount) => void;
+  open: boolean;
+  saved: SavedProgress;
+  subject: QuizSubject;
+}) {
+  const wrongQuestions = getWrongPracticeQuestions(subject, saved);
+  const [count, setCount] = useState<WrongPracticeCount>(10);
+
+  useEffect(() => {
+    if (wrongQuestions.length < 25) {
+      setCount(10);
+    }
+  }, [wrongQuestions.length]);
+
+  if (!open) {
+    return null;
+  }
+
+  const finalCount = Math.min(count, wrongQuestions.length);
+
+  return (
+    <div className="fixed inset-0 z-[95] grid place-items-center bg-foreground/35 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-[22px] border-2 border-foreground bg-card p-4 shadow-[8px_8px_0_0_hsl(var(--foreground))] sm:rounded-[28px] sm:p-5 sm:shadow-[12px_12px_0_0_hsl(var(--foreground))]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-black text-muted-foreground">{subject.title}</p>
+            <h2 className="mt-1 text-2xl font-black">Luyện câu sai</h2>
+          </div>
+          <Button size="icon" variant="ghost" onClick={onClose} aria-label="Đóng luyện câu sai">
+            <XCircle className="size-5" aria-hidden />
+          </Button>
+        </div>
+
+        <div className="mt-5 rounded-xl border-2 border-foreground bg-background/70 p-4">
+          <p className="text-sm font-black text-muted-foreground">Số câu</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[
+              { value: 10 as const, label: "10 câu" },
+              { value: 25 as const, label: "25 câu" }
+            ].map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                className={cn("settings-time-pill", count === item.value && "settings-time-pill-active")}
+                disabled={item.value > wrongQuestions.length}
+                onClick={() => setCount(item.value)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-sm font-black text-muted-foreground">
+            Hiện còn {wrongQuestions.length} câu sai khả dụng. Mỗi câu chỉ xuất hiện tối đa 6 lần trong phần này.
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap sm:justify-end">
+          <Button variant="outline" onClick={onClose}>Hủy</Button>
+          <Button disabled={finalCount === 0} onClick={() => onStart(count)}>
             Bắt đầu {finalCount} câu
             <ChevronRight className="ml-2 size-4" aria-hidden />
           </Button>
@@ -5680,7 +6053,7 @@ export function SettingsDialog({
                   <h3 className="text-xl font-black">Chuyển động animation</h3>
                   <p className="mt-1 text-sm font-black text-muted-foreground">Mức hiện tại: {motionLabel}</p>
                 </div>
-                <Badge variant="outline">{getMotionConfig(settings.motion).count} emoji/lần</Badge>
+                <Badge variant="outline">{getMotionConfig(settings.motion, settings.optimizeMotion).count} emoji/lần</Badge>
               </div>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <button
@@ -5715,6 +6088,25 @@ export function SettingsDialog({
               >
                 {settings.motion === "off" ? "Bật lại chuyển động" : "Loại bỏ chuyển động"}
               </Button>
+              <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
+                <label className="flex cursor-pointer items-center justify-between gap-4">
+                  <span>
+                    <span className="block text-lg font-black">Tối ưu cấu hình</span>
+                    <span className="block text-sm font-black text-muted-foreground">Giảm số vật thể animation, hạ nhịp emoji nền và bớt tính toán va chạm để app mượt hơn.</span>
+                  </span>
+                  <input
+                    className="size-6 accent-black"
+                    type="checkbox"
+                    checked={settings.optimizeMotion}
+                    onChange={(event) =>
+                      onChange((current) => ({
+                        ...current,
+                        optimizeMotion: event.target.checked
+                      }))
+                    }
+                  />
+                </label>
+              </div>
               <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
                 <label className="flex cursor-pointer items-center justify-between gap-4">
                   <span>
@@ -5870,7 +6262,10 @@ export function SettingsDialog({
                       galaxy: "Ngân hà",
                       forest: "Rừng xanh",
                       ocean: "Biển cả",
-                      meadow: "Cánh đồng"
+                      meadow: "Cánh đồng",
+                      coral: "Rạn san hô",
+                      mountain: "Núi và mây",
+                      city: "Phố xã hội"
                     }[settings.background]}
                   </Badge>
                 </div>
@@ -5900,7 +6295,10 @@ export function SettingsDialog({
                     { id: "galaxy" as const, label: "Ngân hà", icon: "GAL" },
                     { id: "forest" as const, label: "Rừng xanh", icon: "FT" },
                     { id: "ocean" as const, label: "Biển cả", icon: "OC" },
-                    { id: "meadow" as const, label: "Cánh đồng", icon: "MD" }
+                    { id: "meadow" as const, label: "Cánh đồng", icon: "MD" },
+                    { id: "coral" as const, label: "Rạn san hô", icon: "CO" },
+                    { id: "mountain" as const, label: "Núi và mây", icon: "NM" },
+                    { id: "city" as const, label: "Phố xã hội", icon: "PX" }
                   ].map((background) => (
                     <button
                       key={background.id}
@@ -6130,12 +6528,12 @@ export function SettingsDialog({
                       Thông tin bản phát hành hiện tại của Quiz ôn tập.
                     </p>
                   </div>
-                  <Badge variant="secondary">v4.6.1</Badge>
+                  <Badge variant="secondary">v4.4.2</Badge>
                 </div>
 
                 <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
                   <p className="text-sm font-black text-muted-foreground">Bản hiện tại</p>
-                  <p className="mt-2 text-4xl font-black">4.6.1</p>
+                  <p className="mt-2 text-4xl font-black">4.4.2</p>
                 </div>
               </section>
             )}
@@ -7094,10 +7492,10 @@ function AdminControlPanel({
       </div>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.4fr)]">
-        <div className="rounded-[1.2rem] border-2 border-foreground bg-card p-3 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+        <div className="rounded-[1.2rem] border-2 border-[#202226] bg-[#fffaf3] p-3 text-[#202226] shadow-[6px_6px_0_0_#202226]">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-sm font-black text-muted-foreground">Danh sách user</p>
-            <Badge variant="outline">{usersWithStats.length}</Badge>
+            <p className="text-sm font-black text-[#5f625c]">Danh sách user</p>
+            <Badge className="border-2 border-[#202226] bg-[#fffaf3] text-[#202226]" variant="outline">{usersWithStats.length}</Badge>
           </div>
           <div className="mb-3 flex flex-wrap gap-2">
             {[
@@ -7109,7 +7507,7 @@ function AdminControlPanel({
               <button
                 key={option.id}
                 type="button"
-                className={cn("rounded-full border-2 border-foreground px-3 py-1 text-xs font-black shadow-[2px_2px_0_0_hsl(var(--foreground))]", userSort === option.id ? "bg-secondary" : "bg-background")}
+                className={cn("rounded-full border-2 border-[#202226] px-3 py-1 text-xs font-black text-[#202226] shadow-[2px_2px_0_0_#202226]", userSort === option.id ? "bg-[#ffd233]" : "bg-[#eef0ef]")}
                 onClick={() => setUserSort(option.id as typeof userSort)}
               >
                 {option.label}
@@ -7117,7 +7515,7 @@ function AdminControlPanel({
             ))}
             <button
               type="button"
-              className="rounded-full border-2 border-foreground bg-background px-3 py-1 text-xs font-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+              className="rounded-full border-2 border-[#202226] bg-[#eef0ef] px-3 py-1 text-xs font-black text-[#202226] shadow-[2px_2px_0_0_#202226]"
               onClick={() => setUserSortAsc((current) => !current)}
             >
               {userSortAsc ? "Đảo: tăng" : "Đảo: giảm"}
@@ -7128,15 +7526,15 @@ function AdminControlPanel({
               <button
                 key={user.id}
                 type="button"
-                className={cn("rounded-xl border-2 border-foreground bg-background p-3 text-left shadow-[3px_3px_0_0_hsl(var(--foreground))]", selectedUser?.id === user.id && "bg-secondary")}
+                className={cn("rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3 text-left text-[#202226] shadow-[3px_3px_0_0_#202226]", selectedUser?.id === user.id && "bg-[#dfe8e1]")}
                 onClick={() => setSelectedUserId(user.id)}
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="truncate text-sm font-black">{user.name}</p>
-                  <span className={cn("size-3 rounded-full", isRecentActivity(user.lastLoginAt, user.dataUpdatedAt, now, 10 * 60_000) ? "bg-primary" : "bg-muted-foreground")} />
+                  <span className={cn("size-3 rounded-full", isRecentActivity(user.lastLoginAt, user.dataUpdatedAt, now, 10 * 60_000) ? "bg-[#ff7d8c]" : "bg-[#8b8f87]")} />
                 </div>
-                <p className="mt-1 truncate text-xs font-black text-muted-foreground">{canWrite ? user.email : "Ẩn email ở chế độ chỉ xem"}</p>
-                <p className="mt-1 truncate text-xs font-black text-muted-foreground">
+                <p className="mt-1 truncate text-xs font-black text-[#696d66]">{canWrite ? user.email : "Ẩn email ở chế độ chỉ xem"}</p>
+                <p className="mt-1 truncate text-xs font-black text-[#696d66]">
                   {canWrite ? `${getBrowserName(user.lastUserAgent)} · ${formatAdminDate(user.lastLoginAt ?? user.dataUpdatedAt)}` : formatAdminDate(user.dataUpdatedAt)}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1">
@@ -7144,18 +7542,18 @@ function AdminControlPanel({
                 </div>
               </button>
             ))}
-            {usersWithStats.length === 0 && <div className="rounded-xl border-2 border-foreground bg-background p-4 text-center text-sm font-black text-muted-foreground">Chưa tải được user nào.</div>}
+            {usersWithStats.length === 0 && <div className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-4 text-center text-sm font-black text-[#696d66]">Chưa tải được user nào.</div>}
           </div>
         </div>
 
         <div className="grid gap-4">
           {selectedUser && (
-            <div className="rounded-[1.2rem] border-2 border-foreground bg-card p-4 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+            <div className="rounded-[1.2rem] border-2 border-[#202226] bg-[#fffaf3] p-4 text-[#202226] shadow-[6px_6px_0_0_#202226]">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black uppercase text-muted-foreground">Chi tiết user</p>
+                  <p className="text-xs font-black uppercase text-[#696d66]">Chi tiết user</p>
                   <h3 className="mt-1 text-2xl font-black">{selectedUser.name}</h3>
-                  <p className="mt-1 text-sm font-black text-muted-foreground">{canWrite ? selectedUser.email : "Email chỉ admin gốc được xem"}</p>
+                  <p className="mt-1 text-sm font-black text-[#696d66]">{canWrite ? selectedUser.email : "Email chỉ admin gốc được xem"}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Badge variant={selectedUser.banned ? "destructive" : "outline"}>{selectedUser.banned ? "Đang bị ban" : "Đang hoạt động"}</Badge>
@@ -7172,53 +7570,53 @@ function AdminControlPanel({
 
               {selectedPulse && (
                 <div className="mt-4 grid gap-3 lg:grid-cols-3">
-                  <div className="rounded-xl border-2 border-foreground bg-secondary p-3">
-                    <p className="text-xs font-black uppercase text-muted-foreground">Giám sát</p>
+                  <div className="rounded-xl border-2 border-[#202226] bg-[#dfe8e1] p-3">
+                    <p className="text-xs font-black uppercase text-[#696d66]">Giám sát</p>
                     <p className="mt-2 text-2xl font-black">{selectedPulse.level}</p>
-                    <p className="mt-1 text-xs font-black text-muted-foreground">Điểm rủi ro {selectedPulse.riskScore}/100</p>
+                    <p className="mt-1 text-xs font-black text-[#696d66]">Điểm rủi ro {selectedPulse.riskScore}/100</p>
                   </div>
-                  <div className="rounded-xl border-2 border-foreground bg-background p-3">
-                    <p className="text-xs font-black uppercase text-muted-foreground">Đánh giá</p>
+                  <div className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3">
+                    <p className="text-xs font-black uppercase text-[#696d66]">Đánh giá</p>
                     <p className="mt-2 text-2xl font-black">{selectedPulse.evaluation}</p>
-                    <p className="mt-1 text-xs font-black text-muted-foreground">{selectedPulse.flags[0] ?? "Không có cảnh báo lớn"}</p>
+                    <p className="mt-1 text-xs font-black text-[#696d66]">{selectedPulse.flags[0] ?? "Không có cảnh báo lớn"}</p>
                   </div>
-                  <div className="rounded-xl border-2 border-foreground bg-accent/80 p-3">
-                    <p className="text-xs font-black uppercase text-muted-foreground">Dự đoán</p>
+                  <div className="rounded-xl border-2 border-[#202226] bg-[#ffe7a8] p-3">
+                    <p className="text-xs font-black uppercase text-[#696d66]">Dự đoán</p>
                     <p className="mt-2 text-2xl font-black">{selectedPulse.forecastNextWeek} bài</p>
-                    <p className="mt-1 text-xs font-black text-muted-foreground">{selectedPulse.prediction}</p>
+                    <p className="mt-1 text-xs font-black text-[#696d66]">{selectedPulse.prediction}</p>
                   </div>
                 </div>
               )}
 
               <div className="mt-4 grid gap-3 lg:grid-cols-2">
                 {canWrite ? (
-                  <div className="rounded-xl border-2 border-foreground bg-background p-3">
+                  <div className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3">
                     <p className="text-sm font-black">Thiết bị và đăng nhập</p>
-                    <div className="mt-3 grid gap-2 text-sm font-bold text-muted-foreground">
-                      <p>IP gần nhất: <span className="text-foreground">{selectedUser.lastLoginIp ?? "Chưa có"}</span></p>
-                      <p>Browser: <span className="text-foreground">{getBrowserName(selectedUser.lastUserAgent)}</span></p>
-                      <p>Nền tảng: <span className="text-foreground">{getPlatformName(selectedUser.lastUserAgent)}</span></p>
-                      <p>Số lần đăng nhập: <span className="text-foreground">{selectedUser.loginCount}</span></p>
-                      <p>Thiết bị ghi nhận: <span className="text-foreground">{selectedUser.deviceCount}</span></p>
-                      <p>Lần cuối: <span className="text-foreground">{formatAdminDate(selectedUser.lastLoginAt)}</span></p>
-                      <p className="break-words">User agent: <span className="text-foreground">{selectedUser.lastUserAgent ?? "Chưa có"}</span></p>
+                    <div className="mt-3 grid gap-2 text-sm font-bold text-[#696d66]">
+                      <p>IP gần nhất: <span className="text-[#202226]">{selectedUser.lastLoginIp ?? "Chưa có"}</span></p>
+                      <p>Browser: <span className="text-[#202226]">{getBrowserName(selectedUser.lastUserAgent)}</span></p>
+                      <p>Nền tảng: <span className="text-[#202226]">{getPlatformName(selectedUser.lastUserAgent)}</span></p>
+                      <p>Số lần đăng nhập: <span className="text-[#202226]">{selectedUser.loginCount}</span></p>
+                      <p>Thiết bị ghi nhận: <span className="text-[#202226]">{selectedUser.deviceCount}</span></p>
+                      <p>Lần cuối: <span className="text-[#202226]">{formatAdminDate(selectedUser.lastLoginAt)}</span></p>
+                      <p className="break-words">User agent: <span className="text-[#202226]">{selectedUser.lastUserAgent ?? "Chưa có"}</span></p>
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border-2 border-foreground bg-background p-3 text-sm font-black text-muted-foreground">
+                  <div className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3 text-sm font-black text-[#696d66]">
                     Chi tiết thiết bị, IP, email và user-agent chỉ admin gốc được xem.
                   </div>
                 )}
 
-                <div className="rounded-xl border-2 border-foreground bg-background p-3">
+                <div className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3">
                   <p className="text-sm font-black">Thành tựu đã mở</p>
                   <div className="mt-3 flex max-h-32 flex-wrap gap-2 overflow-auto">
-                    {selectedUser.stats.achievementTitles.length ? selectedUser.stats.achievementTitles.map((title) => <Badge key={title} variant="secondary">{title}</Badge>) : <span className="text-sm font-bold text-muted-foreground">Chưa có thành tựu.</span>}
+                    {selectedUser.stats.achievementTitles.length ? selectedUser.stats.achievementTitles.map((title) => <Badge key={title} variant="secondary">{title}</Badge>) : <span className="text-sm font-bold text-[#696d66]">Chưa có thành tựu.</span>}
                   </div>
                 </div>
               </div>
 
-              {canWrite && <div className="mt-4 rounded-xl border-2 border-foreground bg-background p-3">
+              {canWrite && <div className="mt-4 rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-black">Hoạt động gần đây</p>
                   <Badge variant="outline">Mới nhất trước</Badge>
@@ -7227,15 +7625,15 @@ function AdminControlPanel({
                   {[...selectedUser.loginEvents]
                     .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
                     .map((event, index) => (
-                      <div key={`${event.createdAt}-${index}`} className="rounded-xl border-2 border-foreground bg-card p-3">
+                      <div key={`${event.createdAt}-${index}`} className="rounded-xl border-2 border-[#202226] bg-[#fffaf3] p-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="text-sm font-black">{getBrowserName(event.userAgent)}</p>
-                          <span className="text-xs font-black text-muted-foreground">{formatAdminDate(event.createdAt)}</span>
+                          <span className="text-xs font-black text-[#696d66]">{formatAdminDate(event.createdAt)}</span>
                         </div>
-                        <p className="mt-1 text-xs font-black text-muted-foreground">{getPlatformName(event.userAgent)} · IP {event.ip ?? "chưa có"}</p>
+                        <p className="mt-1 text-xs font-black text-[#696d66]">{getPlatformName(event.userAgent)} · IP {event.ip ?? "chưa có"}</p>
                       </div>
                     ))}
-                  {selectedUser.loginEvents.length === 0 && <p className="rounded-xl border-2 border-foreground bg-card p-3 text-sm font-black text-muted-foreground">Chưa có lịch sử đăng nhập.</p>}
+                  {selectedUser.loginEvents.length === 0 && <p className="rounded-xl border-2 border-[#202226] bg-[#fffaf3] p-3 text-sm font-black text-[#696d66]">Chưa có lịch sử đăng nhập.</p>}
                 </div>
               </div>}
 
@@ -7256,17 +7654,17 @@ function AdminControlPanel({
                 <AdminProfileEditForm user={selectedUser} allAchievements={allAchievements} onSave={(data) => onEditProfile(selectedUser.id, data)} />
               )}
               {!canWrite && (
-                <p className="mt-4 rounded-xl border-2 border-foreground bg-muted px-3 py-2 text-sm font-black text-muted-foreground">
+                <p className="mt-4 rounded-xl border-2 border-[#202226] bg-[#eef0ef] px-3 py-2 text-sm font-black text-[#696d66]">
                   Tài khoản được ủy quyền chỉ được xem kiểm soát, không thể tinh chỉnh, ban hoặc nâng quyền người khác.
                 </p>
               )}
             </div>
           )}
 
-          <div className="rounded-[1.2rem] border-2 border-foreground bg-card p-4 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
+          <div className="rounded-[1.2rem] border-2 border-[#202226] bg-[#fffaf3] p-4 text-[#202226] shadow-[6px_6px_0_0_#202226]">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-black text-muted-foreground">Kiểm soát theo chương/phần</p>
-              <Badge variant="outline">{chapterStats.length} phần có dữ liệu</Badge>
+              <p className="text-sm font-black text-[#5f625c]">Kiểm soát theo chương/phần</p>
+              <Badge className="border-2 border-[#202226] bg-[#fffaf3] text-[#202226]" variant="outline">{chapterStats.length} phần có dữ liệu</Badge>
             </div>
             <div className="mb-3 flex flex-wrap gap-2">
               {[
@@ -7278,7 +7676,7 @@ function AdminControlPanel({
                 <button
                   key={option.id}
                   type="button"
-                  className={cn("rounded-full border-2 border-foreground px-3 py-1 text-xs font-black shadow-[2px_2px_0_0_hsl(var(--foreground))]", chapterSort === option.id ? "bg-secondary" : "bg-background")}
+                  className={cn("rounded-full border-2 border-[#202226] px-3 py-1 text-xs font-black text-[#202226] shadow-[2px_2px_0_0_#202226]", chapterSort === option.id ? "bg-[#ffd233]" : "bg-[#eef0ef]")}
                   onClick={() => setChapterSort(option.id as typeof chapterSort)}
                 >
                   {option.label}
@@ -7286,7 +7684,7 @@ function AdminControlPanel({
               ))}
               <button
                 type="button"
-                className="rounded-full border-2 border-foreground bg-background px-3 py-1 text-xs font-black shadow-[2px_2px_0_0_hsl(var(--foreground))]"
+                className="rounded-full border-2 border-[#202226] bg-[#eef0ef] px-3 py-1 text-xs font-black text-[#202226] shadow-[2px_2px_0_0_#202226]"
                 onClick={() => setChapterSortAsc((current) => !current)}
               >
                 {chapterSortAsc ? "Đảo: tăng" : "Đảo: giảm"}
@@ -7294,24 +7692,24 @@ function AdminControlPanel({
             </div>
             <div className="grid max-h-[28rem] gap-2 overflow-auto pr-1">
               {sortedChapterStats.map((chapter) => (
-                <div key={chapter.id} className="rounded-xl border-2 border-foreground bg-background p-3">
+                <div key={chapter.id} className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3 text-[#202226]">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-black">{chapter.title}</p>
-                      <p className="text-xs font-black text-muted-foreground">{chapter.subjectTitle}</p>
+                      <p className="text-xs font-black text-[#696d66]">{chapter.subjectTitle}</p>
                     </div>
                     <Badge variant="secondary">{chapter.users} user</Badge>
                   </div>
-                  <div className="mt-3 grid gap-2 text-xs font-black text-muted-foreground sm:grid-cols-4">
-                    <span>Tổng làm: <b className="text-foreground">{chapter.answered + chapter.skipped}</b></span>
-                    <span>Đúng: <b className="text-foreground">{chapter.correct}</b></span>
-                    <span>Sai/trống: <b className="text-foreground">{chapter.wrong + chapter.skipped}</b></span>
-                    <span>Bài nộp: <b className="text-foreground">{chapter.submitted}</b></span>
-                    <span>Gần đây: <b className="text-foreground">{formatAdminDate(chapter.lastActivity ? new Date(chapter.lastActivity).toISOString() : undefined)}</b></span>
+                  <div className="mt-3 grid gap-2 text-xs font-black text-[#696d66] sm:grid-cols-4">
+                    <span>Tổng làm: <b className="text-[#202226]">{chapter.answered + chapter.skipped}</b></span>
+                    <span>Đúng: <b className="text-[#202226]">{chapter.correct}</b></span>
+                    <span>Sai/trống: <b className="text-[#202226]">{chapter.wrong + chapter.skipped}</b></span>
+                    <span>Bài nộp: <b className="text-[#202226]">{chapter.submitted}</b></span>
+                    <span>Gần đây: <b className="text-[#202226]">{formatAdminDate(chapter.lastActivity ? new Date(chapter.lastActivity).toISOString() : undefined)}</b></span>
                   </div>
                 </div>
               ))}
-              {chapterStats.length === 0 && <div className="rounded-xl border-2 border-foreground bg-background p-4 text-center text-sm font-black text-muted-foreground">Chưa có dữ liệu làm bài theo chương.</div>}
+              {chapterStats.length === 0 && <div className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-4 text-center text-sm font-black text-[#696d66]">Chưa có dữ liệu làm bài theo chương.</div>}
             </div>
           </div>
         </div>

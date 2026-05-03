@@ -9,7 +9,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 export const runtime = "nodejs";
 
 const MAX_PAYLOAD_BYTES = 750_000;
-const EMPTY_SAVED = { items: {}, order: [], starredQuestionIds: [], results: [] };
+const EMPTY_SAVED = { items: {}, order: [], starredQuestionIds: [], wrongPracticeSeen: {}, results: [] };
 const EMPTY_PROFILE_PROGRESS = { level: 1, xp: 0, awardedResultIds: [], unlockedAchievementIds: [] };
 const EMPTY_PROFILE_MEDIA = {};
 const PROFILE_MEDIA_BUCKET = "profile-media";

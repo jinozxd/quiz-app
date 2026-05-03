@@ -31,7 +31,22 @@ type ResultItem = {
   score: number;
   total: number;
   submittedAt: number;
+  durationMs?: number;
   pinnedAt?: number;
+  review?: ResultReviewQuestion[];
+};
+
+type ResultReviewQuestion = {
+  id: string;
+  prompt: string;
+  selectedOptionId?: string;
+  correctOptionId?: string;
+  options: Array<{
+    id: string;
+    label: string;
+    text: string;
+    correct: boolean;
+  }>;
 };
 
 type SavedProgress = {
@@ -40,6 +55,7 @@ type SavedProgress = {
   items: Record<string, ProgressItem>;
   order: string[];
   starredQuestionIds?: string[];
+  wrongPracticeSeen?: Record<string, number>;
   results?: ResultItem[];
 };
 
@@ -72,6 +88,21 @@ const progressItemSchema = z.object({
   pinnedAt: z.number().finite().optional()
 });
 
+const resultReviewOptionSchema = z.object({
+  id: z.string().min(1).max(80),
+  label: z.string().max(12),
+  text: z.string().max(1000),
+  correct: z.boolean()
+});
+
+const resultReviewQuestionSchema = z.object({
+  id: z.string().min(1).max(120),
+  prompt: z.string().max(2500),
+  selectedOptionId: z.string().max(80).optional(),
+  correctOptionId: z.string().max(80).optional(),
+  options: z.array(resultReviewOptionSchema).max(8)
+});
+
 const resultItemSchema = z.object({
   id: z.string().min(1).max(180),
   subjectId: z.string().min(1).max(80),
@@ -81,7 +112,9 @@ const resultItemSchema = z.object({
   score: z.number().finite(),
   total: z.number().finite(),
   submittedAt: z.number().finite(),
-  pinnedAt: z.number().finite().optional()
+  durationMs: z.number().finite().optional(),
+  pinnedAt: z.number().finite().optional(),
+  review: z.array(resultReviewQuestionSchema).max(1000).optional()
 });
 
 const savedSchema = z.object({
@@ -90,6 +123,7 @@ const savedSchema = z.object({
   items: z.record(z.string(), progressItemSchema).default({}),
   order: z.array(z.string().max(160)).default([]),
   starredQuestionIds: z.array(z.string().max(120)).default([]),
+  wrongPracticeSeen: z.record(z.string().max(120), z.number().finite()).default({}),
   results: z.array(resultItemSchema).default([])
 });
 
@@ -107,7 +141,7 @@ const profileProgressSchema = z.object({
 });
 
 const payloadSchema = z.object({
-  saved: savedSchema.default({ items: {}, order: [], starredQuestionIds: [], results: [] }),
+  saved: savedSchema.default({ items: {}, order: [], starredQuestionIds: [], wrongPracticeSeen: {}, results: [] }),
   profileMedia: profileMediaSchema,
   profileProgress: profileProgressSchema.optional()
 });
@@ -156,6 +190,7 @@ function getChapterQuestions(subject: QuizSubject, chapterId: string) {
     chapterId.startsWith("mode-exam-40") ||
     chapterId.startsWith("mode-all-random") ||
     chapterId.startsWith("mode-practice-starred") ||
+    chapterId.startsWith("mode-practice-wrong") ||
     chapterId.startsWith("mode-survival") ||
     chapterId.startsWith("mode-match")
   ) {
@@ -173,6 +208,7 @@ function getChapterTitle(subject: QuizSubject, chapterId: string, fallback: stri
   if (chapterId.startsWith("mode-exam-40")) return "Thi thử 40 câu";
   if (chapterId.startsWith("mode-all-random")) return "Trộn tất cả câu";
   if (chapterId.startsWith("mode-practice-starred")) return "Luyện tập câu đã đánh dấu";
+  if (chapterId.startsWith("mode-practice-wrong")) return "Luyện câu sai";
   if (chapterId.startsWith("mode-survival")) return "Sinh tồn";
   if (chapterId.startsWith("mode-match")) return "Nối câu hỏi";
   return fallback.slice(0, 180);
@@ -205,6 +241,48 @@ function calculateScore(subject: QuizSubject, item: ProgressItem) {
     score,
     total: questions.length
   };
+}
+
+function sanitizeResultReview(subject: QuizSubject, chapterId: string | undefined, review: ResultReviewQuestion[] | undefined) {
+  if (!chapterId || !review?.length) {
+    return undefined;
+  }
+
+  const questionById = new Map(getChapterQuestions(subject, chapterId).map((question) => [question.id, question]));
+  const clean: ResultReviewQuestion[] = [];
+
+  for (const item of review) {
+    const question = questionById.get(item.id);
+    if (!question) {
+      continue;
+    }
+
+    const selectedOption = question.options.find((option) => option.id === item.selectedOptionId);
+    const correctOption = question.options.find((option) => option.correct);
+
+    clean.push({
+      id: question.id,
+      prompt: question.prompt,
+      selectedOptionId: selectedOption?.id,
+      correctOptionId: correctOption?.id,
+      options: question.options.map((option) => ({
+        id: option.id,
+        label: option.label,
+        text: option.text,
+        correct: option.correct
+      }))
+    });
+  }
+
+  return clean.length ? clean : undefined;
+}
+
+function clampDuration(value: number | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return undefined;
+  }
+
+  return Math.min(24 * 60 * 60_000, Math.max(0, Math.floor(value)));
 }
 
 function getXpForPercent(percent: number) {
@@ -352,7 +430,7 @@ export function sanitizeAppDataPayload(payload: unknown, session: { id: string; 
   }
 
   const results: ResultItem[] = [];
-  for (const result of parsed.data.saved.results.slice(0, MAX_RESULTS)) {
+  for (const [resultIndex, result] of parsed.data.saved.results.slice(0, MAX_RESULTS).entries()) {
     const subject = subjectById.get(result.subjectId);
     if (!subject) {
       continue;
@@ -377,13 +455,22 @@ export function sanitizeAppDataPayload(payload: unknown, session: { id: string; 
       score,
       total,
       submittedAt: clampTime(result.submittedAt),
-      pinnedAt: result.pinnedAt ? clampTime(result.pinnedAt) : undefined
+      durationMs: clampDuration(result.durationMs),
+      pinnedAt: result.pinnedAt ? clampTime(result.pinnedAt) : undefined,
+      review: resultIndex < 3 ? sanitizeResultReview(subject, chapterId, result.review) : undefined
     });
   }
 
   const starredQuestionIds = parsed.data.saved.starredQuestionIds
     .filter((questionId) => subjects.some((subject) => getAllQuestions(subject).some((question) => question.id === questionId)))
     .slice(0, MAX_STARRED);
+  const validQuestionIds = new Set(subjects.flatMap((subject) => getAllQuestions(subject).map((question) => question.id)));
+  const wrongPracticeSeen = Object.fromEntries(
+    Object.entries(parsed.data.saved.wrongPracticeSeen)
+      .filter(([questionId]) => validQuestionIds.has(questionId))
+      .slice(0, MAX_STARRED)
+      .map(([questionId, count]) => [questionId, Math.min(6, Math.max(0, Math.floor(count)))])
+  );
   const recomputedProfileProgress = recomputeProfileProgress(results);
 
   return {
@@ -393,6 +480,7 @@ export function sanitizeAppDataPayload(payload: unknown, session: { id: string; 
       items: Object.fromEntries(validItems),
       order,
       starredQuestionIds,
+      wrongPracticeSeen,
       results
     },
     profileMedia: sanitizeProfileMedia(parsed.data.profileMedia),

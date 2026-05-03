@@ -16,6 +16,7 @@ export function ContactPageShell() {
     document.documentElement.dataset.background = settings.background;
     document.documentElement.dataset.motion = settings.motion;
     document.documentElement.dataset.entryMotion = settings.entryAnimation ? "on" : "off";
+    document.documentElement.dataset.optimizedMotion = settings.optimizeMotion ? "on" : "off";
     document.documentElement.classList.toggle("dark", settings.theme === "dark");
   }, [settings]);
 

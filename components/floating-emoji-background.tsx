@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 const FLOATING_EMOJI_COUNT_EVENT = "quiz-on-tap-floating-emoji-count-change";
 const MAX_FLOATERS = 9;
 const BASE_FRAME_MS = 16.67;
+const OPTIMIZED_FRAME_MS = 33.34;
+const OPTIMIZED_COLLISION_INTERVAL = 4;
 const COLLISION_RESTITUTION = 0.92;
 const WALL_RESTITUTION = 0.98;
 
@@ -41,6 +43,10 @@ function clampCount(value: unknown) {
 
 function readStoredCount() {
   return 3;
+}
+
+function readOptimizedMotion() {
+  return document.documentElement.dataset.optimizedMotion !== "off";
 }
 
 function randomVelocity(speed: number) {
@@ -142,12 +148,29 @@ function resolveFloaterCollisions(items: Floater[]) {
 export function FloatingEmojiBackground() {
   const [count, setCount] = useState(3);
   const [floaters, setFloaters] = useState<Floater[]>([]);
+  const elementRefs = useRef(new Map<number, HTMLDivElement>());
   const floatersRef = useRef<Floater[]>([]);
   const frameRef = useRef<number | null>(null);
+  const frameCountRef = useRef(0);
   const lastFrameAtRef = useRef<number | null>(null);
   const draggedIdRef = useRef<number | null>(null);
   const mousePosRef = useRef({ x: 0, y: 0 });
   const lastMousePosRef = useRef({ x: 0, y: 0 });
+
+  function syncFloaterElement(item: Floater) {
+    const element = elementRefs.current.get(item.id);
+    if (!element) {
+      return;
+    }
+
+    const isDragged = draggedIdRef.current === item.id;
+    element.style.width = `${item.size}px`;
+    element.style.height = `${item.size}px`;
+    element.style.fontSize = `${item.size * 0.52}px`;
+    element.style.transform = `translate3d(${item.x}px, ${item.y}px, 0) rotate(${item.rotate}deg) scale(${isDragged ? 1.08 : 1})`;
+    element.style.zIndex = isDragged ? "10" : "";
+    element.textContent = item.emoji;
+  }
 
   useEffect(() => {
     setCount(readStoredCount());
@@ -177,6 +200,7 @@ export function FloatingEmojiBackground() {
     const next = Array.from({ length: count }, (_, index) => createFloater(index, width, height));
     floatersRef.current = next;
     setFloaters(next);
+    requestAnimationFrame(() => next.forEach(syncFloaterElement));
   }, [count]);
 
   useEffect(() => {
@@ -205,11 +229,25 @@ export function FloatingEmojiBackground() {
 
   useEffect(() => {
     const tick = (timestamp: number) => {
+      if (document.hidden || floatersRef.current.length === 0) {
+        lastFrameAtRef.current = timestamp;
+        frameRef.current = window.requestAnimationFrame(tick);
+        return;
+      }
+
+      const optimized = readOptimizedMotion();
+      const previousTimestamp = lastFrameAtRef.current ?? timestamp;
+
+      if (optimized && lastFrameAtRef.current !== null && timestamp - previousTimestamp < OPTIMIZED_FRAME_MS) {
+        frameRef.current = window.requestAnimationFrame(tick);
+        return;
+      }
+
       const width = window.innerWidth;
       const height = window.innerHeight;
-      const previousTimestamp = lastFrameAtRef.current ?? timestamp;
       const step = Math.min(2.2, Math.max(0.35, (timestamp - previousTimestamp) / BASE_FRAME_MS || 1));
       lastFrameAtRef.current = timestamp;
+      frameCountRef.current += 1;
 
       const mouseDeltaX = mousePosRef.current.x - lastMousePosRef.current.x;
       const mouseDeltaY = mousePosRef.current.y - lastMousePosRef.current.y;
@@ -276,13 +314,17 @@ export function FloatingEmojiBackground() {
         };
       });
 
-      floatersRef.current = resolveFloaterCollisions(moved).map((item) => ({
+      const collided = optimized && frameCountRef.current % OPTIMIZED_COLLISION_INTERVAL !== 0
+        ? moved
+        : resolveFloaterCollisions(moved);
+
+      floatersRef.current = collided.map((item) => ({
         ...item,
         x: Math.min(Math.max(0, item.x), Math.max(0, width - item.size)),
         y: Math.min(Math.max(0, item.y), Math.max(0, height - item.size))
       }));
 
-      setFloaters([...floatersRef.current]);
+      floatersRef.current.forEach(syncFloaterElement);
       frameRef.current = window.requestAnimationFrame(tick);
     };
 
@@ -300,9 +342,16 @@ export function FloatingEmojiBackground() {
         <div
           key={item.id}
           className={cn(
-            "absolute grid cursor-grab place-items-center rounded-[18px] border-2 border-foreground bg-card shadow-[5px_5px_0_0_hsl(var(--foreground))] transition-transform active:cursor-grabbing",
-            draggedIdRef.current === item.id && "z-10 scale-110 shadow-[8px_8px_0_0_hsl(var(--foreground))]"
+            "absolute grid cursor-grab place-items-center rounded-[18px] border-2 border-foreground bg-card shadow-[5px_5px_0_0_hsl(var(--foreground))] active:cursor-grabbing"
           )}
+          ref={(element) => {
+            if (element) {
+              elementRefs.current.set(item.id, element);
+              syncFloaterElement(item);
+            } else {
+              elementRefs.current.delete(item.id);
+            }
+          }}
           style={{
             width: item.size,
             height: item.size,

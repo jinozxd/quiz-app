@@ -351,6 +351,42 @@
     background-color: #bbf7d0;
   }
 
+  html[data-background="coral"] body,
+  html[data-background="coral"] .bg-background {
+    background-image:
+      radial-gradient(ellipse at 20% 84%, hsl(13 82% 64% / 0.45) 0 0.65rem, transparent 0.72rem),
+      radial-gradient(ellipse at 72% 76%, hsl(330 76% 68% / 0.38) 0 0.8rem, transparent 0.88rem),
+      radial-gradient(ellipse at 50% 100%, transparent 0 48%, hsl(190 86% 82% / 0.35) 49% 52%, transparent 53%),
+      linear-gradient(180deg, hsl(194 88% 88%), hsl(199 76% 58%) 58%, hsl(190 55% 38%));
+    background-size: 140px 110px, 180px 130px, 118px 72px, 100% 100%;
+    background-position: 0 20px, 48px 34px, 0 0, 0 0;
+    background-color: hsl(199 76% 58%);
+  }
+
+  html[data-background="mountain"] body,
+  html[data-background="mountain"] .bg-background {
+    background-image:
+      linear-gradient(135deg, transparent 0 42%, hsl(146 44% 28% / 0.52) 42% 55%, transparent 55%),
+      linear-gradient(45deg, transparent 0 44%, hsl(126 39% 35% / 0.42) 44% 58%, transparent 58%),
+      radial-gradient(ellipse at 24% 18%, hsl(0 0% 100% / 0.72) 0 1rem, transparent 1.1rem),
+      radial-gradient(ellipse at 78% 24%, hsl(0 0% 100% / 0.56) 0 1.2rem, transparent 1.32rem),
+      linear-gradient(180deg, hsl(204 70% 86%), hsl(180 42% 78%) 52%, hsl(98 45% 72%));
+    background-size: 220px 160px, 240px 180px, 190px 120px, 230px 140px, 100% 100%;
+    background-position: 0 88px, 62px 106px, 0 0, 40px 16px, 0 0;
+    background-color: hsl(204 70% 86%);
+  }
+
+  html[data-background="city"] body,
+  html[data-background="city"] .bg-background {
+    background-image:
+      linear-gradient(90deg, hsl(222 25% 24% / 0.52) 0 10%, transparent 10% 16%, hsl(12 72% 62% / 0.42) 16% 27%, transparent 27% 37%, hsl(45 84% 62% / 0.42) 37% 48%, transparent 48%),
+      repeating-linear-gradient(0deg, transparent 0 22px, hsl(0 0% 100% / 0.18) 22px 24px, transparent 24px 52px),
+      linear-gradient(180deg, hsl(211 65% 86%), hsl(220 40% 74%) 58%, hsl(230 22% 46%));
+    background-size: 210px 180px, 100% 58px, 100% 100%;
+    background-position: 0 96px, 0 96px, 0 0;
+    background-color: hsl(220 40% 74%);
+  }
+
   ::selection {
     background: hsl(var(--accent));
     color: hsl(var(--accent-foreground));
@@ -389,6 +425,11 @@
     animation: sheen 900ms ease;
   }
 
+  html[data-optimized-motion="on"] .motion-safe-card:hover::after,
+  html[data-optimized-motion="on"] .title-shine::after {
+    animation: none;
+  }
+
   .motion-pulse-border {
     animation: pulse-border 1800ms ease-in-out infinite;
   }
@@ -423,6 +464,10 @@
     animation-fill-mode: both;
     animation-timing-function: cubic-bezier(0.16, 0.86, 0.22, 1);
     will-change: transform, opacity;
+  }
+
+  html[data-optimized-motion="on"] .emoji-sweep-item {
+    filter: none;
   }
 
   .emoji-sweep-right {
@@ -787,6 +832,34 @@
       radial-gradient(circle at 80% 60%, #fca5a5 0 2px, transparent 3px),
       linear-gradient(180deg, #bbf7d0, #4ade80);
     background-size: 30px 30px, 40px 40px, 100% 100%;
+  }
+
+  .settings-background-coral::before {
+    background-image:
+      radial-gradient(ellipse at 20% 84%, hsl(13 82% 64% / 0.65) 0 0.32rem, transparent 0.38rem),
+      radial-gradient(ellipse at 76% 76%, hsl(330 76% 68% / 0.54) 0 0.38rem, transparent 0.44rem),
+      radial-gradient(ellipse at 50% 100%, transparent 0 48%, hsl(190 86% 82% / 0.4) 49% 52%, transparent 53%),
+      linear-gradient(180deg, hsl(194 88% 88%), hsl(199 76% 58%), hsl(190 55% 38%));
+    background-size: 42px 34px, 54px 38px, 44px 30px, 100% 100%;
+  }
+
+  .settings-background-mountain::before {
+    background-image:
+      linear-gradient(135deg, transparent 0 42%, hsl(146 44% 28% / 0.62) 42% 55%, transparent 55%),
+      linear-gradient(45deg, transparent 0 44%, hsl(126 39% 35% / 0.52) 44% 58%, transparent 58%),
+      radial-gradient(ellipse at 26% 18%, white 0 0.32rem, transparent 0.38rem),
+      linear-gradient(180deg, hsl(204 70% 86%), hsl(98 45% 72%));
+    background-size: 70px 52px, 76px 58px, 60px 42px, 100% 100%;
+    background-position: 0 30px, 20px 34px, 0 0, 0 0;
+  }
+
+  .settings-background-city::before {
+    background-image:
+      linear-gradient(90deg, hsl(222 25% 24% / 0.62) 0 10%, transparent 10% 16%, hsl(12 72% 62% / 0.54) 16% 27%, transparent 27% 37%, hsl(45 84% 62% / 0.54) 37% 48%, transparent 48%),
+      repeating-linear-gradient(0deg, transparent 0 8px, hsl(0 0% 100% / 0.22) 8px 9px, transparent 9px 18px),
+      linear-gradient(180deg, hsl(211 65% 86%), hsl(230 22% 46%));
+    background-size: 70px 62px, 100% 18px, 100% 100%;
+    background-position: 0 32px, 0 32px, 0 0;
   }
 
   .settings-background-chalk > span,
