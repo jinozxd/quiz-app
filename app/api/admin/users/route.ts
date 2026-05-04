@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { createHash } from "node:crypto";
 import type { AppSession } from "@/lib/app-auth";
 import { createSessionToken, getBearerToken, verifyPassword, verifySessionToken } from "@/lib/app-auth";
 import { decryptJsonForUser, encryptJsonForUser } from "@/lib/security/app-data-crypto";
@@ -16,7 +17,7 @@ const NAME_CHANGE_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000;
 const updateSchema = z.discriminatedUnion("action", [
   z.object({
     userId: z.string().uuid(),
-    action: z.enum(["ban", "unban", "delegate", "revokeDelegate", "promote", "demote"])
+    action: z.enum(["ban", "unban", "delegate", "revokeDelegate", "promote", "demote", "delete"])
   }),
   z.object({
     userId: z.string().uuid(),
@@ -63,6 +64,14 @@ function getDatabaseUpdateMessage(error: { code?: string } | null | undefined) {
 function isMissingColumnError(error: { code?: string; message?: string } | null | undefined) {
   const message = error?.message?.toLowerCase() ?? "";
   return error?.code === "PGRST204" || message.includes("could not find") || message.includes("column");
+}
+
+function getUserAgent(request: Request) {
+  return request.headers.get("user-agent")?.slice(0, 500) ?? "";
+}
+
+function getDeviceKey(ip: string, userAgent: string) {
+  return createHash("sha256").update(`${ip}:${userAgent}`).digest("hex").slice(0, 32);
 }
 
 async function requireAdminAccess(session: AppSession, request: Request, write = false) {
@@ -163,6 +172,7 @@ export async function GET(request: Request) {
   }
 
   const canSeeAccountDetails = admin.user.role === "admin";
+  const currentDeviceKey = getDeviceKey(ip, getUserAgent(request));
   const dataByUser = new Map((userData ?? []).map((item) => [item.user_id, item]));
   const eventsByUser = new Map<string, NonNullable<typeof loginEvents>>();
   for (const event of loginEventsError ? [] : loginEvents ?? []) {
@@ -197,7 +207,8 @@ export async function GET(request: Request) {
               ip: event.ip,
               userAgent: event.user_agent,
               deviceKey: event.device_key,
-              createdAt: event.created_at
+              createdAt: event.created_at,
+              currentDevice: user.id === session.id && event.device_key === currentDeviceKey
             }))
           : [],
         dataUpdatedAt: data?.updated_at,
@@ -227,8 +238,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: admin.error }, { status: admin.status });
   }
 
-  if (parsed.data.userId === session.id && ["ban", "demote"].includes(parsed.data.action)) {
-    return NextResponse.json({ error: "Không thể tự khóa hoặc hạ quyền chính mình." }, { status: 400 });
+  if (parsed.data.userId === session.id && ["ban", "demote", "delete"].includes(parsed.data.action)) {
+    return NextResponse.json({ error: "Không thể tự khóa, hạ quyền hoặc xoá chính mình." }, { status: 400 });
   }
 
   if (parsed.data.action === "editProfile") {
@@ -331,13 +342,42 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  if (parsed.data.action === "delete") {
+    const { data: targetUser, error: targetError } = await admin.service
+      .from("app_users")
+      .select("id,role")
+      .eq("id", parsed.data.userId)
+      .maybeSingle();
+
+    if (targetError || !targetUser) {
+      return NextResponse.json({ error: "Không tìm thấy tài khoản cần xoá." }, { status: 404 });
+    }
+
+    if (targetUser.role === "admin") {
+      return NextResponse.json({ error: "Tài khoản admin không được phép xoá." }, { status: 400 });
+    }
+
+    const { error } = await admin.service
+      .from("app_users")
+      .delete()
+      .eq("id", parsed.data.userId)
+      .neq("role", "admin");
+
+    if (error) {
+      return NextResponse.json({ error: "Không xoá được tài khoản." }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
+  }
+
   const patch = {
     ban: { is_banned: true },
     unban: { is_banned: false },
     delegate: { delegated_at: new Date().toISOString(), delegated_by: session.id },
     revokeDelegate: { delegated_at: null, delegated_by: null },
     promote: { role: "admin" },
-    demote: { role: "member", delegated_at: null, delegated_by: null }
+    demote: { role: "member", delegated_at: null, delegated_by: null },
+    delete: {}
   }[parsed.data.action];
 
   const { error } = await admin.service

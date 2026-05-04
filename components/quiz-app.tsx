@@ -19,8 +19,10 @@ import {
   List,
   LogIn,
   LogOut,
+  Minus,
   MoreVertical,
   Pin,
+  Plus,
   RefreshCw,
   RotateCcw,
   Settings,
@@ -88,6 +90,7 @@ type AdminUserRecord = {
     userAgent?: string;
     deviceKey?: string;
     createdAt?: string;
+    currentDevice?: boolean;
   }>;
   dataUpdatedAt?: string;
   saved: SavedProgress;
@@ -3090,7 +3093,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     setAdminUsers(data.users);
   }
 
-  async function updateAdminUser(userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote") {
+  async function updateAdminUser(userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote" | "delete") {
     if (!auth.sessionToken || currentUser?.role !== "admin") {
       setAdminMessage("Chỉ admin gốc mới được đổi quyền hoặc khóa tài khoản.");
       return;
@@ -3110,6 +3113,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     if (!response.ok) {
       setAdminMessage(data.error ?? "Không cập nhật được tài khoản.");
       return;
+    }
+
+    if (action === "delete") {
+      setAdminUsers((current) => current.filter((user) => user.id !== userId));
     }
 
     await loadAdminUsers();
@@ -3136,6 +3143,24 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       setAdminMessage(resData.error ?? "Không tinh chỉnh được tài khoản.");
       return;
     }
+
+    setAdminUsers((current) =>
+      current.map((user) => {
+        if (user.id !== userId) return user;
+
+        return {
+          ...user,
+          name: data.name ?? user.name,
+          email: data.email ?? user.email,
+          profileProgress: {
+            ...user.profileProgress,
+            level: data.level ?? user.profileProgress.level,
+            xp: data.xp ?? user.profileProgress.xp,
+            unlockedAchievementIds: data.unlockedAchievementIds ?? user.profileProgress.unlockedAchievementIds
+          }
+        };
+      })
+    );
 
     if (userId === currentUser.id && resData.user && resData.token) {
       const previousName = currentUser.name;
@@ -7065,17 +7090,35 @@ function AdminProfileEditForm({
     setUnlocked(new Set(user.profileProgress.unlockedAchievementIds));
   }, [user]);
 
+  async function saveProfile(overrides: { level?: number; xp?: number } = {}) {
+    const nextLevel = Math.min(9999, Math.max(1, Math.floor(overrides.level ?? level)));
+    const nextXp = Math.min(100, Math.max(0, Math.floor(overrides.xp ?? xp)));
+    const nextUnlocked = Array.from(unlocked);
+
+    setLevel(nextLevel);
+    setXp(nextXp);
+    setSaving(true);
+    try {
+      await onSave({
+        name: name !== user.name ? name : undefined,
+        email: email !== user.email ? email : undefined,
+        level: nextLevel,
+        xp: nextXp,
+        unlockedAchievementIds: nextUnlocked
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSaving(true);
-    await onSave({
-      name: name !== user.name ? name : undefined,
-      email: email !== user.email ? email : undefined,
-      level: level !== user.profileProgress.level ? level : undefined,
-      xp: xp !== user.profileProgress.xp ? xp : undefined,
-      unlockedAchievementIds: Array.from(unlocked)
-    });
-    setSaving(false);
+    await saveProfile();
+  }
+
+  async function adjustLevel(delta: number) {
+    if (saving) return;
+    await saveProfile({ level: level + delta });
   }
 
   function toggleAchievement(id: string) {
@@ -7101,7 +7144,15 @@ function AdminProfileEditForm({
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1">
             <label className="text-xs font-black">Level</label>
-            <input type="number" className="rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={level} onChange={e => setLevel(Number(e.target.value))} required min={1} max={9999} />
+            <div className="flex items-center gap-2">
+              <Button type="button" size="icon" variant="outline" className="size-9 shrink-0" disabled={saving || level <= 1} onClick={() => void adjustLevel(-1)} title="Giảm 1 level">
+                <Minus className="size-4" aria-hidden />
+              </Button>
+              <input type="number" className="min-w-0 flex-1 rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={level} onChange={e => setLevel(Number(e.target.value))} required min={1} max={9999} />
+              <Button type="button" size="icon" variant="outline" className="size-9 shrink-0" disabled={saving || level >= 9999} onClick={() => void adjustLevel(1)} title="Tăng 1 level">
+                <Plus className="size-4" aria-hidden />
+              </Button>
+            </div>
           </div>
           <div className="grid gap-1">
             <label className="text-xs font-black">% XP</label>
@@ -7147,7 +7198,7 @@ function AdminAccountsPanel({
   allAchievements: Achievement[];
   onEditProfile: (userId: string, data: { name?: string; email?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
   onSelectUser: (userId: string) => void;
-  onUpdateUser: (userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote") => void;
+  onUpdateUser: (userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote" | "delete") => void;
   onRefresh: () => void;
   loading: boolean;
   selectedPulse?: ReturnType<typeof getAdminUserPulse>;
@@ -7242,6 +7293,7 @@ function AdminAccountsPanel({
                   <p>IP: <span className="text-[#202226]">{selectedUser.lastLoginIp ?? "Chưa có"}</span></p>
                   <p>Browser: <span className="text-[#202226]">{getBrowserName(selectedUser.lastUserAgent)}</span></p>
                   <p>Nền tảng: <span className="text-[#202226]">{getPlatformName(selectedUser.lastUserAgent)}</span></p>
+                  <p>Thiết bị: <span className="text-[#202226]">{selectedUser.loginEvents[0]?.currentDevice ? "Máy này" : selectedUser.lastUserAgent ? "Máy khác" : "Chưa có"}</span></p>
                   <p>Lần cuối: <span className="text-[#202226]">{formatAdminDate(selectedUser.lastLoginAt)}</span></p>
                   <p className="break-words">User agent: <span className="text-[#202226]">{selectedUser.lastUserAgent ?? "Chưa có"}</span></p>
                 </div>
@@ -7277,6 +7329,21 @@ function AdminAccountsPanel({
               <Button size="sm" variant="outline" onClick={() => onUpdateUser(selectedUser.id, selectedUser.role === "admin" ? "demote" : "promote")}>
                 {selectedUser.role === "admin" ? "Hạ admin" : "Nâng admin"}
               </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={selectedUser.role === "admin"}
+                title={selectedUser.role === "admin" ? "Tài khoản admin không được xoá" : "Xoá tài khoản user"}
+                onClick={() => {
+                  if (selectedUser.role === "admin") return;
+                  if (window.confirm(`Xoá vĩnh viễn tài khoản ${selectedUser.name}?`)) {
+                    onUpdateUser(selectedUser.id, "delete");
+                  }
+                }}
+              >
+                <Trash2 className="mr-2 size-4" aria-hidden />
+                Xoá tài khoản
+              </Button>
             </div>
           </div>
 
@@ -7293,7 +7360,10 @@ function AdminAccountsPanel({
                 .map((event, index) => (
                   <div key={`${event.createdAt}-${index}`} className="rounded-xl border-2 border-foreground bg-background p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-black">{getBrowserName(event.userAgent)}</p>
+                      <p className="text-sm font-black">
+                        {getBrowserName(event.userAgent)}
+                        {event.currentDevice ? <span className="ml-2 rounded-full bg-[#dfe8e1] px-2 py-0.5 text-[0.65rem] text-[#202226]">Máy này</span> : null}
+                      </p>
                       <span className="text-xs font-black text-muted-foreground">{formatAdminDate(event.createdAt)}</span>
                     </div>
                     <p className="mt-1 text-xs font-black text-muted-foreground">{getPlatformName(event.userAgent)} · IP {event.ip ?? "chưa có"} · device {event.deviceKey ?? "chưa có"}</p>
@@ -7329,7 +7399,7 @@ function AdminControlPanel({
   saved: SavedProgress;
   subjects: QuizSubject[];
   onRefresh: () => void;
-  onUpdateUser: (userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote") => void;
+  onUpdateUser: (userId: string, action: "ban" | "unban" | "delegate" | "revokeDelegate" | "promote" | "demote" | "delete") => void;
   onEditProfile: (userId: string, data: { name?: string; email?: string; level?: number; xp?: number; unlockedAchievementIds?: string[] }) => Promise<void>;
 }) {
   const [adminView, setAdminView] = useState<"overview" | "accounts" | "profile">("overview");
@@ -7839,6 +7909,7 @@ function AdminControlPanel({
                       <p>IP gần nhất: <span className="text-[#202226]">{selectedUser.lastLoginIp ?? "Chưa có"}</span></p>
                       <p>Browser: <span className="text-[#202226]">{getBrowserName(selectedUser.lastUserAgent)}</span></p>
                       <p>Nền tảng: <span className="text-[#202226]">{getPlatformName(selectedUser.lastUserAgent)}</span></p>
+                      <p>Thiết bị gần nhất: <span className="text-[#202226]">{selectedUser.loginEvents[0]?.currentDevice ? "Máy này" : selectedUser.lastUserAgent ? "Máy khác" : "Chưa có"}</span></p>
                       <p>Số lần đăng nhập: <span className="text-[#202226]">{selectedUser.loginCount}</span></p>
                       <p>Thiết bị ghi nhận: <span className="text-[#202226]">{selectedUser.deviceCount}</span></p>
                       <p>Lần cuối: <span className="text-[#202226]">{formatAdminDate(selectedUser.lastLoginAt)}</span></p>
@@ -7870,7 +7941,10 @@ function AdminControlPanel({
                     .map((event, index) => (
                       <div key={`${event.createdAt}-${index}`} className="rounded-xl border-2 border-[#202226] bg-[#fffaf3] p-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="text-sm font-black">{getBrowserName(event.userAgent)}</p>
+                          <p className="text-sm font-black">
+                            {getBrowserName(event.userAgent)}
+                            {event.currentDevice ? <span className="ml-2 rounded-full bg-[#dfe8e1] px-2 py-0.5 text-[0.65rem] text-[#202226]">Máy này</span> : null}
+                          </p>
                           <span className="text-xs font-black text-[#696d66]">{formatAdminDate(event.createdAt)}</span>
                         </div>
                         <p className="mt-1 text-xs font-black text-[#696d66]">{getPlatformName(event.userAgent)} · IP {event.ip ?? "chưa có"}</p>
@@ -7890,6 +7964,21 @@ function AdminControlPanel({
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => onUpdateUser(selectedUser.id, selectedUser.role === "admin" ? "demote" : "promote")}>
                     {selectedUser.role === "admin" ? "Hạ admin" : "Nâng admin"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={selectedUser.role === "admin"}
+                    title={selectedUser.role === "admin" ? "Tài khoản admin không được xoá" : "Xoá tài khoản user"}
+                    onClick={() => {
+                      if (selectedUser.role === "admin") return;
+                      if (window.confirm(`Xoá vĩnh viễn tài khoản ${selectedUser.name}?`)) {
+                        onUpdateUser(selectedUser.id, "delete");
+                      }
+                    }}
+                  >
+                    <Trash2 className="mr-2 size-4" aria-hidden />
+                    Xoá tài khoản
                   </Button>
                 </div>
               )}
