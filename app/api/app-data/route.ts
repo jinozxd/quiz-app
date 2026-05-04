@@ -4,6 +4,7 @@ import { getBearerToken, verifySessionToken } from "@/lib/app-auth";
 import { decryptJsonForUser, encryptJsonForUser, isEncryptedJsonEnvelope } from "@/lib/security/app-data-crypto";
 import { sanitizeAppDataPayload } from "@/lib/security/app-data-guard";
 import { getIp, rateLimit } from "@/lib/security/rate-limit";
+import { recordAppSessionActivity } from "@/lib/security/session-activity";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -18,7 +19,7 @@ function getSession(request: Request) {
   return verifySessionToken(getBearerToken(request));
 }
 
-async function requireLiveUser(session: AppSession) {
+async function requireLiveUser(session: AppSession, request: Request) {
   const service = createServiceClient();
   if (!service) {
     return { error: "Thiếu cấu hình database server.", status: 500 as const };
@@ -52,6 +53,8 @@ async function requireLiveUser(session: AppSession) {
   if (passwordChangedAt && passwordChangedAt > session.iat) {
     return { error: "Phiên đăng nhập đã cũ, vui lòng đăng nhập lại.", status: 401 as const };
   }
+
+  await recordAppSessionActivity(service, session.id, request);
 
   return { service };
 }
@@ -87,7 +90,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Phiên đăng nhập không hợp lệ." }, { status: 401 });
   }
 
-  const liveUser = await requireLiveUser(session);
+  const liveUser = await requireLiveUser(session, request);
   if ("error" in liveUser) {
     return NextResponse.json({ error: liveUser.error }, { status: liveUser.status });
   }
@@ -158,7 +161,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Dữ liệu học tập không hợp lệ." }, { status: 400 });
   }
 
-  const liveUser = await requireLiveUser(session);
+  const liveUser = await requireLiveUser(session, request);
   if ("error" in liveUser) {
     return NextResponse.json({ error: liveUser.error }, { status: liveUser.status });
   }

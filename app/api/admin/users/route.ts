@@ -4,6 +4,7 @@ import type { AppSession } from "@/lib/app-auth";
 import { createSessionToken, getBearerToken, verifyPassword, verifySessionToken } from "@/lib/app-auth";
 import { decryptJsonForUser, encryptJsonForUser } from "@/lib/security/app-data-crypto";
 import { getIp, rateLimit } from "@/lib/security/rate-limit";
+import { recordAppSessionActivity } from "@/lib/security/session-activity";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -64,7 +65,7 @@ function isMissingColumnError(error: { code?: string; message?: string } | null 
   return error?.code === "PGRST204" || message.includes("could not find") || message.includes("column");
 }
 
-async function requireAdminAccess(session: AppSession, write = false) {
+async function requireAdminAccess(session: AppSession, request: Request, write = false) {
   const service = createServiceClient();
   if (!service) {
     return { error: "Thiếu cấu hình database server.", status: 500 as const };
@@ -101,6 +102,8 @@ async function requireAdminAccess(session: AppSession, write = false) {
     return { error: "Bạn không có quyền dùng khu vực kiểm soát.", status: 403 as const };
   }
 
+  await recordAppSessionActivity(service, session.id, request);
+
   return { service, user };
 }
 
@@ -116,7 +119,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Phiên đăng nhập không hợp lệ." }, { status: 401 });
   }
 
-  const admin = await requireAdminAccess(session);
+  const admin = await requireAdminAccess(session, request);
   if ("error" in admin) {
     return NextResponse.json({ error: admin.error }, { status: admin.status });
   }
@@ -172,7 +175,7 @@ export async function GET(request: Request) {
     users: (users ?? []).map((user) => {
       const data = dataByUser.get(user.id);
       const events = eventsByUser.get(user.id) ?? [];
-      const deviceCount = new Set(events.map((event) => event.device_key).filter(Boolean)).size;
+      const deviceCount = new Set(events.map((event) => event.device_key).filter(Boolean)).size || (user.last_user_agent || user.last_login_ip ? 1 : 0);
 
       return {
         id: user.id,
@@ -219,7 +222,7 @@ export async function PATCH(request: Request) {
   }
 
   const isSelf = parsed.data.userId === session.id;
-  const admin = await requireAdminAccess(session, !isSelf);
+  const admin = await requireAdminAccess(session, request, !isSelf);
   if ("error" in admin) {
     return NextResponse.json({ error: admin.error }, { status: admin.status });
   }

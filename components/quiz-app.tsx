@@ -2736,7 +2736,13 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function scrollToQuizTop() {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const snapToTop = () => window.scrollTo({ top: 0, behavior: "auto" });
+    snapToTop();
+    window.requestAnimationFrame(() => {
+      snapToTop();
+      window.requestAnimationFrame(snapToTop);
+    });
+    window.setTimeout(snapToTop, 90);
     setQuizNavOpen(false);
   }
 
@@ -3333,6 +3339,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                         if (requireLogin()) {
                           return;
                         }
+                        scrollToQuizTop();
                         setState({ subject, answers: {}, submitted: false });
                       }}
                     />
@@ -3510,6 +3517,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                         if (requireLogin()) {
                           return;
                         }
+                        scrollToQuizTop();
                         setState({
                           subject: state.subject,
                           chapter,
@@ -3548,6 +3556,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                                   if (requireLogin()) {
                                     return;
                                   }
+                                  scrollToQuizTop();
                                   setState({
                                     subject: state.subject,
                                     chapter: part,
@@ -8551,7 +8560,7 @@ function TopNav({
           HUIT
         </div>
 
-        <div className="flex flex-col items-stretch gap-3 pr-0 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 xl:pr-28">
+        <div className="flex flex-col items-stretch gap-3 pr-0 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-4 xl:pr-28">
           <button type="button" className="flex items-center gap-3 text-left" onClick={onHome}>
             <span className="grid size-12 place-items-center rounded-xl border-2 border-foreground bg-accent shadow-[4px_4px_0_0_hsl(var(--foreground))]">
               <BookOpenCheck className="size-7 stroke-[3]" aria-hidden />
@@ -8562,7 +8571,7 @@ function TopNav({
             </span>
           </button>
 
-          <nav className="flex flex-wrap items-center gap-3 text-sm font-black sm:gap-4">
+          <nav className="flex flex-wrap items-center gap-3 text-sm font-black md:gap-4">
             <button
               type="button"
               className="underline decoration-4 underline-offset-4 hover:decoration-accent sm:underline-offset-8"
@@ -8583,18 +8592,18 @@ function TopNav({
               Tóm tắt
             </Link>
             {(user?.role === "admin" || user?.delegated) && (
-              <Button className="w-full sm:w-auto" type="button" size="sm" variant="secondary" onClick={onAdmin}>
+              <Button className="w-full md:w-auto" type="button" size="sm" variant="secondary" onClick={onAdmin}>
                 <ShieldCheck className="mr-2 size-4" aria-hidden />
                 Kiểm soát
               </Button>
             )}
             {user ? (
-              <Button className="w-full sm:w-auto" type="button" size="sm" variant="outline" onClick={onLogout}>
+              <Button className="w-full md:w-auto" type="button" size="sm" variant="outline" onClick={onLogout}>
                 <LogOut className="mr-2 size-4" aria-hidden />
                 Đăng xuất
               </Button>
             ) : (
-              <Button className="w-full sm:w-auto" type="button" size="sm" onClick={onAuth}>
+              <Button className="w-full md:w-auto" type="button" size="sm" onClick={onAuth}>
                 <LogIn className="mr-2 size-4" aria-hidden />
                 Đăng nhập
               </Button>
