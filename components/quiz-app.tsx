@@ -1189,6 +1189,64 @@ function addRecentResult(results: ResultItem[] | undefined, result: ResultItem) 
   return [result, ...(results ?? [])].slice(0, 100);
 }
 
+function mergeSavedProgress(current: SavedProgress, incoming: SavedProgress): SavedProgress {
+  const items = { ...current.items };
+  for (const [id, incomingItem] of Object.entries(incoming.items ?? {})) {
+    const currentItem = items[id];
+    if (!currentItem || incomingItem.updatedAt >= currentItem.updatedAt) {
+      items[id] = incomingItem;
+    }
+  }
+
+  const order = Array.from(new Set([
+    ...(incoming.order ?? []),
+    ...current.order,
+    ...Object.keys(items)
+  ])).filter((id) => Boolean(items[id]));
+
+  const resultById = new Map<string, ResultItem>();
+  for (const result of [...(current.results ?? []), ...(incoming.results ?? [])]) {
+    const existing = resultById.get(result.id);
+    if (!existing || result.submittedAt >= existing.submittedAt) {
+      resultById.set(result.id, result);
+    }
+  }
+
+  const starredQuestionIds = Array.from(new Set([
+    ...(current.starredQuestionIds ?? []),
+    ...(incoming.starredQuestionIds ?? [])
+  ]));
+
+  const wrongPracticeSeen = { ...(incoming.wrongPracticeSeen ?? {}) };
+  for (const [questionId, count] of Object.entries(current.wrongPracticeSeen ?? {})) {
+    wrongPracticeSeen[questionId] = Math.max(wrongPracticeSeen[questionId] ?? 0, count);
+  }
+
+  const currentActiveId = current.activeSubjectId && current.activeChapterId
+    ? progressId(current.activeSubjectId, current.activeChapterId)
+    : undefined;
+  const incomingActiveId = incoming.activeSubjectId && incoming.activeChapterId
+    ? progressId(incoming.activeSubjectId, incoming.activeChapterId)
+    : undefined;
+  const currentActive = currentActiveId ? items[currentActiveId] : undefined;
+  const incomingActive = incomingActiveId ? items[incomingActiveId] : undefined;
+  const active = currentActive && incomingActive
+    ? (currentActive.updatedAt >= incomingActive.updatedAt ? currentActive : incomingActive)
+    : currentActive ?? incomingActive;
+
+  return {
+    activeSubjectId: active?.subjectId,
+    activeChapterId: active?.chapterId,
+    items,
+    order,
+    starredQuestionIds,
+    wrongPracticeSeen,
+    results: Array.from(resultById.values())
+      .sort((a, b) => b.submittedAt - a.submittedAt)
+      .slice(0, 100)
+  };
+}
+
 function getWeekRange(now = Date.now()) {
   const current = new Date(now);
   current.setHours(0, 0, 0, 0);
@@ -1824,7 +1882,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const transitionKeyRef = useRef<string | null>(null);
   const survivalResultSavedRef = useRef<string | null>(null);
   const achievementToastReadyRef = useRef(false);
-  const cloudDataLoadedRef = useRef(false);
+  const cloudDataLoadedTokenRef = useRef<string | null>(null);
   const localDataHydratedRef = useRef(false);
   const pomodoroPausedElapsedMsRef = useRef(0);
   const wasPomodoroRunningRef = useRef(false);
@@ -1959,10 +2017,11 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   useEffect(() => {
     const token = auth.sessionToken;
     if (!token) {
-      cloudDataLoadedRef.current = false;
+      cloudDataLoadedTokenRef.current = null;
       return;
     }
 
+    cloudDataLoadedTokenRef.current = null;
     let cancelled = false;
     fetch("/api/app-data", {
       headers: { Authorization: `Bearer ${token}` }
@@ -1982,8 +2041,8 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           return;
         }
 
-        if (data.saved && hasSavedContent(data.saved)) {
-          setSaved({
+        if (data.saved) {
+          const incomingSaved = {
             ...emptySaved(),
             ...data.saved,
             items: data.saved.items ?? {},
@@ -1991,7 +2050,11 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             starredQuestionIds: data.saved.starredQuestionIds ?? [],
             wrongPracticeSeen: data.saved.wrongPracticeSeen ?? {},
             results: data.saved.results ?? []
-          });
+          };
+
+          if (hasSavedContent(incomingSaved)) {
+            setSaved((current) => mergeSavedProgress(current, incomingSaved));
+          }
         }
         if (data.profileProgress) {
           const incomingProfile = normalizeProfileProgress(data.profileProgress);
@@ -2003,10 +2066,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             ...data.profileMedia
           }));
         }
-        cloudDataLoadedRef.current = true;
+        cloudDataLoadedTokenRef.current = token;
       })
       .catch(() => {
-        cloudDataLoadedRef.current = true;
+        cloudDataLoadedTokenRef.current = token;
       });
 
     return () => {
@@ -2016,7 +2079,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
 
   useEffect(() => {
     const token = auth.sessionToken;
-    if (!token || !cloudDataLoadedRef.current) {
+    if (!token || cloudDataLoadedTokenRef.current !== token || !localDataHydratedRef.current) {
       return;
     }
 
@@ -2907,7 +2970,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     authRef.current = normalizeAuthState();
     profileMediaRef.current = {};
     profileProgressRef.current = emptyProfile;
-    cloudDataLoadedRef.current = false;
+    cloudDataLoadedTokenRef.current = null;
     setSaved(emptyProgress);
     setAuth(normalizeAuthState());
     setProfileMedia({});
@@ -4522,7 +4585,7 @@ function RecentResults({
             <p className="mt-2 text-sm text-muted-foreground">Sau khi nộp bài, kết quả sẽ xuất hiện ở đây.</p>
           </div>
         ) : (
-          <div className="p-1 pb-3 pr-3">
+          <div className="overflow-hidden p-1 pb-3 pr-3">
             <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {sortedResults.map((result, index) => {
                 const subject = getSubject(subjects, result.subjectId);
@@ -4570,9 +4633,9 @@ function RecentResults({
                     <div className={cn("result-mini-stamp", isLatest && "result-mini-stamp-latest")} aria-hidden>
                       {mood.emoji}
                     </div>
-                    <div className="result-card-header relative z-10 flex items-center justify-between gap-2">
-                      <p className="text-sm font-black text-muted-foreground">{subject?.title ?? "Quiz"}</p>
-                      <div className="flex items-center gap-2">
+                    <div className="result-card-header relative z-10 flex min-w-0 items-center justify-between gap-2">
+                      <p className="min-w-0 truncate pr-1 text-sm font-black text-muted-foreground">{subject?.title ?? "Quiz"}</p>
+                      <div className="flex shrink-0 items-center gap-2">
                         {result.pinnedAt && <Badge variant="outline">Ghim</Badge>}
                         {isTop3 && durationLabel && (
                           <Badge variant="secondary" className="result-duration-badge">
@@ -4584,7 +4647,7 @@ function RecentResults({
                     <h3 className={cn("result-card-title relative z-10 line-clamp-2 font-black", isLatest ? "text-xl" : isTop3 ? "text-lg" : "text-lg")}>{result.chapterTitle}</h3>
                     <p className={cn("result-percent-effect result-card-percent relative z-10 font-black", percentEffect, isLatest ? "text-6xl" : isTop3 ? "text-5xl" : "text-5xl")}>{percent}%</p>
                     <div className="result-card-badges relative z-10 flex flex-wrap gap-2">
-                      <p className="rounded-full border-2 border-foreground bg-card px-3 py-1 text-sm font-black">
+                      <p className="max-w-full rounded-full border-2 border-foreground bg-card px-3 py-1 text-sm font-black leading-tight">
                         {result.score}/{result.total} câu đúng
                       </p>
                       <p className="result-mood-chip">
@@ -4604,7 +4667,7 @@ function RecentResults({
                     </p>
                     {canReview && (
                       <Button
-                        className="relative z-10 mt-3 w-full"
+                        className="relative z-10 mt-3 w-full min-w-0"
                         size="sm"
                         variant="outline"
                         onPointerDown={(event) => event.stopPropagation()}

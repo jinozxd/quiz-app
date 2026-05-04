@@ -59,17 +59,32 @@ function getDatabaseUpdateMessage(error: { code?: string } | null | undefined) {
   return { error: "Không cập nhật được thông tin tài khoản.", status: 500 as const };
 }
 
+function isMissingColumnError(error: { code?: string; message?: string } | null | undefined) {
+  const message = error?.message?.toLowerCase() ?? "";
+  return error?.code === "PGRST204" || message.includes("could not find") || message.includes("column");
+}
+
 async function requireAdminAccess(session: AppSession, write = false) {
   const service = createServiceClient();
   if (!service) {
     return { error: "Thiếu cấu hình database server.", status: 500 as const };
   }
 
-  const { data: user, error } = await service
+  let { data: user, error } = await service
     .from("app_users")
     .select("id,role,delegated_at,is_banned,password_changed_at,name_changed_at,password_hash,password_salt")
     .eq("id", session.id)
     .maybeSingle();
+
+  if (error && isMissingColumnError(error)) {
+    const fallback = await service
+      .from("app_users")
+      .select("id,role,password_changed_at,password_hash,password_salt")
+      .eq("id", session.id)
+      .maybeSingle();
+    user = fallback.data ? { ...fallback.data, delegated_at: null, is_banned: false, name_changed_at: null } : null;
+    error = fallback.error;
+  }
 
   if (error || !user || user.is_banned) {
     return { error: "Phiên quản trị không còn hợp lệ.", status: 401 as const };
@@ -106,11 +121,30 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: admin.error }, { status: admin.status });
   }
 
-  const [{ data: users, error: usersError }, { data: userData, error: dataError }, { data: loginEvents }] = await Promise.all([
-    admin.service
+  let { data: users, error: usersError } = await admin.service
+    .from("app_users")
+    .select("id,email,name,role,is_banned,delegated_at,created_at,updated_at,password_changed_at,name_changed_at,last_login_at,last_login_ip,last_user_agent,login_count")
+    .order("created_at", { ascending: false });
+
+  if (usersError && isMissingColumnError(usersError)) {
+    const fallback = await admin.service
       .from("app_users")
-      .select("id,email,name,role,is_banned,delegated_at,created_at,updated_at,password_changed_at,name_changed_at,last_login_at,last_login_ip,last_user_agent,login_count")
-      .order("created_at", { ascending: false }),
+      .select("id,email,name,role,created_at,updated_at,password_changed_at")
+      .order("created_at", { ascending: false });
+    users = (fallback.data ?? []).map((user) => ({
+      ...user,
+      is_banned: false,
+      delegated_at: null,
+      name_changed_at: null,
+      last_login_at: null,
+      last_login_ip: null,
+      last_user_agent: null,
+      login_count: 0
+    }));
+    usersError = fallback.error;
+  }
+
+  const [{ data: userData, error: dataError }, { data: loginEvents, error: loginEventsError }] = await Promise.all([
     admin.service
       .from("app_user_data")
       .select("user_id,saved,profile_progress,updated_at"),
@@ -128,7 +162,7 @@ export async function GET(request: Request) {
   const canSeeAccountDetails = admin.user.role === "admin";
   const dataByUser = new Map((userData ?? []).map((item) => [item.user_id, item]));
   const eventsByUser = new Map<string, NonNullable<typeof loginEvents>>();
-  for (const event of loginEvents ?? []) {
+  for (const event of loginEventsError ? [] : loginEvents ?? []) {
     const list = eventsByUser.get(event.user_id) ?? [];
     list.push(event);
     eventsByUser.set(event.user_id, list);
