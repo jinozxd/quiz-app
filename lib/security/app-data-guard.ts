@@ -3,7 +3,7 @@ import subjectsRaw from "@/data/subjects.json";
 import type { QuizChapter, QuizSubject } from "@/lib/quiz-types";
 
 const MAX_ITEMS = 200;
-const MAX_RESULTS = 30;
+const MAX_RESULTS = 100;
 const MAX_STARRED = 1000;
 const MAX_PROFILE_MEDIA_USERS = 25;
 const MAX_DATA_AGE_MS = 1000 * 60 * 60 * 24 * 365 * 3;
@@ -457,7 +457,7 @@ export function sanitizeAppDataPayload(payload: unknown, session: { id: string; 
       submittedAt: clampTime(result.submittedAt),
       durationMs: clampDuration(result.durationMs),
       pinnedAt: result.pinnedAt ? clampTime(result.pinnedAt) : undefined,
-      review: resultIndex < 3 ? sanitizeResultReview(subject, chapterId, result.review) : undefined
+      review: sanitizeResultReview(subject, chapterId, result.review)
     });
   }
 

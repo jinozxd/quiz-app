@@ -92,6 +92,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Tên này được giữ riêng cho quản trị, vui lòng chọn tên khác." }, { status: 400 });
     }
 
+    const { count: userCount } = await service
+      .from("app_users")
+      .select("*", { count: "exact", head: true });
+
+    const role = (userCount ?? 0) === 0 ? "admin" : "member";
+
     const { hash, salt } = await hashPassword(parsed.data.password);
     const { data, error } = await service
       .from("app_users")
@@ -100,7 +106,7 @@ export async function POST(request: Request) {
         name: parsed.data.name,
         password_hash: hash,
         password_salt: salt,
-        role: "member"
+        role
       })
       .select("id,name,role")
       .single();

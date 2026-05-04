@@ -80,7 +80,7 @@ async function requireAdminAccess(session: AppSession, write = false) {
     return { error: "Phiên đăng nhập đã cũ, vui lòng đăng nhập lại.", status: 401 as const };
   }
 
-  const canRead = user.role === "admin" || Boolean(user.delegated_at) || session.id === user.id;
+  const canRead = user.role === "admin" || Boolean(user.delegated_at);
   const canWrite = user.role === "admin";
   if ((write && !canWrite) || (!write && !canRead)) {
     return { error: "Bạn không có quyền dùng khu vực kiểm soát.", status: 403 as const };
