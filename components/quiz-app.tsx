@@ -1186,9 +1186,7 @@ function makeResultReview(chapter: QuizChapter, answers: Record<string, string>)
 }
 
 function addRecentResult(results: ResultItem[] | undefined, result: ResultItem) {
-  return [result, ...(results ?? [])]
-    .slice(0, 30)
-    .map((item, index) => index < 3 ? item : { ...item, review: undefined });
+  return [result, ...(results ?? [])].slice(0, 100);
 }
 
 function getWeekRange(now = Date.now()) {
@@ -2392,6 +2390,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       return;
     }
     setItemActionId(null);
+    scrollToQuizTop();
     setState({
       subject,
       chapter,
@@ -2409,6 +2408,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     const id = progressId(subject.id, shuffled.id);
     const item = saved.items[id];
 
+    scrollToQuizTop();
     setState({
       subject,
       chapter: item ? reorderChapter(shuffled, item.questionOrder, item.optionOrders) : shuffled,
@@ -2422,6 +2422,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       return;
     }
 
+    scrollToQuizTop();
     setState({
       subject,
       chapter: makeExamChapter(subject),
@@ -2435,6 +2436,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       return;
     }
 
+    scrollToQuizTop();
     setState({
       subject,
       chapter: makeAllQuestionsChapter(subject),
@@ -2448,6 +2450,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       return;
     }
 
+    scrollToQuizTop();
     setState({
       subject,
       chapter: makePracticeChapter(subject, saved.starredQuestionIds ?? []),
@@ -2474,6 +2477,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       });
       return { ...current, wrongPracticeSeen: seen };
     });
+    scrollToQuizTop();
     setState({
       subject,
       chapter,
@@ -2488,6 +2492,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     }
 
     setSurvivalConfigOpen(false);
+    scrollToQuizTop();
     setState({
       subject,
       chapter: makeSurvivalChapter(subject, config),
@@ -2509,6 +2514,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     }
 
     setMatchingConfigOpen(false);
+    scrollToQuizTop();
     setState({
       subject,
       chapter: makeMatchingChapter(subject, count),
@@ -4527,7 +4533,7 @@ function RecentResults({
                 const percentEffect = getResultPercentEffect(percent);
                 const isLatest = index === 0;
                 const isTop3 = index < 3;
-                const canReview = index < 3 && Boolean(result.review?.length);
+                const canReview = Boolean(result.review?.length);
                 const rankEmoji = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
                 const durationLabel = result.durationMs
                   ? result.durationMs >= 60_000
