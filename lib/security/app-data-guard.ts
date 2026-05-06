@@ -64,6 +64,7 @@ type ProfileProgress = {
   xp: number;
   awardedResultIds: string[];
   unlockedAchievementIds: string[];
+  adminAdjustedAt?: number;
 };
 
 export type SanitizedAppData = {
@@ -137,7 +138,8 @@ const profileProgressSchema = z.object({
   level: z.number().finite().optional(),
   xp: z.number().finite().optional(),
   awardedResultIds: z.array(z.string().min(1).max(180)).max(300).optional(),
-  unlockedAchievementIds: z.array(z.string().min(1).max(80)).max(100).optional()
+  unlockedAchievementIds: z.array(z.string().min(1).max(80)).max(100).optional(),
+  adminAdjustedAt: z.number().finite().optional()
 });
 
 const payloadSchema = z.object({
@@ -303,7 +305,9 @@ function recomputeProfileProgress(results: ResultItem[]) {
       continue;
     }
 
-    const percent = result.total ? Math.round((result.score / result.total) * 100) : 0;
+    const total = Number.isFinite(result.total) ? Math.max(0, result.total) : 0;
+    const score = Number.isFinite(result.score) ? Math.min(total, Math.max(0, result.score)) : 0;
+    const percent = total ? Math.round((score / total) * 100) : 0;
     const xpGain = getXpForPercent(percent);
     if (level >= 100) {
       xp = 0;
@@ -334,12 +338,16 @@ function normalizeProfileProgress(profile: z.infer<typeof profileProgressSchema>
 
   const level = typeof profile.level === "number" ? Math.min(100, Math.max(1, Math.floor(profile.level))) : 1;
   const xp = typeof profile.xp === "number" && level < 100 ? Math.min(99, Math.max(0, Math.floor(profile.xp))) : 0;
+  const adminAdjustedAt = typeof profile.adminAdjustedAt === "number" && Number.isFinite(profile.adminAdjustedAt)
+    ? Math.max(0, Math.floor(profile.adminAdjustedAt))
+    : undefined;
 
   return {
     level,
     xp,
     awardedResultIds: Array.isArray(profile.awardedResultIds) ? profile.awardedResultIds.slice(0, 300) : [],
-    unlockedAchievementIds: Array.isArray(profile.unlockedAchievementIds) ? profile.unlockedAchievementIds : []
+    unlockedAchievementIds: Array.isArray(profile.unlockedAchievementIds) ? profile.unlockedAchievementIds : [],
+    adminAdjustedAt
   };
 }
 
@@ -347,6 +355,14 @@ function sanitizeProfileProgress(profile: z.infer<typeof profileProgressSchema> 
   const normalized = normalizeProfileProgress(profile);
   if (!normalized) {
     return recomputed;
+  }
+
+  if (normalized.adminAdjustedAt) {
+    return {
+      ...normalized,
+      awardedResultIds: Array.from(new Set([...normalized.awardedResultIds, ...recomputed.awardedResultIds])).slice(0, 300),
+      unlockedAchievementIds: Array.from(new Set([...normalized.unlockedAchievementIds, ...recomputed.unlockedAchievementIds]))
+    };
   }
 
   const base = getProfileProgressPoints(normalized) >= getProfileProgressPoints(recomputed)
@@ -416,21 +432,8 @@ export function sanitizeAppDataPayload(payload: unknown, session: { id: string; 
     }
   }
 
-  const submittedByProgressKey = new Map<string, { item: ProgressItem; score: ReturnType<typeof calculateScore>; subject: QuizSubject }>();
-  for (const item of validItems.values()) {
-    const subject = subjectById.get(item.subjectId);
-    if (!subject || !item.submitted) {
-      continue;
-    }
-    submittedByProgressKey.set(`${item.subjectId}:${item.chapterId}`, {
-      item,
-      score: calculateScore(subject, item),
-      subject
-    });
-  }
-
   const results: ResultItem[] = [];
-  for (const [resultIndex, result] of parsed.data.saved.results.slice(0, MAX_RESULTS).entries()) {
+  for (const result of parsed.data.saved.results.slice(0, MAX_RESULTS)) {
     const subject = subjectById.get(result.subjectId);
     if (!subject) {
       continue;
@@ -438,13 +441,15 @@ export function sanitizeAppDataPayload(payload: unknown, session: { id: string; 
 
     const chapterId = result.chapterId;
     const chapterQuestions = chapterId ? getChapterQuestions(subject, chapterId) : [];
-    const backing = chapterId ? submittedByProgressKey.get(`${result.subjectId}:${chapterId}`) : undefined;
-    if (!backing && (!chapterId || chapterQuestions.length === 0)) {
+    if (chapterId && chapterQuestions.length === 0) {
       continue;
     }
 
-    const total = backing ? backing.score.total : Math.min(Math.max(1, Math.floor(result.total)), chapterQuestions.length || getAllQuestions(subject).length || 1);
-    const score = backing ? backing.score.score : Math.min(total, Math.max(0, Math.floor(result.score)));
+    const review = sanitizeResultReview(subject, chapterId, result.review);
+    const total = review?.length ?? Math.min(Math.max(1, Math.floor(result.total)), chapterQuestions.length || getAllQuestions(subject).length || Math.max(1, Math.floor(result.total)));
+    const score = review
+      ? review.filter((question) => question.selectedOptionId && question.selectedOptionId === question.correctOptionId).length
+      : Math.min(total, Math.max(0, Math.floor(result.score)));
 
     results.push({
       id: result.id,
@@ -457,7 +462,7 @@ export function sanitizeAppDataPayload(payload: unknown, session: { id: string; 
       submittedAt: clampTime(result.submittedAt),
       durationMs: clampDuration(result.durationMs),
       pinnedAt: result.pinnedAt ? clampTime(result.pinnedAt) : undefined,
-      review: sanitizeResultReview(subject, chapterId, result.review)
+      review
     });
   }
 

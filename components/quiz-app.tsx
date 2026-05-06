@@ -269,6 +269,7 @@ type ProfileProgress = {
   xp: number;
   awardedResultIds: string[];
   unlockedAchievementIds: string[];
+  adminAdjustedAt?: number;
 };
 
 type Achievement = {
@@ -620,12 +621,16 @@ function restoreProfileMedia(): ProfileMedia {
 function normalizeProfileProgress(parsed?: Partial<ProfileProgress>): ProfileProgress {
   const level = typeof parsed?.level === "number" ? Math.min(100, Math.max(1, Math.floor(parsed.level))) : 1;
   const xp = typeof parsed?.xp === "number" && level < 100 ? Math.min(99, Math.max(0, Math.floor(parsed.xp))) : 0;
+  const adminAdjustedAt = typeof parsed?.adminAdjustedAt === "number" && Number.isFinite(parsed.adminAdjustedAt)
+    ? Math.max(0, Math.floor(parsed.adminAdjustedAt))
+    : undefined;
 
   return {
     level,
     xp,
     awardedResultIds: Array.isArray(parsed?.awardedResultIds) ? parsed.awardedResultIds : [],
-    unlockedAchievementIds: Array.isArray(parsed?.unlockedAchievementIds) ? parsed.unlockedAchievementIds : []
+    unlockedAchievementIds: Array.isArray(parsed?.unlockedAchievementIds) ? parsed.unlockedAchievementIds : [],
+    adminAdjustedAt
   };
 }
 
@@ -634,6 +639,14 @@ function getProfileProgressPoints(profile: ProfileProgress) {
 }
 
 function mergeProfileProgress(current: ProfileProgress, incoming: ProfileProgress): ProfileProgress {
+  if ((incoming.adminAdjustedAt ?? 0) > (current.adminAdjustedAt ?? 0)) {
+    return {
+      ...incoming,
+      awardedResultIds: Array.from(new Set([...incoming.awardedResultIds, ...current.awardedResultIds])).slice(0, 300),
+      unlockedAchievementIds: Array.from(new Set([...incoming.unlockedAchievementIds, ...current.unlockedAchievementIds]))
+    };
+  }
+
   const currentPoints = getProfileProgressPoints(current);
   const incomingPoints = getProfileProgressPoints(incoming);
   const base = incomingPoints > currentPoints ? incoming : current;
@@ -641,8 +654,23 @@ function mergeProfileProgress(current: ProfileProgress, incoming: ProfileProgres
   return {
     ...base,
     awardedResultIds: Array.from(new Set([...incoming.awardedResultIds, ...current.awardedResultIds])).slice(0, 300),
-    unlockedAchievementIds: Array.from(new Set([...incoming.unlockedAchievementIds, ...current.unlockedAchievementIds]))
+    unlockedAchievementIds: Array.from(new Set([...incoming.unlockedAchievementIds, ...current.unlockedAchievementIds])),
+    adminAdjustedAt: Math.max(incoming.adminAdjustedAt ?? 0, current.adminAdjustedAt ?? 0) || undefined
   };
+}
+
+function mergeProfileMedia(current: ProfileMedia, incoming: ProfileMedia): ProfileMedia {
+  const merged = { ...current };
+
+  for (const [name, media] of Object.entries(incoming)) {
+    const existing = merged[name] ?? {};
+    merged[name] = {
+      avatar: existing.avatar?.startsWith("data:image/") ? existing.avatar : media.avatar ?? existing.avatar,
+      cover: existing.cover?.startsWith("data:image/") ? existing.cover : media.cover ?? existing.cover
+    };
+  }
+
+  return merged;
 }
 
 function awardResultsToProfile(profile: ProfileProgress, results: ResultItem[]): ProfileProgress {
@@ -1170,7 +1198,9 @@ function getInitialState(subjects: QuizSubject[], saved: SavedProgress): QuizSta
 }
 
 function getResultPercentValue(result: ResultItem) {
-  return result.total ? Math.round((result.score / result.total) * 100) : 0;
+  const total = Number.isFinite(result.total) ? Math.max(0, result.total) : 0;
+  const score = Number.isFinite(result.score) ? Math.min(total, Math.max(0, result.score)) : 0;
+  return total ? Math.round((score / total) * 100) : 0;
 }
 
 function makeResultReview(chapter: QuizChapter, answers: Record<string, string>): ResultReviewQuestion[] {
@@ -2064,10 +2094,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           setProfileProgress((current) => mergeProfileProgress(current, incomingProfile));
         }
         if (data.profileMedia && Object.keys(data.profileMedia).length > 0) {
-          setProfileMedia((current) => ({
-            ...current,
-            ...data.profileMedia
-          }));
+          setProfileMedia((current) => mergeProfileMedia(current, data.profileMedia ?? {}));
         }
         cloudDataLoadedTokenRef.current = token;
       })
@@ -2612,10 +2639,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       const nextLevel = Math.min(100, current.level + Math.floor(totalXp / 100));
 
       return {
+        ...current,
         level: nextLevel,
         xp: nextLevel >= 100 ? 0 : totalXp % 100,
-        awardedResultIds: [result.id, ...current.awardedResultIds].slice(0, 300),
-        unlockedAchievementIds: current.unlockedAchievementIds
+        awardedResultIds: [result.id, ...current.awardedResultIds].slice(0, 300)
       };
     });
   }
@@ -3061,13 +3088,6 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       return result.error ?? "Không sync được ảnh profile lên server.";
     }
 
-    setProfileMedia((current) => ({
-      ...current,
-      [displayUser.name]: {
-        ...current[displayUser.name],
-        [kind]: result.url
-      }
-    }));
     return undefined;
   }
 
@@ -3176,6 +3196,15 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           return { ...rest, [resData.user!.name]: existing };
         });
       }
+    }
+    if (userId === currentUser.id && (data.level !== undefined || data.xp !== undefined || data.unlockedAchievementIds !== undefined)) {
+      setProfileProgress((current) => normalizeProfileProgress({
+        ...current,
+        level: data.level ?? current.level,
+        xp: data.xp ?? current.xp,
+        unlockedAchievementIds: data.unlockedAchievementIds ?? current.unlockedAchievementIds,
+        adminAdjustedAt: Date.now()
+      }));
     }
 
     await loadAdminUsers();
@@ -4619,11 +4648,11 @@ function RecentResults({
             <p className="mt-2 text-sm text-muted-foreground">Sau khi nộp bài, kết quả sẽ xuất hiện ở đây.</p>
           </div>
         ) : (
-          <div className="overflow-hidden p-1 pb-3 pr-3">
-            <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="overflow-x-auto overflow-y-hidden p-1 pb-4 pr-3">
+            <div className="flex min-w-0 snap-x gap-4">
               {sortedResults.map((result, index) => {
                 const subject = getSubject(subjects, result.subjectId);
-                const percent = Math.round((result.score / result.total) * 100);
+                const percent = getResultPercentValue(result);
                 const mood = getResultMood(percent);
                 const quote = getResultQuote(percent, result.id);
                 const celebration = getResultCelebration(percent);
@@ -4642,7 +4671,7 @@ function RecentResults({
                   <div
                     key={`${result.id}-${animationRun}`}
                     className={cn(
-                      "result-card motion-safe-card rounded-[22px] border-2 border-foreground bg-secondary shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-colors duration-200 hover:bg-secondary/90",
+                      "result-card motion-safe-card w-[min(20.5rem,78vw)] flex-none snap-start rounded-[22px] border-2 border-foreground bg-secondary shadow-[6px_6px_0_0_hsl(var(--foreground))] transition-colors duration-200 hover:bg-secondary/90 md:w-[21rem] xl:w-[calc((100%_-_2rem)/3)]",
                       isLatest && "result-card-latest",
                       isTop3 && "result-card-top3",
                       index === 1 && "result-card-top3-silver",
@@ -5672,7 +5701,7 @@ function ResultDialogs({
   onUnpinItem: (id: string) => void;
   pinnedCount: number;
 }) {
-  const percent = actionItem ? Math.round((actionItem.score / actionItem.total) * 100) : 0;
+  const percent = actionItem ? getResultPercentValue(actionItem) : 0;
   const mood = getResultMood(percent);
   const quote = actionItem ? getResultQuote(percent, actionItem.id) : "";
 
@@ -7091,8 +7120,8 @@ function AdminProfileEditForm({
   }, [user]);
 
   async function saveProfile(overrides: { level?: number; xp?: number } = {}) {
-    const nextLevel = Math.min(9999, Math.max(1, Math.floor(overrides.level ?? level)));
-    const nextXp = Math.min(100, Math.max(0, Math.floor(overrides.xp ?? xp)));
+    const nextLevel = Math.min(100, Math.max(1, Math.floor(overrides.level ?? level)));
+    const nextXp = Math.min(99, Math.max(0, Math.floor(overrides.xp ?? xp)));
     const nextUnlocked = Array.from(unlocked);
 
     setLevel(nextLevel);
@@ -7148,15 +7177,15 @@ function AdminProfileEditForm({
               <Button type="button" size="icon" variant="outline" className="size-9 shrink-0" disabled={saving || level <= 1} onClick={() => void adjustLevel(-1)} title="Giảm 1 level">
                 <Minus className="size-4" aria-hidden />
               </Button>
-              <input type="number" className="min-w-0 flex-1 rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={level} onChange={e => setLevel(Number(e.target.value))} required min={1} max={9999} />
-              <Button type="button" size="icon" variant="outline" className="size-9 shrink-0" disabled={saving || level >= 9999} onClick={() => void adjustLevel(1)} title="Tăng 1 level">
+              <input type="number" className="min-w-0 flex-1 rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={level} onChange={e => setLevel(Number(e.target.value))} required min={1} max={100} />
+              <Button type="button" size="icon" variant="outline" className="size-9 shrink-0" disabled={saving || level >= 100} onClick={() => void adjustLevel(1)} title="Tăng 1 level">
                 <Plus className="size-4" aria-hidden />
               </Button>
             </div>
           </div>
           <div className="grid gap-1">
             <label className="text-xs font-black">% XP</label>
-            <input type="number" className="rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={xp} onChange={e => setXp(Number(e.target.value))} required min={0} max={100} />
+            <input type="number" className="rounded-lg border-2 border-foreground px-3 py-1.5 text-sm font-bold shadow-[2px_2px_0_0_hsl(var(--foreground))]" value={xp} onChange={e => setXp(Number(e.target.value))} required min={0} max={99} />
           </div>
         </div>
       </div>
@@ -8214,7 +8243,7 @@ function LegacyAdminControlPanel({
           ) : (
             <div className="mt-5 space-y-3">
               {recentResults.map((result) => {
-                const resultRate = Math.round((result.score / result.total) * 100);
+                const resultRate = getResultPercentValue(result);
                 return (
                   <div key={result.id} className="rounded-2xl bg-[#eef0ef] p-3">
                     <div className="flex items-center justify-between gap-3">
@@ -8333,6 +8362,14 @@ function AccountFrame({
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const canSyncProfileMedia = user.role === "admin" || user.delegated || profile.level >= PROFILE_MEDIA_SYNC_LEVEL;
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [media?.avatar]);
+
+  useEffect(() => {
+    setCoverError(false);
+  }, [media?.cover]);
 
   async function updateImage(kind: "avatar" | "cover", event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];

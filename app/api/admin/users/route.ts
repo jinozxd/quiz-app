@@ -10,8 +10,16 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
 
+type ProfileProgress = {
+  level: number;
+  xp: number;
+  awardedResultIds: string[];
+  unlockedAchievementIds: string[];
+  adminAdjustedAt?: number;
+};
+
 const EMPTY_SAVED = { items: {}, order: [], starredQuestionIds: [], wrongPracticeSeen: {}, results: [] };
-const EMPTY_PROFILE_PROGRESS = { level: 1, xp: 0, awardedResultIds: [] as string[], unlockedAchievementIds: [] as string[] };
+const EMPTY_PROFILE_PROGRESS: ProfileProgress = { level: 1, xp: 0, awardedResultIds: [], unlockedAchievementIds: [] };
 const NAME_CHANGE_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000;
 
 const updateSchema = z.discriminatedUnion("action", [
@@ -25,8 +33,8 @@ const updateSchema = z.discriminatedUnion("action", [
     name: z.string().trim().min(2).max(40).regex(/^[\p{L}\p{N}_ .-]+$/u).optional(),
     email: z.string().trim().email().max(120).optional(),
     password: z.string().min(6).max(128).optional(),
-    level: z.number().int().min(1).max(9999).optional(),
-    xp: z.number().int().min(0).max(100).optional(),
+    level: z.number().int().min(1).max(100).optional(),
+    xp: z.number().int().min(0).max(99).optional(),
     unlockedAchievementIds: z.array(z.string()).optional()
   })
 ]);
@@ -309,6 +317,7 @@ export async function PATCH(request: Request) {
       if (level !== undefined) newProgress.level = level;
       if (xp !== undefined) newProgress.xp = xp;
       if (unlockedAchievementIds !== undefined) newProgress.unlockedAchievementIds = unlockedAchievementIds;
+      newProgress.adminAdjustedAt = Date.now();
 
       const { error: saveError } = await admin.service
         .from("app_user_data")
