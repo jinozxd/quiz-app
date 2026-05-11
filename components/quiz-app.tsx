@@ -3356,12 +3356,19 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             const subjectStarredCount = getStarredQuestions(subject, saved.starredQuestionIds ?? []).length;
             const subjectWrongCount = getWrongPracticeQuestions(subject, saved).length;
             const subjectQuestionCount = getAllQuestions(subject).length;
+            const isLogicSubject = subject.id.includes("logic");
+            const isBlurred = isLogicSubject && !canUseAdminControl;
 
             return (
-              <Card key={subject.id} className="mt-6">
+              <Card key={subject.id} className={cn("mt-6", isBlurred && "pointer-events-none select-none opacity-50 blur-sm")}>
                 <CardHeader>
                   <CardTitle className="flex items-start justify-between gap-3">
-                    <span>{subject.title}</span>
+                    <span>
+                      {subject.title}
+                      {isLogicSubject && (
+                        <span className="ml-2 text-sm font-normal text-muted-foreground">(đang bảo trì)</span>
+                      )}
+                    </span>
                     <span className="text-2xl leading-none" aria-hidden>
                       {getSubjectEmoji(subject.id)}
                     </span>
