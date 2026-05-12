@@ -2891,14 +2891,21 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function resetAllProgress() {
-    setSaved((current) => ({
-      ...current,
-      activeSubjectId: undefined,
-      activeChapterId: undefined,
-      items: {},
-      order: [],
-      wrongPracticeSeen: {}
-    }));
+    setSaved((current) => {
+      // Chỉ xóa các item chưa nộp (đang làm dở), giữ lại item đã hoàn thành
+      const keptItems = Object.fromEntries(
+        Object.entries(current.items).filter(([, item]) => item.submitted)
+      );
+      const keptOrder = current.order.filter((id) => keptItems[id]);
+      return {
+        ...current,
+        activeSubjectId: undefined,
+        activeChapterId: undefined,
+        items: keptItems,
+        order: keptOrder,
+        wrongPracticeSeen: {}
+      };
+    });
     setState({ answers: {}, submitted: false });
     setDeleteAllOpen(false);
     setMenuOpen(false);
