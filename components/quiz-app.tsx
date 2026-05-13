@@ -336,6 +336,9 @@ export type AppSettings = {
   sweepAnimation: SweepAnimationType;
   motion: MotionLevel;
   theme: ThemeMode;
+  themeScheduleEnabled: boolean;
+  themeScheduleStart: string;
+  themeScheduleEnd: string;
 };
 
 type WeeklyChapterRecap = {
@@ -740,7 +743,10 @@ function defaultSettings(): AppSettings {
     optimizeMotion: true,
     sweepAnimation: "emoji",
     motion: "normal",
-    theme: "light"
+    theme: "light",
+    themeScheduleEnabled: false,
+    themeScheduleStart: "18:00",
+    themeScheduleEnd: "06:00"
   };
 }
 
@@ -809,7 +815,10 @@ export function restoreSettings(): AppSettings {
       optimizeMotion: parsed.optimizeMotion !== false,
       sweepAnimation: parsed.sweepAnimation === "stars" || parsed.sweepAnimation === "hearts" || parsed.sweepAnimation === "off" ? parsed.sweepAnimation : "emoji",
       motion: parsed.motion === "low" || parsed.motion === "normal" || parsed.motion === "high" || parsed.motion === "off" ? parsed.motion : "normal",
-      theme: parsed.theme === "dark" ? "dark" : "light"
+      theme: parsed.theme === "dark" ? "dark" : "light",
+      themeScheduleEnabled: Boolean(parsed.themeScheduleEnabled),
+      themeScheduleStart: parsed.themeScheduleStart || "18:00",
+      themeScheduleEnd: parsed.themeScheduleEnd || "06:00"
     };
   } catch {
     return defaultSettings();
@@ -2159,10 +2168,40 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       saveSettings(settings);
     }
     document.documentElement.dataset.background = settings.background;
-    document.documentElement.classList.toggle("dark", settings.theme === "dark");
+    
+    const applyTheme = () => {
+      let isDark = settings.theme === "dark";
+      if (settings.themeScheduleEnabled) {
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const [startH, startM] = (settings.themeScheduleStart || "18:00").split(':').map(Number);
+        const startMinutes = (startH || 18) * 60 + (startM || 0);
+        const [endH, endM] = (settings.themeScheduleEnd || "06:00").split(':').map(Number);
+        const endMinutes = (endH || 6) * 60 + (endM || 0);
+        
+        if (startMinutes <= endMinutes) {
+          isDark = currentMinutes >= startMinutes && currentMinutes < endMinutes;
+        } else {
+          isDark = currentMinutes >= startMinutes || currentMinutes < endMinutes;
+        }
+      }
+      document.documentElement.classList.toggle("dark", isDark);
+    };
+
+    applyTheme();
+    
+    let interval: number | undefined;
+    if (settings.themeScheduleEnabled) {
+      interval = window.setInterval(applyTheme, 60000);
+    }
+
     document.documentElement.dataset.motion = settings.motion;
     document.documentElement.dataset.entryMotion = settings.entryAnimation ? "on" : "off";
     document.documentElement.dataset.optimizedMotion = settings.optimizeMotion ? "on" : "off";
+    
+    return () => {
+      if (interval) window.clearInterval(interval);
+    };
   }, [settings]);
 
   useEffect(() => {
@@ -3380,6 +3419,9 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           <div className="">
             <div className="min-w-0">
               <WelcomeBanner user={currentUser} hasProgress={progressItems.length > 0} />
+              <p className="mb-4 mt-2 text-center text-sm font-bold text-muted-foreground italic sm:text-left">
+                💡 Ghi chú nhỏ: Nhấn giữ để tùy chọn phần tiến trình và kết quả gần đây
+              </p>
               <ProgressPanel
                 items={progressItems}
                 subjects={subjects}
@@ -6325,10 +6367,10 @@ export function SettingsDialog({
           </Button>
         </div>
 
-        <div className="grid flex-1 overflow-hidden lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,2.2fr)]">
-          <aside className="max-h-40 overflow-y-auto border-b-2 border-foreground bg-muted/60 p-3 sm:max-h-none sm:p-4 lg:border-b-0 lg:border-r-2 lg:p-5">
-            <p className="text-sm font-black text-muted-foreground">Khu cài đặt</p>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:grid-cols-3 lg:grid-cols-1 lg:gap-3">
+        <div className="flex flex-1 overflow-hidden">
+          <aside className="w-[110px] shrink-0 overflow-y-auto border-r-2 border-foreground bg-muted/60 p-2 sm:w-[140px] sm:p-4 lg:w-[220px] lg:p-5">
+            <p className="hidden text-sm font-black text-muted-foreground lg:block">Khu cài đặt</p>
+            <div className="mt-2 flex flex-col gap-2 sm:mt-4 lg:gap-3">
               <button
                 type="button"
                 className={cn("settings-tab", activeSection === "account" && "settings-tab-active")}
@@ -6388,7 +6430,7 @@ export function SettingsDialog({
             </div>
           </aside>
 
-          <div className="overflow-y-auto p-3 sm:p-5 lg:p-7">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-7">
             {activeSection === "account" && (
               <section className="rounded-xl border-2 border-foreground bg-background/70 p-5 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -6707,6 +6749,45 @@ export function SettingsDialog({
                     <span className="block text-sm text-muted-foreground">Tối hơn, tương phản rõ và đỡ chói.</span>
                   </span>
                 </button>
+              </div>
+              
+              <div className="mt-6 border-t-2 border-dashed border-foreground/20 pt-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-lg font-black">Lịch trình chế độ tối</h4>
+                    <p className="text-sm font-black text-muted-foreground">Tự động bật chế độ tối trong khoảng thời gian nhất định.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className={cn("relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-foreground transition-colors", settings.themeScheduleEnabled ? "bg-primary" : "bg-muted")}
+                    onClick={() => onChange(c => ({ ...c, themeScheduleEnabled: !c.themeScheduleEnabled }))}
+                  >
+                    <span className={cn("inline-block h-4 w-4 transform rounded-full bg-foreground transition-transform", settings.themeScheduleEnabled ? "translate-x-5" : "translate-x-1")} />
+                  </button>
+                </div>
+                
+                {settings.themeScheduleEnabled && (
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-black uppercase tracking-wider text-muted-foreground">Bắt đầu</label>
+                      <input 
+                        type="time" 
+                        value={settings.themeScheduleStart}
+                        onChange={(e) => onChange(c => ({ ...c, themeScheduleStart: e.target.value }))}
+                        className="w-full rounded-lg border-2 border-foreground bg-background px-3 py-2 font-black shadow-[4px_4px_0_0_hsl(var(--foreground))] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-black uppercase tracking-wider text-muted-foreground">Kết thúc</label>
+                      <input 
+                        type="time" 
+                        value={settings.themeScheduleEnd}
+                        onChange={(e) => onChange(c => ({ ...c, themeScheduleEnd: e.target.value }))}
+                        className="w-full rounded-lg border-2 border-foreground bg-background px-3 py-2 font-black shadow-[4px_4px_0_0_hsl(var(--foreground))] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
             )}
