@@ -7891,9 +7891,9 @@ function AdminControlPanel({
           </div>
         </div>
 
-        <div className="admin-float-card rounded-[1.6rem] bg-[#202226] p-5 text-white lg:col-span-2 lg:row-span-2">
+        <div className="admin-float-card rounded-[1.6rem] bg-[#202226] p-5 text-white lg:col-span-2 flex flex-col justify-between">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-bold text-white/65">Phân bố</p>
+            <p className="text-sm font-bold text-white/65">Phân bố tổng</p>
             <CircleHelp className="size-5 text-white/65" aria-hidden />
           </div>
           <div className="mt-8 grid place-items-center">
@@ -7906,7 +7906,7 @@ function AdminControlPanel({
           </div>
         </div>
 
-        <div className="admin-float-card rounded-[1.6rem] bg-[#fffaf3] p-5 lg:col-span-4 lg:row-span-2">
+        <div className="admin-float-card rounded-[1.6rem] bg-[#fffaf3] p-5 lg:col-span-6 lg:row-span-2">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-bold text-[#72746f]">Tổng quan theo chương</p>
@@ -7983,7 +7983,7 @@ function AdminControlPanel({
           )}
         </div>
 
-        <div className="admin-float-card rounded-[1.6rem] bg-[#dfe8e1] p-5 lg:col-span-4">
+        <div className="admin-float-card rounded-[1.6rem] bg-[#dfe8e1] p-5 lg:col-span-6">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-bold text-[#72746f]">Trạng thái user</p>
             <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={loading}>
@@ -8006,7 +8006,7 @@ function AdminControlPanel({
           {message && <div className="mt-4 rounded-2xl bg-white/60 px-4 py-3 text-sm font-bold text-[#72746f]">{message}</div>}
         </div>
 
-        <div className="admin-float-card rounded-[1.6rem] bg-[#fffaf3] p-5 lg:col-span-4">
+        <div className="admin-float-card rounded-[1.6rem] bg-[#fffaf3] p-5 lg:col-span-6">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-bold text-[#72746f]">Giám sát</p>
@@ -8033,7 +8033,7 @@ function AdminControlPanel({
           </div>
         </div>
 
-        <div className="admin-float-card rounded-[1.6rem] bg-[#202226] p-5 text-white lg:col-span-4">
+        <div className="admin-float-card rounded-[1.6rem] bg-[#202226] p-5 text-white lg:col-span-6">
           <p className="text-sm font-bold text-white/65">Đánh giá hệ thống</p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-white/10 p-3">
@@ -8051,7 +8051,7 @@ function AdminControlPanel({
           </div>
         </div>
 
-        <div className="admin-float-card rounded-[1.6rem] bg-[#f4828d] p-5 text-white lg:col-span-4">
+        <div className="admin-float-card rounded-[1.6rem] bg-[#f4828d] p-5 text-white lg:col-span-6">
           <p className="text-sm font-bold text-white/75">Dự đoán 7 ngày tới</p>
           <p className="mt-6 text-5xl font-semibold tracking-normal">{forecastNextWeekTotal}</p>
           <p className="mt-2 text-sm font-bold text-white/75">
