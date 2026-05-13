@@ -313,6 +313,7 @@ type SurvivalConfig = {
 type MatchingCount = 25 | 40 | "full";
 type WrongPracticeCount = 10 | 25;
 type PracticeCount = 5 | 8 | 10;
+type ExamPriority = "none" | "wrong" | "practice";
 
 type MotionLevel = "low" | "normal" | "high" | "off";
 type ThemeMode = "light" | "dark";
@@ -930,6 +931,15 @@ function makeShuffledChapter(chapter: QuizChapter): QuizChapter {
   };
 }
 
+function reshuffleChapterAttempt(subject: QuizSubject | undefined, chapter: QuizChapter | undefined) {
+  if (!subject || !chapter?.id.endsWith("-shuffle")) {
+    return undefined;
+  }
+
+  const baseChapter = getChapter(subject, getBaseChapterId(chapter.id));
+  return baseChapter ? makeShuffledChapter(baseChapter) : undefined;
+}
+
 function getAllQuestions(subject: QuizSubject) {
   return subject.chapters.flatMap((chapter) => chapter.questions);
 }
@@ -939,7 +949,7 @@ function getStarredQuestions(subject: QuizSubject, starredQuestionIds: string[])
   return getAllQuestions(subject).filter((question) => starredSet.has(question.id));
 }
 
-function getWrongPracticeQuestions(subject: QuizSubject, saved: SavedProgress) {
+function getWrongQuestions(subject: QuizSubject, saved: SavedProgress) {
   const questionById = new Map(getAllQuestions(subject).map((question) => [question.id, question]));
   const wrongQuestionIds = new Set<string>();
 
@@ -975,9 +985,12 @@ function getWrongPracticeQuestions(subject: QuizSubject, saved: SavedProgress) {
   }
 
   return Array.from(wrongQuestionIds)
-    .filter((questionId) => (saved.wrongPracticeSeen?.[questionId] ?? 0) < 6)
     .map((questionId) => questionById.get(questionId))
     .filter((question): question is QuizChapter["questions"][number] => Boolean(question));
+}
+
+function getWrongPracticeQuestions(subject: QuizSubject, saved: SavedProgress) {
+  return getWrongQuestions(subject, saved).filter((question) => (saved.wrongPracticeSeen?.[question.id] ?? 0) < 6);
 }
 
 function makeAllQuestionsChapter(subject: QuizSubject): QuizChapter {
@@ -1015,16 +1028,35 @@ function makeWrongPracticeChapter(subject: QuizSubject, saved: SavedProgress, co
   };
 }
 
-function makeExamChapter(subject: QuizSubject): QuizChapter {
+function getExamSourceQuestions(subject: QuizSubject) {
   const chapterCount = subject.chapters.length;
   const baseCount = Math.floor(EXAM_QUESTION_COUNT / chapterCount);
   let extra = EXAM_QUESTION_COUNT % chapterCount;
 
-  const questions = subject.chapters.flatMap((chapter) => {
+  return subject.chapters.flatMap((chapter) => {
     const take = baseCount + (extra > 0 ? 1 : 0);
     extra -= 1;
     return shuffleArray(chapter.questions).slice(0, Math.min(take, chapter.questions.length));
   });
+}
+
+function makePrioritizedQuestionSet(sourceQuestions: QuizChapter["questions"], priorityQuestions: QuizChapter["questions"]) {
+  const priorityIds = new Set(priorityQuestions.map((question) => question.id));
+  const prioritized = shuffleArray(priorityQuestions).slice(0, EXAM_QUESTION_COUNT);
+  const remaining = shuffleArray(sourceQuestions.filter((question) => !priorityIds.has(question.id)));
+  return [...prioritized, ...remaining].slice(0, EXAM_QUESTION_COUNT);
+}
+
+function makeExamChapter(subject: QuizSubject, saved?: SavedProgress, priority: ExamPriority = "none"): QuizChapter {
+  const sourceQuestions = getExamSourceQuestions(subject);
+  const priorityQuestions = priority === "wrong" && saved
+    ? getWrongQuestions(subject, saved)
+    : priority === "practice" && saved
+      ? getStarredQuestions(subject, saved.starredQuestionIds ?? [])
+      : [];
+  const questions = priority === "none"
+    ? sourceQuestions
+    : makePrioritizedQuestionSet(sourceQuestions, priorityQuestions);
 
   return {
     id: `mode-exam-40-${Date.now()}`,
@@ -1905,6 +1937,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const [adminControlOpen, setAdminControlOpen] = useState(false);
   const [survivalConfigOpen, setSurvivalConfigOpen] = useState(false);
   const [matchingConfigOpen, setMatchingConfigOpen] = useState(false);
+  const [examConfigOpen, setExamConfigOpen] = useState(false);
   const [wrongPracticeConfigOpen, setWrongPracticeConfigOpen] = useState(false);
   const [practiceConfigOpen, setPracticeConfigOpen] = useState(false);
   const [modeConfigSubject, setModeConfigSubject] = useState<QuizSubject | null>(null);
@@ -2575,15 +2608,16 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     });
   }
 
-  function startExamMode(subject: QuizSubject) {
+  function startExamMode(subject: QuizSubject, priority: ExamPriority = "none") {
     if (requireLogin()) {
       return;
     }
 
+    setExamConfigOpen(false);
     scrollToQuizTop();
     setState({
       subject,
-      chapter: makeExamChapter(subject),
+      chapter: makeExamChapter(subject, savedRef.current, priority),
       answers: {},
       submitted: false
     });
@@ -2816,19 +2850,24 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function resetCurrentQuizAttempt() {
-    setState((current) => ({
-      ...current,
-      answers: {},
-      submitted: false,
-      survival: current.survival
-        ? {
-            ...current.survival,
-            livesLeft: current.survival.livesTotal,
-            shieldAvailable: current.survival.shieldEnabled,
-            gameOver: false
-          }
-        : undefined
-    }));
+    setState((current) => {
+      const reshuffledChapter = reshuffleChapterAttempt(current.subject, current.chapter);
+
+      return {
+        ...current,
+        chapter: reshuffledChapter ?? current.chapter,
+        answers: {},
+        submitted: false,
+        survival: current.survival
+          ? {
+              ...current.survival,
+              livesLeft: current.survival.livesTotal,
+              shieldAvailable: current.survival.shieldEnabled,
+              gameOver: false
+            }
+          : undefined
+      };
+    });
   }
 
   function scrollToQuizTop() {
@@ -3368,6 +3407,15 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           />
         )}
         {modeConfigSubject && (
+          <ExamConfigDialog
+            open={examConfigOpen}
+            subject={modeConfigSubject}
+            saved={saved}
+            onClose={() => setExamConfigOpen(false)}
+            onStart={(priority) => startExamMode(modeConfigSubject, priority)}
+          />
+        )}
+        {modeConfigSubject && (
           <WrongPracticeConfigDialog
             open={wrongPracticeConfigOpen}
             subject={modeConfigSubject}
@@ -3491,7 +3539,13 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                         title="Thi thử"
                         badge="40 câu"
                         icon="🧪"
-                        onClick={() => startExamMode(subject)}
+                        onClick={() => {
+                          if (requireLogin()) {
+                            return;
+                          }
+                          setModeConfigSubject(subject);
+                          setExamConfigOpen(true);
+                        }}
                       />
                       <ModeCard
                         title="Trộn tất cả"
@@ -5350,6 +5404,101 @@ function PracticeConfigDialog({
           <Button variant="outline" onClick={onClose}>Hủy</Button>
           <Button disabled={finalCount === 0} onClick={() => onStart(count)}>
             Bắt đầu {finalCount} câu
+            <ChevronRight className="ml-2 size-4" aria-hidden />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ExamConfigDialog({
+  onClose,
+  onStart,
+  open,
+  saved,
+  subject
+}: {
+  onClose: () => void;
+  onStart: (priority: ExamPriority) => void;
+  open: boolean;
+  saved: SavedProgress;
+  subject: QuizSubject;
+}) {
+  const [priority, setPriority] = useState<ExamPriority>("none");
+  const wrongCount = getWrongQuestions(subject, saved).length;
+  const practiceCount = getStarredQuestions(subject, saved.starredQuestionIds ?? []).length;
+
+  if (!open) {
+    return null;
+  }
+
+  const options: Array<{ value: ExamPriority; label: string; description: string; count?: number; disabled?: boolean }> = [
+    {
+      value: "none",
+      label: "Không ưu tiên",
+      description: "Ra đề thi thử như hiện tại, cân câu theo từng chương."
+    },
+    {
+      value: "wrong",
+      label: "Ưu tiên câu sai",
+      description: "Đẩy các câu từng sai lên trước, phần còn thiếu sẽ bù bằng câu thi thử thường.",
+      count: wrongCount,
+      disabled: wrongCount === 0
+    },
+    {
+      value: "practice",
+      label: "Ưu tiên câu luyện tập",
+      description: "Đẩy các câu đã đánh dấu/luyện tập lên trước, phần còn thiếu sẽ bù bằng câu thi thử thường.",
+      count: practiceCount,
+      disabled: practiceCount === 0
+    }
+  ];
+
+  return (
+    <div className="fixed inset-0 z-[95] grid place-items-center bg-foreground/35 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-[22px] border-2 border-foreground bg-card p-4 shadow-[8px_8px_0_0_hsl(var(--foreground))] sm:rounded-[28px] sm:p-5 sm:shadow-[12px_12px_0_0_hsl(var(--foreground))]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-black text-muted-foreground">{subject.title}</p>
+            <h2 className="mt-1 text-2xl font-black">Thi thử</h2>
+          </div>
+          <Button size="icon" variant="ghost" onClick={onClose} aria-label="Đóng cấu hình thi thử">
+            <XCircle className="size-5" aria-hidden />
+          </Button>
+        </div>
+
+        <div className="mt-5 rounded-xl border-2 border-foreground bg-background/70 p-4">
+          <p className="text-sm font-black text-muted-foreground">Ưu tiên ra câu</p>
+          <div className="mt-3 grid gap-3">
+            {options.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                className={cn(
+                  "rounded-xl border-2 border-foreground bg-card p-3 text-left shadow-[4px_4px_0_0_hsl(var(--foreground))] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0",
+                  priority === item.value && "bg-primary text-primary-foreground"
+                )}
+                disabled={item.disabled}
+                onClick={() => setPriority(item.value)}
+              >
+                <span className="flex items-center justify-between gap-3">
+                  <span className="font-black">{item.label}</span>
+                  {typeof item.count === "number" && <Badge variant="outline">{item.count} câu</Badge>}
+                </span>
+                <span className="mt-1 block text-sm font-medium opacity-80">{item.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap sm:justify-end">
+          <Button variant="outline" onClick={onClose}>Hủy</Button>
+          <Button onClick={() => onStart(priority)}>
+            Bắt đầu 40 câu
             <ChevronRight className="ml-2 size-4" aria-hidden />
           </Button>
         </div>
