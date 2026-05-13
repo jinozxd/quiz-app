@@ -7011,12 +7011,12 @@ export function SettingsDialog({
                       Thông tin bản phát hành hiện tại của Quiz ôn tập.
                     </p>
                   </div>
-                  <Badge variant="secondary">v4.4.2</Badge>
+                  <Badge variant="secondary">v5.0.1</Badge>
                 </div>
 
                 <div className="mt-5 rounded-xl border-2 border-foreground bg-card/85 p-4">
                   <p className="text-sm font-black text-muted-foreground">Bản hiện tại</p>
-                  <p className="mt-2 text-4xl font-black">4.4.2</p>
+                  <p className="mt-2 text-4xl font-black">5.0.1</p>
                 </div>
               </section>
             )}
@@ -7178,6 +7178,12 @@ function isDoingQuiz(user: AdminUserWithStats, now: number) {
 
 function formatAdminDate(value?: string) {
   return value ? new Date(value).toLocaleString("vi-VN") : "Chưa có";
+}
+
+function getLatestDateString(a?: string, b?: string) {
+  if (!a) return b;
+  if (!b) return a;
+  return new Date(a).getTime() > new Date(b).getTime() ? a : b;
 }
 
 function getBrowserName(userAgent?: string) {
@@ -8101,7 +8107,7 @@ function AdminControlPanel({
                 </div>
                 <p className="mt-1 truncate text-xs font-black text-[#696d66]">{canWrite ? user.email : "Ẩn email ở chế độ chỉ xem"}</p>
                 <p className="mt-1 truncate text-xs font-black text-[#696d66]">
-                  {canWrite ? `${getBrowserName(user.lastUserAgent)} · ${formatAdminDate(user.lastLoginAt ?? user.dataUpdatedAt)}` : formatAdminDate(user.dataUpdatedAt)}
+                  {canWrite ? `${getBrowserName(user.lastUserAgent)} · ${formatAdminDate(getLatestDateString(user.lastLoginAt, user.dataUpdatedAt))}` : formatAdminDate(user.dataUpdatedAt)}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   <RoleBadge role={user.role} delegated={user.delegated} />
