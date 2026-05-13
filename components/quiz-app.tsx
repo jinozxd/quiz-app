@@ -312,6 +312,7 @@ type SurvivalConfig = {
 
 type MatchingCount = 25 | 40 | "full";
 type WrongPracticeCount = 10 | 25;
+type PracticeCount = 5 | 8 | 10;
 
 type MotionLevel = "low" | "normal" | "high" | "off";
 type ThemeMode = "light" | "dark";
@@ -981,11 +982,12 @@ function makeAllQuestionsChapter(subject: QuizSubject): QuizChapter {
   };
 }
 
-function makePracticeChapter(subject: QuizSubject, starredQuestionIds: string[]): QuizChapter {
+function makePracticeChapter(subject: QuizSubject, starredQuestionIds: string[], count: PracticeCount): QuizChapter {
+  const questions = shuffleArray(getStarredQuestions(subject, starredQuestionIds)).slice(0, count);
   return {
-    id: `mode-practice-starred-${Date.now()}`,
-    title: "Luyện tập câu đã đánh dấu",
-    questions: shuffleArray(getStarredQuestions(subject, starredQuestionIds)).map((question) => ({
+    id: `mode-practice-starred-${count}-${Date.now()}`,
+    title: `Luyện tập câu đánh dấu - ${questions.length} câu`,
+    questions: questions.map((question) => ({
       ...question,
       options: shuffleArray(question.options)
     }))
@@ -1895,6 +1897,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const [survivalConfigOpen, setSurvivalConfigOpen] = useState(false);
   const [matchingConfigOpen, setMatchingConfigOpen] = useState(false);
   const [wrongPracticeConfigOpen, setWrongPracticeConfigOpen] = useState(false);
+  const [practiceConfigOpen, setPracticeConfigOpen] = useState(false);
   const [modeConfigSubject, setModeConfigSubject] = useState<QuizSubject | null>(null);
   const [expandedSubjectIds, setExpandedSubjectIds] = useState<string[]>(() => subjects[0]?.id ? [subjects[0].id] : []);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
@@ -2561,15 +2564,16 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     });
   }
 
-  function startPracticeMode(subject: QuizSubject) {
+  function startPracticeMode(subject: QuizSubject, count: PracticeCount) {
     if (requireLogin()) {
       return;
     }
 
+    setPracticeConfigOpen(false);
     scrollToQuizTop();
     setState({
       subject,
-      chapter: makePracticeChapter(subject, saved.starredQuestionIds ?? []),
+      chapter: makePracticeChapter(subject, saved.starredQuestionIds ?? [], count),
       answers: {},
       submitted: false
     });
@@ -3333,6 +3337,15 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             onStart={(count) => startWrongPracticeMode(modeConfigSubject, count)}
           />
         )}
+        {modeConfigSubject && (
+          <PracticeConfigDialog
+            open={practiceConfigOpen}
+            subject={modeConfigSubject}
+            saved={saved}
+            onClose={() => setPracticeConfigOpen(false)}
+            onStart={(count) => startPracticeMode(modeConfigSubject, count)}
+          />
+        )}
         <AchievementsButton
           completed={completedAchievementCount}
           total={achievements.length}
@@ -3461,7 +3474,13 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                         badge={`${subjectStarredCount} câu`}
                         disabled={subjectStarredCount === 0}
                         icon="⭐"
-                        onClick={() => startPracticeMode(subject)}
+                        onClick={() => {
+                          if (requireLogin()) {
+                            return;
+                          }
+                          setModeConfigSubject(subject);
+                          setPracticeConfigOpen(true);
+                        }}
                       />
                       <ModeCard
                         title="Luyện câu sai"
@@ -5214,6 +5233,80 @@ function MatchingConfigDialog({
         <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap sm:justify-end">
           <Button variant="outline" onClick={onClose}>Hủy</Button>
           <Button onClick={() => onStart(count)}>
+            Bắt đầu {finalCount} câu
+            <ChevronRight className="ml-2 size-4" aria-hidden />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PracticeConfigDialog({
+  onClose,
+  onStart,
+  open,
+  saved,
+  subject
+}: {
+  onClose: () => void;
+  onStart: (count: PracticeCount) => void;
+  open: boolean;
+  saved: SavedProgress;
+  subject: QuizSubject;
+}) {
+  const starredQuestions = getStarredQuestions(subject, saved.starredQuestionIds ?? []);
+  const [count, setCount] = useState<PracticeCount>(5);
+
+  if (!open) {
+    return null;
+  }
+
+  const finalCount = Math.min(count, starredQuestions.length);
+
+  return (
+    <div className="fixed inset-0 z-[95] grid place-items-center bg-foreground/35 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-[22px] border-2 border-foreground bg-card p-4 shadow-[8px_8px_0_0_hsl(var(--foreground))] sm:rounded-[28px] sm:p-5 sm:shadow-[12px_12px_0_0_hsl(var(--foreground))]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-black text-muted-foreground">{subject.title}</p>
+            <h2 className="mt-1 text-2xl font-black">Luyện tập câu đánh dấu</h2>
+          </div>
+          <Button size="icon" variant="ghost" onClick={onClose} aria-label="Đóng luyện tập">
+            <XCircle className="size-5" aria-hidden />
+          </Button>
+        </div>
+
+        <div className="mt-5 rounded-xl border-2 border-foreground bg-background/70 p-4">
+          <p className="text-sm font-black text-muted-foreground">Chọn số câu ôn</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[
+              { value: 5 as const, label: "5 câu" },
+              { value: 8 as const, label: "8 câu" },
+              { value: 10 as const, label: "10 câu" }
+            ].map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                className={cn("settings-time-pill", count === item.value && "settings-time-pill-active")}
+                disabled={item.value > starredQuestions.length}
+                onClick={() => setCount(item.value)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-sm font-black text-muted-foreground">
+            Hiện có {starredQuestions.length} câu đã đánh dấu.
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap sm:justify-end">
+          <Button variant="outline" onClick={onClose}>Hủy</Button>
+          <Button disabled={finalCount === 0} onClick={() => onStart(count)}>
             Bắt đầu {finalCount} câu
             <ChevronRight className="ml-2 size-4" aria-hidden />
           </Button>
