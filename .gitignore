@@ -6,5 +6,6 @@ dist
 coverage
 *.tsbuildinfo
 *.log
+.claude/
 tmp-docx-logic/
 tmp-docx-logic-verify/

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ChangeEvent, FormEvent, ReactNode } from "react";
 import Link from "next/link";
 import {
@@ -10,6 +10,8 @@ import {
   BarChart3,
   BookOpenCheck,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   ChevronRight,
   CircleHelp,
   Eye,
@@ -1894,10 +1896,12 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   const [matchingConfigOpen, setMatchingConfigOpen] = useState(false);
   const [wrongPracticeConfigOpen, setWrongPracticeConfigOpen] = useState(false);
   const [modeConfigSubject, setModeConfigSubject] = useState<QuizSubject | null>(null);
+  const [expandedSubjectIds, setExpandedSubjectIds] = useState<string[]>(() => subjects[0]?.id ? [subjects[0].id] : []);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [itemActionId, setItemActionId] = useState<string | null>(null);
   const [resultActionId, setResultActionId] = useState<string | null>(null);
+  const pendingTopScrollRef = useRef(false);
   const [latestSubmitId, setLatestSubmitId] = useState<string | null>(null);
   const [submitPopupResult, setSubmitPopupResult] = useState<ResultItem | null>(null);
   const [levelUpNotice, setLevelUpNotice] = useState<LevelUpNotice | null>(null);
@@ -1938,6 +1942,17 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     setQuizTimerStartedAt(Date.now());
   }, [state.subject?.id, state.chapter?.id]);
 
+  useLayoutEffect(() => {
+    if (!pendingTopScrollRef.current) {
+      return;
+    }
+
+    const snapToTop = () => window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    pendingTopScrollRef.current = false;
+    snapToTop();
+    window.requestAnimationFrame(snapToTop);
+  }, [state.subject?.id, state.chapter?.id, state.submitted]);
+
   function requireLogin() {
     if (currentUser) {
       return false;
@@ -1946,6 +1961,14 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
     setAuthMode("login");
     setAuthOpen(true);
     return true;
+  }
+
+  function toggleSubjectModes(subjectId: string) {
+    setExpandedSubjectIds((current) =>
+      current.includes(subjectId)
+        ? current.filter((id) => id !== subjectId)
+        : [...current, subjectId]
+    );
   }
 
   useEffect(() => {
@@ -2766,7 +2789,8 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function scrollToQuizTop() {
-    const snapToTop = () => window.scrollTo({ top: 0, behavior: "auto" });
+    pendingTopScrollRef.current = true;
+    const snapToTop = () => window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     snapToTop();
     window.requestAnimationFrame(() => {
       snapToTop();
@@ -3227,6 +3251,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           user={currentUser}
           onHome={() => {
             setAdminControlOpen(false);
+            scrollToQuizTop();
             setState({ answers: {}, submitted: false });
           }}
           onAdmin={() => {
@@ -3234,6 +3259,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
               return;
             }
             setAdminControlOpen(true);
+            scrollToQuizTop();
             setState({ answers: {}, submitted: false });
           }}
           onSettings={() => {
@@ -3356,15 +3382,33 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             const subjectStarredCount = getStarredQuestions(subject, saved.starredQuestionIds ?? []).length;
             const subjectWrongCount = getWrongPracticeQuestions(subject, saved).length;
             const subjectQuestionCount = getAllQuestions(subject).length;
+            const subjectModesExpanded = expandedSubjectIds.includes(subject.id);
 
             return (
               <Card key={subject.id} className="mt-6">
                 <CardHeader>
                   <CardTitle className="flex items-start justify-between gap-3">
-                    <span>{subject.title}</span>
-                    <span className="text-2xl leading-none" aria-hidden>
-                      {getSubjectEmoji(subject.id)}
-                    </span>
+                    <span className="min-w-0">{subject.title}</span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-2xl leading-none" aria-hidden>
+                        {getSubjectEmoji(subject.id)}
+                      </span>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className="size-10 rounded-full"
+                        aria-expanded={subjectModesExpanded}
+                        aria-label={subjectModesExpanded ? "Thu gon che do mon hoc" : "Mo rong che do mon hoc"}
+                        onClick={() => toggleSubjectModes(subject.id)}
+                      >
+                        {subjectModesExpanded ? (
+                          <ChevronUp className="size-5" aria-hidden />
+                        ) : (
+                          <ChevronDown className="size-5" aria-hidden />
+                        )}
+                      </Button>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -3372,76 +3416,78 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                     <Badge variant="outline">{subject.chapters.length} chương</Badge>
                     <Badge variant="outline">{subjectQuestionCount} câu</Badge>
                   </div>
-                  <div className="mt-5 grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <ModeCard
-                      title="Thi thử"
-                      badge="40 câu"
-                      icon="🧪"
-                      onClick={() => startExamMode(subject)}
-                    />
-                    <ModeCard
-                      title="Trộn tất cả"
-                      badge={`${subjectQuestionCount} câu`}
-                      icon="🔀"
-                      onClick={() => startAllRandomMode(subject)}
-                    />
-                    <ModeCard
-                      title="Chế độ học"
-                      badge={`${subject.chapters.length} chương`}
-                      icon="📚"
-                      onClick={() => {
-                        if (requireLogin()) {
-                          return;
-                        }
-                        scrollToQuizTop();
-                        setState({ subject, answers: {}, submitted: false });
-                      }}
-                    />
-                    <ModeCard
-                      title="Luyện tập"
-                      badge={`${subjectStarredCount} câu`}
-                      disabled={subjectStarredCount === 0}
-                      icon="⭐"
-                      onClick={() => startPracticeMode(subject)}
-                    />
-                    <ModeCard
-                      title="Luyện câu sai"
-                      badge={`${subjectWrongCount} câu`}
-                      disabled={subjectWrongCount === 0}
-                      icon="!"
-                      onClick={() => {
-                        if (requireLogin()) {
-                          return;
-                        }
-                        setModeConfigSubject(subject);
-                        setWrongPracticeConfigOpen(true);
-                      }}
-                    />
-                    <ModeCard
-                      title="Sinh tồn"
-                      badge="1/3 mạng + khiêng"
-                      icon="🛡️"
-                      onClick={() => {
-                        if (requireLogin()) {
-                          return;
-                        }
-                        setModeConfigSubject(subject);
-                        setSurvivalConfigOpen(true);
-                      }}
-                    />
-                    <ModeCard
-                      title="Nối câu hỏi"
-                      badge="8 câu/round"
-                      icon="🧩"
-                      onClick={() => {
-                        if (requireLogin()) {
-                          return;
-                        }
-                        setModeConfigSubject(subject);
-                        setMatchingConfigOpen(true);
-                      }}
-                    />
-                  </div>
+                  {subjectModesExpanded && (
+                    <div className="mt-5 grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <ModeCard
+                        title="Thi thử"
+                        badge="40 câu"
+                        icon="🧪"
+                        onClick={() => startExamMode(subject)}
+                      />
+                      <ModeCard
+                        title="Trộn tất cả"
+                        badge={`${subjectQuestionCount} câu`}
+                        icon="🔀"
+                        onClick={() => startAllRandomMode(subject)}
+                      />
+                      <ModeCard
+                        title="Chế độ học"
+                        badge={`${subject.chapters.length} chương`}
+                        icon="📚"
+                        onClick={() => {
+                          if (requireLogin()) {
+                            return;
+                          }
+                          scrollToQuizTop();
+                          setState({ subject, answers: {}, submitted: false });
+                        }}
+                      />
+                      <ModeCard
+                        title="Luyện tập"
+                        badge={`${subjectStarredCount} câu`}
+                        disabled={subjectStarredCount === 0}
+                        icon="⭐"
+                        onClick={() => startPracticeMode(subject)}
+                      />
+                      <ModeCard
+                        title="Luyện câu sai"
+                        badge={`${subjectWrongCount} câu`}
+                        disabled={subjectWrongCount === 0}
+                        icon="!"
+                        onClick={() => {
+                          if (requireLogin()) {
+                            return;
+                          }
+                          setModeConfigSubject(subject);
+                          setWrongPracticeConfigOpen(true);
+                        }}
+                      />
+                      <ModeCard
+                        title="Sinh tồn"
+                        badge="1/3 mạng + khiêng"
+                        icon="🛡️"
+                        onClick={() => {
+                          if (requireLogin()) {
+                            return;
+                          }
+                          setModeConfigSubject(subject);
+                          setSurvivalConfigOpen(true);
+                        }}
+                      />
+                      <ModeCard
+                        title="Nối câu hỏi"
+                        badge="8 câu/round"
+                        icon="🧩"
+                        onClick={() => {
+                          if (requireLogin()) {
+                            return;
+                          }
+                          setModeConfigSubject(subject);
+                          setMatchingConfigOpen(true);
+                        }}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -3487,6 +3533,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           user={currentUser}
           onHome={() => {
             setAdminControlOpen(false);
+            scrollToQuizTop();
             setState({ answers: {}, submitted: false });
           }}
           onAdmin={() => {
@@ -3494,6 +3541,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
               return;
             }
             setAdminControlOpen(true);
+            scrollToQuizTop();
             setState({ answers: {}, submitted: false });
           }}
           onSettings={() => {
@@ -3539,7 +3587,14 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           <Header
             title={state.subject.title}
             action={
-              <Button variant="outline" size="sm" onClick={() => setState({ answers: {}, submitted: false })}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  scrollToQuizTop();
+                  setState({ answers: {}, submitted: false });
+                }}
+              >
                 <ArrowLeft className="mr-2 size-4" aria-hidden />
                 Trang chính
               </Button>
@@ -3667,6 +3722,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
         user={currentUser}
         onHome={() => {
           setAdminControlOpen(false);
+          scrollToQuizTop();
           setState({ answers: {}, submitted: false });
         }}
         onAdmin={() => {
@@ -3674,6 +3730,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             return;
           }
           setAdminControlOpen(true);
+          scrollToQuizTop();
           setState({ answers: {}, submitted: false });
         }}
         onSettings={() => {
@@ -3723,12 +3780,22 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setState((current) => ({ ...current, chapter: undefined, submitted: false }))}
+                onClick={() => {
+                  scrollToQuizTop();
+                  setState((current) => ({ ...current, chapter: undefined, submitted: false }));
+                }}
               >
                 <ArrowLeft className="mr-2 size-4" aria-hidden />
                 Chương
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setState({ answers: {}, submitted: false })}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  scrollToQuizTop();
+                  setState({ answers: {}, submitted: false });
+                }}
+              >
                 Trang chính
               </Button>
             </div>
@@ -3739,7 +3806,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
           <MatchingModeView
             chapter={state.chapter}
             submitted={state.submitted}
-            onExit={() => setState({ subject: state.subject, answers: {}, submitted: false })}
+            onExit={() => {
+              scrollToQuizTop();
+              setState({ subject: state.subject, answers: {}, submitted: false });
+            }}
             onFinish={finishMatchingMode}
           />
         ) : (
@@ -3785,7 +3855,10 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setState((current) => ({ ...current, chapter: undefined, submitted: false }))}
+                onClick={() => {
+                  scrollToQuizTop();
+                  setState((current) => ({ ...current, chapter: undefined, submitted: false }));
+                }}
               >
                 <ArrowLeft className="mr-2 size-4" aria-hidden />
                 Chương
@@ -4003,7 +4076,13 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
               </p>
             </div>
             <div className="grid gap-3 sm:flex sm:flex-wrap">
-              <Button variant="outline" onClick={() => setState({ answers: {}, submitted: false })}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  scrollToQuizTop();
+                  setState({ answers: {}, submitted: false });
+                }}
+              >
                 <ArrowLeft className="mr-2 size-4" aria-hidden />
                 Quay lại chế độ
               </Button>
