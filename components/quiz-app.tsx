@@ -7202,6 +7202,21 @@ function getPlatformName(userAgent?: string) {
   return "Thiết bị khác";
 }
 
+function getDeviceType(userAgent?: string) {
+  if (!userAgent) return "Không rõ";
+  if (/tablet|ipad/i.test(userAgent) && !/mobile/i.test(userAgent)) return "Máy tính bảng";
+  if (/mobile|android.*mobile|iphone/i.test(userAgent)) return "Điện thoại";
+  return "Máy tính";
+}
+
+function getDeviceSummary(userAgent?: string) {
+  if (!userAgent) return "Chưa có thông tin";
+  const browser = getBrowserName(userAgent);
+  const platform = getPlatformName(userAgent);
+  const deviceType = getDeviceType(userAgent);
+  return `${browser} trên ${platform} (${deviceType})`;
+}
+
 function AdminSmallStat({ detail, label, value }: { detail: string; label: string; value: number }) {
   return (
     <div className="rounded-xl border-2 border-foreground bg-background p-3">
@@ -7503,14 +7518,27 @@ function AdminAccountsPanel({
               </div>
 
               <div className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3">
-                <p className="text-sm font-black">Thiết bị gần nhất</p>
+                <p className="text-sm font-black">Thiết bị và đăng nhập</p>
+                {selectedUser.lastUserAgent ? (
+                  <div className="mt-3 rounded-lg border-2 border-[#202226] bg-[#fffaf3] p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base" aria-hidden>{getDeviceType(selectedUser.lastUserAgent) === "Điện thoại" ? "📱" : getDeviceType(selectedUser.lastUserAgent) === "Máy tính bảng" ? "📱" : "💻"}</span>
+                      <div>
+                        <p className="text-sm font-black text-[#202226]">
+                          {getDeviceSummary(selectedUser.lastUserAgent)}
+                          {selectedUser.loginEvents[0]?.currentDevice && <span className="ml-2 rounded-full bg-[#dfe8e1] px-2 py-0.5 text-[0.6rem] font-black text-[#202226]">Đang dùng</span>}
+                        </p>
+                        <p className="mt-0.5 text-xs font-bold text-[#72746f]">{formatAdminDate(selectedUser.lastLoginAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="mt-3 grid gap-2 text-sm font-bold text-[#72746f]">
-                  <p>IP: <span className="text-[#202226]">{selectedUser.lastLoginIp ?? "Chưa có"}</span></p>
-                  <p>Browser: <span className="text-[#202226]">{getBrowserName(selectedUser.lastUserAgent)}</span></p>
-                  <p>Nền tảng: <span className="text-[#202226]">{getPlatformName(selectedUser.lastUserAgent)}</span></p>
-                  <p>Thiết bị: <span className="text-[#202226]">{selectedUser.loginEvents[0]?.currentDevice ? "Máy này" : selectedUser.lastUserAgent ? "Máy khác" : "Chưa có"}</span></p>
-                  <p>Lần cuối: <span className="text-[#202226]">{formatAdminDate(selectedUser.lastLoginAt)}</span></p>
-                  <p className="break-words">User agent: <span className="text-[#202226]">{selectedUser.lastUserAgent ?? "Chưa có"}</span></p>
+                  <p>IP gần nhất: <span className="text-[#202226]">{selectedUser.lastLoginIp ?? "Chưa đăng nhập"}</span></p>
+                  <p>Loại thiết bị: <span className="text-[#202226]">{selectedUser.lastUserAgent ? getDeviceType(selectedUser.lastUserAgent) : "Chưa đăng nhập"}</span></p>
+                  <p>Số lần đăng nhập: <span className="text-[#202226]">{selectedUser.loginCount}</span></p>
+                  <p>Thiết bị ghi nhận: <span className="text-[#202226]">{selectedUser.deviceCount}</span></p>
+                  <p className="break-words">User agent: <span className="text-[#202226]">{selectedUser.lastUserAgent ?? "Chưa đăng nhập"}</span></p>
                 </div>
               </div>
             </div>
@@ -7566,23 +7594,33 @@ function AdminAccountsPanel({
 
           <div className="rounded-[1.2rem] border-2 border-[#202226] bg-card p-4 shadow-[6px_6px_0_0_#202226]">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-black">Lịch sử đăng nhập</p>
-              <Badge variant="outline">{selectedUser.loginEvents.length}</Badge>
+              <p className="text-sm font-black">Lịch sử đăng nhập chi tiết</p>
+              <Badge variant="outline">{selectedUser.loginEvents.length} lần</Badge>
             </div>
             <div className="mt-3 grid max-h-72 gap-2 overflow-auto pr-1">
               {[...selectedUser.loginEvents]
                 .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
                 .map((event, index) => (
-                  <div key={`${event.createdAt}-${index}`} className="rounded-xl border-2 border-foreground bg-background p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-black">
-                        {getBrowserName(event.userAgent)}
-                        {event.currentDevice ? <span className="ml-2 rounded-full bg-[#dfe8e1] px-2 py-0.5 text-[0.65rem] text-[#202226]">Máy này</span> : null}
-                      </p>
-                      <span className="text-xs font-black text-muted-foreground">{formatAdminDate(event.createdAt)}</span>
+                  <details key={`${event.createdAt}-${index}`} className="group rounded-xl border-2 border-foreground bg-background">
+                    <summary className="cursor-pointer p-3">
+                      <div className="inline-flex w-[calc(100%-1.2rem)] flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-black">
+                          <span aria-hidden>{getDeviceType(event.userAgent) === "Điện thoại" ? "📱" : "💻"}</span>{" "}
+                          {getBrowserName(event.userAgent)} · {getPlatformName(event.userAgent)}
+                          {event.currentDevice ? <span className="ml-2 rounded-full bg-[#dfe8e1] px-2 py-0.5 text-[0.6rem] font-black text-[#202226]">Đang dùng</span> : null}
+                        </p>
+                        <span className="text-xs font-black text-muted-foreground">{formatAdminDate(event.createdAt)}</span>
+                      </div>
+                    </summary>
+                    <div className="border-t-2 border-foreground/20 px-3 pb-3 pt-2">
+                      <div className="grid gap-1.5 text-xs font-bold text-muted-foreground">
+                        <p>IP: <span className="text-foreground">{event.ip ?? "chưa có"}</span></p>
+                        <p>Loại: <span className="text-foreground">{getDeviceType(event.userAgent)}</span></p>
+                        <p>Device key: <span className="break-all text-foreground">{event.deviceKey ?? "chưa có"}</span></p>
+                        <p className="break-words">User agent: <span className="text-foreground">{event.userAgent ?? "chưa có"}</span></p>
+                      </div>
                     </div>
-                    <p className="mt-1 text-xs font-black text-muted-foreground">{getPlatformName(event.userAgent)} · IP {event.ip ?? "chưa có"} · device {event.deviceKey ?? "chưa có"}</p>
-                  </div>
+                  </details>
                 ))}
               {selectedUser.loginEvents.length === 0 && <p className="rounded-xl border-2 border-foreground bg-background p-3 text-sm font-black text-muted-foreground">Chưa có lịch sử đăng nhập.</p>}
             </div>
@@ -8120,15 +8158,29 @@ function AdminControlPanel({
                 {canWrite ? (
                   <div className="rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3">
                     <p className="text-sm font-black">Thiết bị và đăng nhập</p>
+                    {selectedUser.lastUserAgent ? (
+                      <div className="mt-3 rounded-lg border-2 border-[#202226] bg-[#fffaf3] p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg" aria-hidden>{getDeviceType(selectedUser.lastUserAgent) === "Điện thoại" ? "📱" : getDeviceType(selectedUser.lastUserAgent) === "Máy tính bảng" ? "📱" : "💻"}</span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-black text-[#202226]">
+                              {getDeviceSummary(selectedUser.lastUserAgent)}
+                              {selectedUser.loginEvents[0]?.currentDevice && <span className="ml-2 inline-block rounded-full bg-[#dfe8e1] px-2 py-0.5 text-[0.6rem] font-black text-[#202226]">Đang dùng</span>}
+                            </p>
+                            <p className="mt-0.5 text-xs font-bold text-[#696d66]">Đăng nhập lúc {formatAdminDate(selectedUser.lastLoginAt)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-3 rounded-lg border-2 border-dashed border-[#b5b8b2] bg-[#fffaf3] p-3 text-center text-sm font-bold text-[#696d66]">Chưa có thông tin thiết bị — user chưa đăng nhập lần nào.</p>
+                    )}
                     <div className="mt-3 grid gap-2 text-sm font-bold text-[#696d66]">
-                      <p>IP gần nhất: <span className="text-[#202226]">{selectedUser.lastLoginIp ?? "Chưa có"}</span></p>
-                      <p>Browser: <span className="text-[#202226]">{getBrowserName(selectedUser.lastUserAgent)}</span></p>
-                      <p>Nền tảng: <span className="text-[#202226]">{getPlatformName(selectedUser.lastUserAgent)}</span></p>
-                      <p>Thiết bị gần nhất: <span className="text-[#202226]">{selectedUser.loginEvents[0]?.currentDevice ? "Máy này" : selectedUser.lastUserAgent ? "Máy khác" : "Chưa có"}</span></p>
+                      <p>IP gần nhất: <span className="text-[#202226]">{selectedUser.lastLoginIp ?? "Chưa đăng nhập"}</span></p>
+                      <p>Loại thiết bị: <span className="text-[#202226]">{selectedUser.lastUserAgent ? getDeviceType(selectedUser.lastUserAgent) : "Chưa đăng nhập"}</span></p>
                       <p>Số lần đăng nhập: <span className="text-[#202226]">{selectedUser.loginCount}</span></p>
                       <p>Thiết bị ghi nhận: <span className="text-[#202226]">{selectedUser.deviceCount}</span></p>
                       <p>Lần cuối: <span className="text-[#202226]">{formatAdminDate(selectedUser.lastLoginAt)}</span></p>
-                      <p className="break-words">User agent: <span className="text-[#202226]">{selectedUser.lastUserAgent ?? "Chưa có"}</span></p>
+                      <p className="break-words">User agent: <span className="text-[#202226]">{selectedUser.lastUserAgent ?? "Chưa đăng nhập"}</span></p>
                     </div>
                   </div>
                 ) : (
@@ -8147,23 +8199,33 @@ function AdminControlPanel({
 
               {canWrite && <div className="mt-4 rounded-xl border-2 border-[#202226] bg-[#eef0ef] p-3">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-black">Hoạt động gần đây</p>
-                  <Badge variant="outline">Mới nhất trước</Badge>
+                  <p className="text-sm font-black">Lịch sử đăng nhập chi tiết</p>
+                  <Badge variant="outline">{selectedUser.loginEvents.length} lần</Badge>
                 </div>
                 <div className="mt-3 grid max-h-56 gap-2 overflow-auto pr-1">
                   {[...selectedUser.loginEvents]
                     .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
                     .map((event, index) => (
-                      <div key={`${event.createdAt}-${index}`} className="rounded-xl border-2 border-[#202226] bg-[#fffaf3] p-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="text-sm font-black">
-                            {getBrowserName(event.userAgent)}
-                            {event.currentDevice ? <span className="ml-2 rounded-full bg-[#dfe8e1] px-2 py-0.5 text-[0.65rem] text-[#202226]">Máy này</span> : null}
-                          </p>
-                          <span className="text-xs font-black text-[#696d66]">{formatAdminDate(event.createdAt)}</span>
+                      <details key={`${event.createdAt}-${index}`} className="group rounded-xl border-2 border-[#202226] bg-[#fffaf3]">
+                        <summary className="cursor-pointer p-3">
+                          <div className="inline-flex w-[calc(100%-1.2rem)] flex-wrap items-center justify-between gap-2">
+                            <p className="text-sm font-black">
+                              <span aria-hidden>{getDeviceType(event.userAgent) === "Điện thoại" ? "📱" : "💻"}</span>{" "}
+                              {getBrowserName(event.userAgent)} · {getPlatformName(event.userAgent)}
+                              {event.currentDevice ? <span className="ml-2 rounded-full bg-[#dfe8e1] px-2 py-0.5 text-[0.6rem] font-black text-[#202226]">Đang dùng</span> : null}
+                            </p>
+                            <span className="text-xs font-black text-[#696d66]">{formatAdminDate(event.createdAt)}</span>
+                          </div>
+                        </summary>
+                        <div className="border-t-2 border-[#202226]/20 px-3 pb-3 pt-2">
+                          <div className="grid gap-1.5 text-xs font-bold text-[#696d66]">
+                            <p>IP: <span className="text-[#202226]">{event.ip ?? "chưa có"}</span></p>
+                            <p>Loại: <span className="text-[#202226]">{getDeviceType(event.userAgent)}</span></p>
+                            <p>Device key: <span className="break-all text-[#202226]">{event.deviceKey ?? "chưa có"}</span></p>
+                            <p className="break-words">User agent: <span className="text-[#202226]">{event.userAgent ?? "chưa có"}</span></p>
+                          </div>
                         </div>
-                        <p className="mt-1 text-xs font-black text-[#696d66]">{getPlatformName(event.userAgent)} · IP {event.ip ?? "chưa có"}</p>
-                      </div>
+                      </details>
                     ))}
                   {selectedUser.loginEvents.length === 0 && <p className="rounded-xl border-2 border-[#202226] bg-[#fffaf3] p-3 text-sm font-black text-[#696d66]">Chưa có lịch sử đăng nhập.</p>}
                 </div>
