@@ -205,10 +205,10 @@ export async function GET(request: Request) {
         createdAt: canSeeAccountDetails ? user.created_at : undefined,
         updatedAt: canSeeAccountDetails ? user.updated_at : data?.updated_at,
         passwordChangedAt: canSeeAccountDetails ? user.password_changed_at : undefined,
-        lastLoginAt: canSeeAccountDetails ? user.last_login_at : undefined,
-        lastLoginIp: canSeeAccountDetails ? user.last_login_ip : undefined,
-        lastUserAgent: canSeeAccountDetails ? user.last_user_agent : undefined,
-        loginCount: user.login_count ?? events.length,
+        lastLoginAt: canSeeAccountDetails ? (user.last_login_at ?? events[0]?.created_at) : undefined,
+        lastLoginIp: canSeeAccountDetails ? (user.last_login_ip ?? events[0]?.ip) : undefined,
+        lastUserAgent: canSeeAccountDetails ? (user.last_user_agent ?? events[0]?.user_agent) : undefined,
+        loginCount: Math.max(user.login_count ?? 0, events.length),
         deviceCount: canSeeAccountDetails ? deviceCount : 0,
         loginEvents: canSeeAccountDetails
           ? events.slice(0, 12).map((event) => ({
