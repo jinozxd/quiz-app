@@ -2915,14 +2915,21 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
   }
 
   function resetAllProgress() {
-    setSaved((current) => ({
-      ...current,
-      activeSubjectId: undefined,
-      activeChapterId: undefined,
-      items: {},
-      order: [],
-      wrongPracticeSeen: {}
-    }));
+    setSaved((current) => {
+      // Chỉ xóa các item chưa nộp (đang làm dở), giữ lại item đã hoàn thành
+      const keptItems = Object.fromEntries(
+        Object.entries(current.items).filter(([, item]) => item.submitted)
+      );
+      const keptOrder = current.order.filter((id) => keptItems[id]);
+      return {
+        ...current,
+        activeSubjectId: undefined,
+        activeChapterId: undefined,
+        items: keptItems,
+        order: keptOrder,
+        wrongPracticeSeen: {}
+      };
+    });
     setState({ answers: {}, submitted: false });
     setDeleteAllOpen(false);
     setMenuOpen(false);
@@ -3383,12 +3390,19 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
             const subjectWrongCount = getWrongPracticeQuestions(subject, saved).length;
             const subjectQuestionCount = getAllQuestions(subject).length;
             const subjectModesExpanded = expandedSubjectIds.includes(subject.id);
+            const isLogicSubject = subject.id.includes("logic");
+            const isBlurred = isLogicSubject && !canUseAdminControl;
 
             return (
-              <Card key={subject.id} className="mt-6">
+              <Card key={subject.id} className={cn("mt-6", isBlurred && "pointer-events-none select-none opacity-50 blur-sm")}>
                 <CardHeader>
                   <CardTitle className="flex items-start justify-between gap-3">
-                    <span className="min-w-0">{subject.title}</span>
+                    <span className="min-w-0">
+                      {subject.title}
+                      {isLogicSubject && (
+                        <span className="ml-2 text-sm font-normal text-muted-foreground">(đang bảo trì)</span>
+                      )}
+                    </span>
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="text-2xl leading-none" aria-hidden>
                         {getSubjectEmoji(subject.id)}
@@ -3399,7 +3413,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
                         variant="outline"
                         className="size-10 rounded-full"
                         aria-expanded={subjectModesExpanded}
-                        aria-label={subjectModesExpanded ? "Thu gon che do mon hoc" : "Mo rong che do mon hoc"}
+                        aria-label={subjectModesExpanded ? "Thu gọn chế độ môn học" : "Mở rộng chế độ môn học"}
                         onClick={() => toggleSubjectModes(subject.id)}
                       >
                         {subjectModesExpanded ? (
