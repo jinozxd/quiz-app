@@ -6455,7 +6455,7 @@
                 "id": "a",
                 "label": "A",
                 "text": "1/1/1993",
-                "correct": false
+                "correct": true
               },
               {
                 "id": "b",
@@ -6473,7 +6473,7 @@
                 "id": "d",
                 "label": "D",
                 "text": "1/1/1999",
-                "correct": true
+                "correct": false
               }
             ]
           },
