@@ -2385,7 +2385,7 @@ export function QuizApp({ subjects }: { subjects: QuizSubject[] }) {
       };
 
       if (state.subject && state.chapter) {
-        if (state.chapter.id.startsWith("mode-match")) {
+        if (state.chapter.id.startsWith("mode-match") || state.chapter.id.startsWith("mode-survival")) {
           return next;
         }
 
